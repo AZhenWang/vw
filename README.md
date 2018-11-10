@@ -1,3 +1,8 @@
+
+配置文件命令
+cp conf/myapp_example.py conf/myapp.py
+
+
 # batch命令
 
 ## 项目初始化命令
