@@ -66,9 +66,9 @@ class Ts(Interface):
             # 如果start_date为空，就按ts_code依次拉取所有股票的迄今为止的信息
             for ts_code, update_date in self.code_list.values:
                 if update_date and update_date >= self.end_date:
-                    print('不打了')
+                    # print('不打了')
                     continue
-                print('打')
+                # print('打')
                 flag = True
                 while flag:
                     try:
@@ -76,7 +76,7 @@ class Ts(Interface):
                         flag = False
 
                     except BaseException as e:
-                        print(e)
+                        # print(e)
                         time.sleep(10)
                         self.update_by_ts_code(api, ts_code)
 
@@ -89,7 +89,7 @@ class Ts(Interface):
                         self.update_by_trade_date(api, trade_date)
                         flag = False
                     except BaseException as e:
-                        print(e)
+                        # print(e)
                         time.sleep(10)
                         self.update_by_trade_date(api, trade_date)
 
@@ -101,13 +101,13 @@ class Ts(Interface):
         )
 
         if existed_dates.empty or (~self.trade_dates.isin(existed_dates['trade_date'])).any():
-            print('打进来了')
+            # print('打进来了')
             new_rows = self.pro.query(api, ts_code=ts_code, start_date=self.start_date, end_date=self.end_date)
             if not new_rows.empty:
                 if not existed_dates.empty:
                     new_rows = new_rows[~new_rows['trade_date'].isin(existed_dates['trade_date'])]
                 if not new_rows.empty:
-                    print('新增')
+                    # print('新增')
                     avail_recorders = new_rows[fields_map[api]]
                     avail_recorders.sort_values(by=['trade_date'], inplace=True)
                     avail_recorders.to_sql(api, self.engine, index=False, if_exists='append', chunksize=1000)
