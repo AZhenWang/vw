@@ -6,7 +6,6 @@ channels:
 dependencies:
   - _tflow_1100_select=0.0.2
   - absl-py=0.4.1
-  - appnope=0.1.0
   - astor=0.7.1
   - attrs=18.2.0
   - automat=0.7.0
@@ -32,11 +31,8 @@ dependencies:
   - jupyter_client=5.2.3
   - jupyter_core=4.4.0
   - kiwisolver=1.0.1
-  - libcxx=4.0.1
-  - libcxxabi=4.0.1
   - libedit=3.1.20170329
   - libffi=3.2.1
-  - libgfortran=3.0.1
   - libpng=1.6.34
   - libprotobuf=3.6.0
   - libsodium=1.0.16
