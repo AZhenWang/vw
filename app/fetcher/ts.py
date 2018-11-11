@@ -18,11 +18,10 @@ class Ts(Interface):
         self.end_date = end_date
         self.engine = GL.get_value('db_engine')
         self.code_list = []
-        # self.code_list = ['002813.SZ', '600641.SH']
         self.trade_dates = self.get_trade_dates()
 
     def get_trade_dates(self):
-        trade_cal = self.pro.trade_cal(start_date='19901201', end_date=self.end_date)
+        trade_cal = self.pro.trade_cal(start_date='', end_date=self.end_date)
         trade_cal = trade_cal[trade_cal['is_open'] == 1]
         trade_cal.sort_values(by=['cal_date'], inplace=True)
         return trade_cal['cal_date']
@@ -103,6 +102,7 @@ class Ts(Interface):
         if existed_dates.empty or (~self.trade_dates.isin(existed_dates['trade_date'])).any():
             # print('打进来了')
             new_rows = self.pro.query(api, ts_code=ts_code, start_date=self.start_date, end_date=self.end_date)
+            # print(new_rows)
             if not new_rows.empty:
                 if not existed_dates.empty:
                     new_rows = new_rows[~new_rows['trade_date'].isin(existed_dates['trade_date'])]

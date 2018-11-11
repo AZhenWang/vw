@@ -1,3 +1,4 @@
+#coding: utf-8
 # 入口
 import sys
 import getopt
