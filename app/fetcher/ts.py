@@ -29,7 +29,7 @@ class Ts(Interface):
     def set_code_list(self):
         api = 'stock_basic'
         code_list = pd.read_sql(
-            sa.text('SELECT ts_code, update_date FROM ' + api + ' where list_status=:ls'),
+            sa.text('SELECT ts_code FROM ' + api + ' where list_status=:ls'),
             self.engine,
             params={'ls': 'L'}
         )
@@ -63,7 +63,7 @@ class Ts(Interface):
     def query(self, api):
         if not self.start_date:
             # 如果start_date为空，就按ts_code依次拉取所有股票的迄今为止的信息
-            for ts_code, update_date in self.code_list.values:
+            for ts_code in self.code_list.values:
                 flag = True
                 while flag:
                     try:
@@ -106,8 +106,6 @@ class Ts(Interface):
                     avail_recorders = new_rows[fields_map[api]]
                     avail_recorders.sort_values(by=['trade_date'], inplace=True)
                     avail_recorders.to_sql(api, self.engine, index=False, if_exists='append', chunksize=1000)
-                    # 更新stock_basic表的update_date
-                    self.update_update_date(ts_code=ts_code)
 
     def update_by_trade_date(self, api, trade_date):
         new_rows = self.pro.query(api, trade_date=trade_date)
@@ -122,6 +120,4 @@ class Ts(Interface):
             if not new_rows.empty:
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, self.engine, index=False, if_exists='append', chunksize=1000)
-                # 更新stock_basic表的update_date
-                self.update_update_date(update_date=trade_date)
 
