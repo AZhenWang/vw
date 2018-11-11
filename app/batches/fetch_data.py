@@ -18,5 +18,6 @@ def execute(start_date='', end_date=''):
     if not worker.trade_dates.empty:
         # ts_apis = ['daily', 'daily_basic', 'adj_factor']
         ts_apis = ['daily_basic']
+        
         for api in ts_apis:
             worker.query(api)
