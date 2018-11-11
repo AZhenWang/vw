@@ -64,10 +64,6 @@ class Ts(Interface):
         if not self.start_date:
             # 如果start_date为空，就按ts_code依次拉取所有股票的迄今为止的信息
             for ts_code, update_date in self.code_list.values:
-                if update_date and update_date >= self.end_date:
-                    # print('不打了')
-                    continue
-                # print('打')
                 flag = True
                 while flag:
                     try:
@@ -102,7 +98,6 @@ class Ts(Interface):
         if existed_dates.empty or (~self.trade_dates.isin(existed_dates['trade_date'])).any():
             # print('打进来了')
             new_rows = self.pro.query(api, ts_code=ts_code, start_date=self.start_date, end_date=self.end_date)
-            # print(new_rows)
             if not new_rows.empty:
                 if not existed_dates.empty:
                     new_rows = new_rows[~new_rows['trade_date'].isin(existed_dates['trade_date'])]
