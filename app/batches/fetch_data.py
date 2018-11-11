@@ -6,7 +6,7 @@ def execute(start_date='', end_date=''):
     now = datetime.now()
     today = now.strftime('%Y%m%d')
     if not end_date or end_date >= today:
-        yesterday = (now - timedelta(2)).strftime('%Y%m%d')
+        yesterday = (now - timedelta(1)).strftime('%Y%m%d')
         hour = now.hour
         if hour < 17:
             end_date = yesterday
