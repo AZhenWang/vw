@@ -63,7 +63,7 @@ class Ts(Interface):
     def query(self, api):
         if not self.start_date:
             # 如果start_date为空，就按ts_code依次拉取所有股票的迄今为止的信息
-            for ts_code in self.code_list.values:
+            for ts_code in self.code_list['ts_code']:
                 flag = True
                 while flag:
                     try:
