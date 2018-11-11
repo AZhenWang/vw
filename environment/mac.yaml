@@ -114,8 +114,3 @@ dependencies:
     - sqlalchemy==1.2.13
     - tushare==1.2.15
     - urllib3==1.24
-
-- libcxx=4.0.1
-  - libgfortran=3.0.1
-  - libcxxabi=4.0.1
-  - appnope=0.1.0
