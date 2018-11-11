@@ -21,7 +21,7 @@ class Ts(Interface):
         self.trade_dates = self.get_trade_dates()
 
     def get_trade_dates(self):
-        trade_cal = self.pro.trade_cal(start_date='', end_date=self.end_date)
+        trade_cal = self.pro.trade_cal(start_date=self.start_date, end_date=self.end_date)
         trade_cal = trade_cal[trade_cal['is_open'] == 1]
         trade_cal.sort_values(by=['cal_date'], inplace=True)
         return trade_cal['cal_date']

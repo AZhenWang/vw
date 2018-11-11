@@ -39,7 +39,7 @@ if file_name:
             from globalvar import GL
 
             db_engine = create_engine(
-                'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config))
+                'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config), echo=True)
             # db_engine = create_engine(
             #     'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config), echo=True)
             GL.set_value('db_engine', db_engine)
