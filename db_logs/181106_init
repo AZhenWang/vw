@@ -41,7 +41,7 @@ create table daily_basic (
 
 create table adj_factor(
    id INT NOT NULL AUTO_INCREMENT,
-   ts_code VARCHAR(9) NOT NULL,
+   ts_code INT NOT NULL,
    trade_date VARCHAR(8) NOT NULL,
    adj_factor FLOAT not null comment '复权因子',
    created_at timestamp not null default CURRENT_TIMESTAMP,
@@ -65,23 +65,34 @@ create table stock_basic(
    UNIQUE `ts_code_idx`  (`ts_code`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8 comment'股票列表';
 
+create table trade_cal(
+   id INT NOT NULL AUTO_INCREMENT,
+   cal_date VARCHAR(8) NOT NULL comment '交易日期',
+   is_open	bool  NULL	comment'是否交易，0休市 1交易',
+   pretrade_date	VARCHAR(8)  NULL	comment'上一个交易日',
+   PRIMARY KEY(id),
+   UNIQUE `cal_date_idx`  (`cal_date`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'交易日历';
+
 create table classifiers(
    id INT NOT NULL AUTO_INCREMENT,
-   ts_code VARCHAR(9) NOT NULL,
-   trade_date VARCHAR(8) NOT NULL,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
    knn_5 FLOAT null comment 'knn(5天后变化)',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   UNIQUE KEY `code_date_unique_idx` (`trade_date`,`ts_code`)
+   KEY (code_id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'聚类模型值';
 
 
 create table thresholds(
    id INT NOT NULL AUTO_INCREMENT,
-   ts_code VARCHAR(9) NOT NULL,
-   trade_date VARCHAR(8) NOT NULL,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
    threshold_20 FLOAT null comment '偏置值',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   UNIQUE KEY `code_date_unique_idx` (`trade_date`,`ts_code`)
+   KEY (code_id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'升降的阀值，0.05表示上升趋势趋势，0.03表示下降趋势';

@@ -2,7 +2,7 @@
 # 入口
 import sys
 import getopt
-from _datetime import date
+from datetime import datetime, timedelta
 
 
 def usage():
@@ -44,10 +44,19 @@ if file_name:
             #     'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config), echo=True)
             GL.set_value('db_engine', db_engine)
 
-            if start_date or end_date:
-                executor.execute(start_date, end_date)
-            else:
-                executor.execute()
+            now = datetime.now()
+            today = now.strftime('%Y%m%d')
+            if not start_date:
+                start_date = '19901219'
+            if not end_date or end_date >= today:
+                yesterday = (now - timedelta(1)).strftime('%Y%m%d')
+                hour = now.hour
+                if hour < 17:
+                    end_date = yesterday
+                else:
+                    end_date = today
+
+            executor.execute(start_date, end_date)
         else:
             print('此文件没有execute函数')
     except BaseException as e:
