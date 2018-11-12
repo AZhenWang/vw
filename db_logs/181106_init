@@ -50,6 +50,7 @@ create table adj_factor(
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'复权因子';
 
 create table stock_basic(
+   id INT NOT NULL AUTO_INCREMENT,
    ts_code VARCHAR(9) NOT NULL,
    name	VARCHAR(20)  NULL	comment'股票名称',
    area	VARCHAR(10)  NULL	comment'所在地域',
@@ -60,7 +61,8 @@ create table stock_basic(
    list_date	VARCHAR(8) NOT NULL	comment'上市日期',
    delist_date	VARCHAR(8)  NULL	comment'退市日期',
    is_hs	CHAR(1) NOT NULL	comment'是否沪深港通标的，N否 H沪股通 S深股通',
-   PRIMARY KEY(ts_code)
+   PRIMARY KEY(id),
+   UNIQUE `ts_code_idx`  (`ts_code`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8 comment'股票列表';
 
 create table classifiers(
