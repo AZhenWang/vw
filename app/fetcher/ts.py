@@ -38,15 +38,31 @@ class Ts(Interface):
     def update_stock_basic(self):
         api = 'stock_basic'
         existed_code_list = pd.read_sql(
-            sa.text('SELECT ts_code FROM ' + api),
+            sa.text('SELECT ts_code, list_status FROM ' + api),
             self.engine
         )
-        new_rows = self.pro.stock_basic(fields=fields_map[api])
+        new_rows = self.pro.stock_basic(list_status='L', fields=fields_map[api])
+        disappear_rows = self.pro.stock_basic(list_status='D', fields=fields_map[api])
         if not existed_code_list.empty:
             new_rows = new_rows[~new_rows['ts_code'].isin(existed_code_list['ts_code'])]
+        else:
+            new_rows = new_rows.append(disappear_rows)
+
         if not new_rows.empty:
             avail_recorders = new_rows[fields_map[api]]
             avail_recorders.to_sql(api, self.engine, index=False, if_exists='append', chunksize=1000)
+
+        if not existed_code_list.empty and not disappear_rows.empty:
+            new_disappear_rows = existed_code_list[existed_code_list['ts_code'].isin(disappear_rows['ts_code'])]
+            new_disappear_rows = new_disappear_rows[new_disappear_rows['list_status'] == 'L']
+
+            if not new_disappear_rows.empty:
+                avail_disappear_recorders = disappear_rows[['delist_date', 'ts_code']]
+                avail_disappear_recorders = avail_disappear_recorders[avail_disappear_recorders['ts_code'].isin(new_disappear_rows['ts_code'])]
+                for delist_date, ts_code in avail_disappear_recorders.values:
+                    pd.io.sql.execute('update ' + api + ' set list_status=%s, delist_date=%s where ts_code=%s',
+                                  self.engine, params=['D', delist_date, ts_code])
+
 
     def update_update_date(self, ts_code='', update_date=''):
         if not update_date:
