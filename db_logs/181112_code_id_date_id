@@ -55,3 +55,9 @@ ALTER TABLE daily_basic DROP KEY code_date_unique_idx;
 
 ALTER TABLE adj_factor DROP `ts_code`;
 ALTER TABLE adj_factor DROP `trade_date`;
+
+ALTER TABLE daily DROP `ts_code`;
+ALTER TABLE daily DROP `trade_date`;
+
+ALTER TABLE daily_basic DROP `ts_code`;
+ALTER TABLE daily_basic DROP `trade_date`;
