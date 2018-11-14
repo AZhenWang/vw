@@ -1,11 +1,9 @@
 from app.fetcher.common import Interface
 from conf.myapp import ts_token
 from app.saver.tables import fields_map
-from globalvar import GL
+from app.saver.logic import DB
 
-import pandas as pd
 import tushare as ts
-import sqlalchemy as sa
 import time
 
 
@@ -15,58 +13,37 @@ class Ts(Interface):
         self.pro = ts.pro_api(ts_token)
         self.start_date = start_date
         self.end_date = end_date
-        self.engine = GL.get_value('db_engine')
         self.code_list = []
         self.trade_dates = []
 
     def set_trade_dates(self):
         api = 'trade_cal'
-        trade_cal = pd.read_sql(
-            sa.text('SELECT id as date_id, cal_date FROM ' + api + ' where is_open = 1 and cal_date >= :sd and cal_date <= :ed'),
-            self.engine,
-            params={'sd': self.start_date, 'ed': self.end_date}
-        )
+        trade_cal = DB.get_open_cal_date(self.start_date, self.end_date)
         if trade_cal.empty:
             now_rows = self.pro.query(api, fields=fields_map[api], start_date=self.start_date, end_date=self.end_date)
             now_rows = now_rows[fields_map[api]]
-            now_rows.to_sql(api, self.engine, index=False, if_exists='append', chunksize=1000)
+            now_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
             if not now_rows.empty:
-                trade_cal = pd.read_sql(
-                    sa.text('SELECT id as date_id, cal_date FROM ' + api + ' where is_open = 1 and cal_date >= :sd and cal_date <= :ed'),
-                    self.engine,
-                    params={'sd': self.start_date, 'ed': self.end_date}
-                )
+                trade_cal = DB.get_open_cal_date(self.start_date, self.end_date)
         self.trade_dates = trade_cal
 
     def update_trade_cal(self):
         api = 'trade_cal'
-        existed_trade_cal = pd.read_sql(
-            sa.text('SELECT cal_date FROM ' + api + ' where cal_date >= :sd and cal_date <= :ed'),
-            self.engine,
-            params={'sd':self.start_date, 'ed':self.end_date}
-        )
+        existed_cal_date = DB.get_cal_date(self.start_date, self.end_date)
         new_rows = self.pro.query(api, fields=fields_map[api], start_date=self.start_date, end_date=self.end_date)
-        if not existed_trade_cal.empty:
-            new_rows = new_rows[~new_rows['cal_date'].isin(existed_trade_cal['cal_date'])]
+        if not existed_cal_date.empty:
+            new_rows = new_rows[~new_rows['cal_date'].isin(existed_cal_date['cal_date'])]
         if not new_rows.empty:
             new_rows = new_rows[fields_map[api]]
-            new_rows.to_sql(api, self.engine, index=False, if_exists='append', chunksize=1000)
+            new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def set_code_list(self):
-        api = 'stock_basic'
-        code_list = pd.read_sql(
-            sa.text('SELECT id as code_id, ts_code FROM ' + api + ' where list_status=:ls'),
-            self.engine,
-            params={'ls': 'L'}
-        )
+        code_list = DB.get_code_list(list_status='L')
         self.code_list = code_list
 
     def update_stock_basic(self):
         api = 'stock_basic'
-        existed_code_list = pd.read_sql(
-            sa.text('SELECT ts_code, list_status FROM ' + api),
-            self.engine
-        )
+        existed_code_list = DB.get_code_list()
         new_rows = self.pro.query(api, list_status='L', fields=fields_map[api])
         disappear_rows = self.pro.query(api, list_status='D', fields=fields_map[api])
         if not existed_code_list.empty:
@@ -76,7 +53,7 @@ class Ts(Interface):
 
         if not new_rows.empty:
             avail_recorders = new_rows[fields_map[api]]
-            avail_recorders.to_sql(api, self.engine, index=False, if_exists='append', chunksize=1000)
+            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
         if not existed_code_list.empty and not disappear_rows.empty:
             new_disappear_rows = existed_code_list[existed_code_list['ts_code'].isin(disappear_rows['ts_code'])]
@@ -85,23 +62,11 @@ class Ts(Interface):
                 avail_disappear_recorders = disappear_rows[['delist_date', 'ts_code']]
                 avail_disappear_recorders = avail_disappear_recorders[avail_disappear_recorders['ts_code'].isin(new_disappear_rows['ts_code'])]
                 for delist_date, ts_code in avail_disappear_recorders.values:
-                    pd.io.sql.execute('update ' + api + ' set list_status=%s, delist_date=%s where ts_code=%s',
-                                  self.engine, params=['D', delist_date, ts_code])
-
-
-    def update_update_date(self, ts_code='', update_date=''):
-        if not update_date:
-            update_date = self.end_date
-        if not ts_code:
-            # 全部股票更新一遍
-            pd.io.sql.execute('update stock_basic set update_date=%s', self.engine, params=[update_date])
-        else:
-            pd.io.sql.execute('update stock_basic set update_date=%s where ts_code=%s',
-                              self.engine, params=[update_date, ts_code])
+                    DB.update_delist_date(delist_date, ts_code)
 
     def query(self, api):
         # 按trade_date依次拉取所有股票信息
-        for date_id,cal_date in self.trade_dates.values:
+        for date_id,cal_date in self.trade_dates[['date_id', 'cal_date']].values:
             flag = True
             while flag:
                 try:
@@ -115,15 +80,11 @@ class Ts(Interface):
     def update_by_trade_date(self, api, date_id, cal_date):
         new_rows = self.pro.query(api, trade_date=cal_date)
         if not new_rows.empty:
-            existed_codes = pd.read_sql(
-                sa.text('SELECT sb.ts_code FROM ' + api + ' as api left join stock_basic as sb on sb.id = api.code_id where api.date_id=:date_id'),
-                self.engine,
-                params={'date_id': date_id}
-            )
+            existed_codes = DB.get_existed_codes(table_name=api, date_id=date_id)
             if not existed_codes.empty:
                 new_rows = new_rows[~new_rows['ts_code'].isin(existed_codes['ts_code'])]
             new_rows = new_rows.merge(self.trade_dates, left_on='trade_date', right_on='cal_date')
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
-            avail_recorders.to_sql(api, self.engine, index=False, if_exists='append', chunksize=1000)
+            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 

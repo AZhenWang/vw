@@ -34,15 +34,6 @@ if file_name:
         module_name = 'app.batches.{}'.format(file_name)
         executor = __import__(module_name, fromlist=('batches', file_name))
         if hasattr(executor, "execute"):
-            from sqlalchemy import create_engine
-            from conf.myapp import db_config
-            from globalvar import GL
-
-            db_engine = create_engine(
-                'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config), echo=True)
-            # db_engine = create_engine(
-            #     'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config), echo=True)
-            GL.set_value('db_engine', db_engine)
 
             now = datetime.now()
             today = now.strftime('%Y%m%d')
@@ -52,10 +43,10 @@ if file_name:
                 yesterday = (now - timedelta(1)).strftime('%Y%m%d')
                 hour = now.hour
                 if hour < 17:
+                    print(yesterday)
                     end_date = yesterday
                 else:
                     end_date = today
-
             executor.execute(start_date, end_date)
         else:
             print('此文件没有execute函数')

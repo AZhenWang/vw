@@ -1,7 +1,7 @@
+from app.models.common import Interface
+
 from sklearn.neighbors import KNeighborsRegressor, NearestNeighbors
-import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
-import random
 import pandas as pd
 import numpy as np
 import random
@@ -9,18 +9,24 @@ import random
 random.seed(1)
 
 
-class Knn(object):
-    def __init__(self, sample_interval=12*20, pre_predict_interval=5, score_interval=60):
+class Knn(Interface):
+    def __init__(self, start_date='', end_date='', sample_interval=12*20, pre_predict_interval=5, score_interval=60):
         """
 
         :param sample_interval: 样本区间天数
         :param pre_predict_interval: 向前预测间隔天数
         :param score_interval: 计算R2_SCORE的区间天数
         """
+        self.start_date = start_date
+        self.end_date = end_date
         self.sample_interval = sample_interval
         self.pre_predict_interval = pre_predict_interval
         self.score_interval = score_interval
 
+    def run(self):
+        pass
+        
+    
     def knn_predict(self, features, predict_date):
         """predict one date by knn algorithm
 
