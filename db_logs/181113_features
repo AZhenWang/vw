@@ -9,29 +9,14 @@ create table features(
 
 create table features_groups(
    id INT NOT NULL AUTO_INCREMENT,
-   feature_id int not null comment'特征id, 列表字符串:[1,4]',
-   root_id int not null comment '组id',
+   feature_id int not null comment'特征id',
+   group_number int not null comment '组号',
    created_at timestamp not null default CURRENT_TIMESTAMP,
-   updated_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   index(`root_id`),
-   FOREIGN KEY (`feature_id`) REFERENCES `features` (`id`) on delete cascade on update cascade,
+   index(`group_number`),
+   index(`feature_id`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8 comment'特征组合表';
 
-
-create table feature_logs(
-   id INT NOT NULL AUTO_INCREMENT,
-   date_id INT NOT NULL,
-   code_id INT NOT NULL,
-   feature_id INT NOT NULL,
-   feature_v float NOT NULL,
-   created_at timestamp not null default CURRENT_TIMESTAMP,
-   updated_at timestamp not null default CURRENT_TIMESTAMP,
-   PRIMARY KEY(id),
-   index(`feature_id`),
-   CONSTRAINT `unique_code_date` UNIQUE KEY (`date_id`, `code_id`),
-   CONSTRAINT `features_id_v` FOREIGN KEY (`feature_id`) REFERENCES `features` (`id`) on delete cascade on update cascade
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'特征值记录';
 
 create table classifiers(
    id INT NOT NULL AUTO_INCREMENT,
@@ -47,7 +32,7 @@ create table classified_v(
    date_id INT NOT NULL,
    code_id INT NOT NULL,
    classifier_id int not null comment'聚类模型表id',
-   feature_group_id int not null default 1 comment'特征组合表的id',
+   features_groups_number int not null default 1 comment'特征组合表的组号',
    classifier_v float not null comment'预测值',
    metric_type varchar(10) null comment'指标类型，R2: R2分数， RODR: rate of daily return日收益率变化率',
    metric_v float null comment '指标值',
@@ -56,10 +41,8 @@ create table classified_v(
    KEY (code_id),
    KEY (classifier_id),
    CONSTRAINT `classifier_id_v` FOREIGN KEY (`classifier_id`) REFERENCES `classifiers` (`id`) on delete cascade on update cascade,
-   FOREIGN KEY (`feature_group_id`) REFERENCES `features_groups` (`id`) on delete cascade on update cascade,
    CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8 comment'聚类模型预测值';
 
 
 # batch插入数据
-

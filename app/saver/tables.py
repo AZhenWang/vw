@@ -25,11 +25,8 @@ fields_map = {
     'features': [
         'name', 'remark',
     ],
-    'features_groups': [
-        'feature_id', 'root_id', 'updated_at'
-    ],
-    'feature_logs': [
-        'date_id', 'code_id', 'feature_id', 'feature_v', 'updated_at',
+    'features_groups_map': [
+        'feature_id', 'group_number'
     ],
     'classifiers': [
         'class_name', 'params',

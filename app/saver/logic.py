@@ -62,9 +62,45 @@ class DB(object):
         pd.io.sql.execute('update stock_basic set list_status=%s, delist_date=%s where ts_code=%s',
                           cls.engine, params=['D', delist_date, ts_code])
 
-    @staticmethod
-    def validate_field(columns):
-        valid_fields = list((set(columns).union(set(self.fields))) ^ (set(columns) ^ set(self.fields)))
-        return valid_fields
+    @classmethod
+    def get_code_info(cls, code_id, start_date, end_date):
+        code_info = pd.read_sql(
+            sa.text(
+                ' SELECT d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
+                ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
+                ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
+                ' left join trade_cal tc on tc.id = d.date_id'
+                ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed'),
+            cls.engine,
+            params={'code_id': code_id, 'sd': start_date, 'ed': end_date}
+        )
+        return code_info
+
+    @classmethod
+    def insert_features(cls, name, remark):
+        pd.io.sql.execute('insert into features (name, remark) values (%s, %s)',
+                      cls.engine, params=[name, remark])
+
+    @classmethod
+    def get_features(cls):
+        features = pd.read_sql(sa.text('SELECT id, name from features'), cls.engine)
+        return features
+
+    @classmethod
+    def truncate_features(cls):
+        pd.io.sql.execute('truncate features', cls.engine)
+
+    @classmethod
+    def truncate_feature_groups(cls):
+        pd.io.sql.execute('truncate features_groups', cls.engine)
+
+    @classmethod
+    def insert_feature_groups(cls, feature_id, group_number):
+        pd.io.sql.execute('insert into features_groups (feature_id, group_number) values (%s, %s)', cls.engine, params=[feature_id, group_number])
+
+    # @staticmethod
+    # def validate_field(columns, fields):
+    #     valid_fields = list((set(columns).union(set(fields))) ^ (set(columns) ^ set(fields)))
+    #     return valid_fields
 
 

@@ -1,4 +1,5 @@
 from app.models.common import Interface
+from app.features.assembly import Assembly
 
 from sklearn.neighbors import KNeighborsRegressor, NearestNeighbors
 from sklearn.metrics import r2_score

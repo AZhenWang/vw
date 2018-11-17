@@ -13,6 +13,8 @@ cp conf/myapp_example.py conf/myapp.py
 *** python index.py -n update_basic_tables  --sd='20180101' --ed=''
     初始化表，初始化基本日线行情信息
 
+*** python index.py -n init_features
+    初始化特征表和特征组合表
 
 ## 每日一次
 *** today=$(date +%Y%m%d) && python index.py -n fetch_data --sd=$today --ed=$today
