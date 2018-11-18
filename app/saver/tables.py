@@ -25,7 +25,7 @@ fields_map = {
     'features': [
         'name', 'remark',
     ],
-    'features_groups_map': [
+    'features_groups': [
         'feature_id', 'group_number'
     ],
     'classifiers': [

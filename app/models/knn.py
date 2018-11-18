@@ -1,5 +1,6 @@
 from app.models.common import Interface
 from app.features.assembly import Assembly
+from app.saver.logic import DB
 
 from sklearn.neighbors import KNeighborsRegressor, NearestNeighbors
 from sklearn.metrics import r2_score
@@ -11,7 +12,13 @@ random.seed(1)
 
 
 class Knn(Interface):
-    def __init__(self, start_date='', end_date='', sample_interval=12*20, pre_predict_interval=5, score_interval=60):
+    def __init__(self,
+                 start_date='',
+                 end_date='',
+                 sample_interval=12*20,
+                 pre_predict_interval=5,
+                 score_interval=60
+                 ):
         """
 
         :param sample_interval: 样本区间天数
@@ -25,10 +32,31 @@ class Knn(Interface):
         self.score_interval = score_interval
 
     def run(self):
-        pass
-        
+        feature_assembly = Assembly(end_date=self.end_date, period=self.sample_interval+self.score_interval)
+        # codes = DB.get_code_list(list_status='L')
+        example_codes = [865]
+        for code_id in example_codes:
+            # for code_id in codes['code_id']:
+            X = feature_assembly.pack_features(code_id)
+            Y = feature_assembly.pack_targets(self.pre_predict_interval)
+
+            features_groups = DB.get_features_groups()
+            gp = features_groups.groupby('group_number')
+            max_score = -10000
+            max_score_features = []
+            for group_number, group_data in gp:
+                # predict Y values
+                Y_hat = self.batch_knn_predict(X, Y, columns=group_data['name'])
+                # r2 score
+                score = r2_score(Y.dropna(), Y_hat[Y.notna()])
+                if score > max_score:
+                    max_score = score
+                    max_score_features =  group_data['name']
+
+            print(max_score)
+            print(max_score_features)
     
-    def knn_predict(self, features, predict_date):
+    def knn_predict(self, X, Y, predict_date):
         """predict one date by knn algorithm
 
         Args:
@@ -67,7 +95,7 @@ class Knn(Interface):
 
         return predict_value
 
-    def batch_knn_predict(self, columns):
+    def batch_knn_predict(self, X, Y, columns):
         """batch predict by knn algorithm
 
         Args:
@@ -78,14 +106,14 @@ class Knn(Interface):
             predict_Y: predict values
             true_Y: true values
         """
-        features = self.features[columns]
-        predict_Y = pd.Series(index=pd.date_range(self.predict_start_date, self.predict_end_date))
+        sub_X = X[columns].copy()
+        Y_hat = pd.Series(index=pd.date_range(self.predict_start_date, self.predict_end_date))
         for predict_date in pd.date_range(start=self.predict_start_date, end=self.predict_end_date):
-            result = self.knn_predict(features, predict_date)
-            predict_Y.loc[predict_date] = result
+            result = self.knn_predict(sub_X, Y, predict_date)
+            Y_hat.loc[predict_date] = result
 
-        predict_Y.dropna(inplace=True)
-        return predict_Y
+        Y_hat.dropna(inplace=True)
+        return Y_hat
 
     def combine_cols(self):
         """combine columns orderly

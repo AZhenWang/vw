@@ -18,7 +18,7 @@ class DB(object):
         return existed_cal_date
 
     @classmethod
-    def get_open_cal_date(cls, start_date, end_date, period=1):
+    def get_open_cal_date(cls, start_date='', end_date='', period=1):
         if start_date != '':
             trade_cal = pd.read_sql(
                 sa.text(
@@ -31,7 +31,7 @@ class DB(object):
                 sa.text(
                     'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date <= :ed order by cal_date desc limit :period'),
                 cls.engine,
-                params={'sd': start_date, 'ed': end_date, 'period': period}
+                params={'ed': end_date, 'period': period}
             )
         return trade_cal
 
@@ -63,17 +63,30 @@ class DB(object):
                           cls.engine, params=['D', delist_date, ts_code])
 
     @classmethod
-    def get_code_info(cls, code_id, start_date, end_date):
-        code_info = pd.read_sql(
-            sa.text(
-                ' SELECT d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
-                ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
-                ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
-                ' left join trade_cal tc on tc.id = d.date_id'
-                ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed'),
-            cls.engine,
-            params={'code_id': code_id, 'sd': start_date, 'ed': end_date}
-        )
+    def get_code_info(cls, code_id, start_date='', end_date='', period=''):
+        if start_date != '':
+            code_info = pd.read_sql(
+                sa.text(
+                    ' SELECT d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
+                    ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
+                    ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
+                    ' left join trade_cal tc on tc.id = d.date_id'
+                    ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed'),
+                cls.engine,
+                params={'code_id': code_id, 'sd': start_date, 'ed': end_date}
+            )
+        else:
+            code_info = pd.read_sql(
+                sa.text(
+                    ' SELECT tc.cat_date, d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
+                    ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
+                    ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
+                    ' left join trade_cal tc on tc.id = d.date_id'
+                    ' where d.code_id = :code_id and tc.cal_date <= :ed order by tc.cal_date desc limit :period'),
+                cls.engine,
+                params={'code_id': code_id, 'ed': end_date, 'period': period}
+            )
+
         return code_info
 
     @classmethod
@@ -91,12 +104,26 @@ class DB(object):
         pd.io.sql.execute('truncate features', cls.engine)
 
     @classmethod
-    def truncate_feature_groups(cls):
+    def truncate_features_groups(cls):
         pd.io.sql.execute('truncate features_groups', cls.engine)
 
     @classmethod
-    def insert_feature_groups(cls, feature_id, group_number):
+    def insert_features_groups(cls, feature_id, group_number):
         pd.io.sql.execute('insert into features_groups (feature_id, group_number) values (%s, %s)', cls.engine, params=[feature_id, group_number])
+
+    @classmethod
+    def get_features_groups(cls, group_number=''):
+        if group_number != '':
+            features_groups = pd.read_sql(
+                sa.text(' select f.name, fg.group_number from features_groups fg '
+                                                ' left join features f on f.id = fg.feature_id'
+                                                ' where fg.group_number = :gn'), cls.engine,
+                              params={'gn':group_number})
+        else:
+            features_groups = pd.read_sql(
+                sa.text(' select f.name, fg.group_number from features_groups fg '
+                        ' left join features f on f.id = fg.feature_id'), cls.engine)
+        return features_groups
 
     # @staticmethod
     # def validate_field(columns, fields):
