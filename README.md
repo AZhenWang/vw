@@ -6,6 +6,7 @@ cp conf/myapp_example.py conf/myapp.py
 # batch命令
 
 ## 项目初始化命令
+
 *** python index.py -n fetch_data --sd='' --ed='20000101'
 *** python index.py -n fetch_data --sd='20000101' --ed='20100101'
 *** python index.py -n fetch_data --sd='20100101' --ed=''
@@ -21,6 +22,3 @@ cp conf/myapp_example.py conf/myapp.py
 
 *** python index.py -n run_knn_model
     每日跑一次knn模型
-
-*** python index.py -n update_basic_tables --sd=$today --ed=$today
-    更新stock_basic表，每日更新一次上市的股票基本信息

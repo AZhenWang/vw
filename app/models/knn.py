@@ -20,7 +20,7 @@ class Knn(Interface):
                  sample_interval=12*20,
                  pre_predict_interval=5,
                  memory_size=60,
-                 code_id='',
+                 single_code_id='',
                  ):
         """ knn 预测模型
         """
@@ -33,12 +33,20 @@ class Knn(Interface):
         self.trade_dates = DB.get_open_cal_date(end_date=self.end_date, period=self.memory_size)
         self.feature_assembly = Assembly(end_date=self.end_date, sample_interval=self.sample_interval, pre_predict_interval=self.pre_predict_interval)
 
-        if code_id == '':
+        if single_code_id == '':
             codes = DB.get_latestopendays_code_list(
                 latest_open_days=self.sample_interval + self.pre_predict_interval + self.feature_assembly.max_window)
             self.codes = codes['code_id']
+            self.store = True # 如果不传single_code_id,就遍历所有股票，存储结果，
         else:
-            self.codes = [code_id]
+            self.codes = [single_code_id]
+            self.store = False  # 如果传了单只股票id,就不保存结果到数据库，而是返回预测结果
+        print(end_date,
+                 classifier_id,
+                 sample_interval,
+                 pre_predict_interval,
+                 memory_size,
+                 single_code_id,)
 
     def run(self):
         for code_id in self.codes:
@@ -75,9 +83,12 @@ class Knn(Interface):
                     Y_hat = new_rows['classifier_v']
                     score = r2_score(Y_true.dropna(), Y_hat[Y_true.notna()])
                     new_rows.iloc[-1, -1] = str(score)
-                    #  delete first, add later
-                    DB.delete_classified_v(code_id, self.classifier_id, group_number)
-                    new_rows.to_sql('classified_v', DB.engine, index=False, if_exists='append', chunksize=1000)
+                    if self.store:
+                        #  delete first, add later
+                        DB.delete_classified_v(code_id, self.classifier_id, group_number)
+                        new_rows.to_sql('classified_v', DB.engine, index=False, if_exists='append', chunksize=1000)
+                    else:
+                        return new_rows
 
     def knn_predict(self, X, Y, predict_idx):
         """predict one date by knn algorithm
