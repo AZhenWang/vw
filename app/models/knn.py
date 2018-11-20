@@ -8,7 +8,6 @@ from sklearn.metrics import r2_score
 import pandas as pd
 import numpy as np
 import random
-import json
 from sklearn import preprocessing
 
 random.seed(1)
@@ -17,34 +16,35 @@ random.seed(1)
 class Knn(Interface):
     def __init__(self,
                  end_date='',
-                 classifier_id=''
+                 classifier_id='',
+                 sample_interval=12*20,
+                 pre_predict_interval=5,
+                 memory_size=60,
+                 code_id='',
                  ):
         """ knn 预测模型
         """
 
         self.end_date = end_date
         self.classifier_id = classifier_id
-
-        self.sample_interval = 0
-        self.pre_predict_interval = 0
-        self.memory_size = 0
-
-        classifier = DB.get_classifier(classifier_id)
-        if classifier:
-            classifier_params = json.loads(classifier[1])
-            self.sample_interval = classifier_params['sample_interval']
-            self.pre_predict_interval = classifier_params['pre_predict_interval']
-            self.memory_size = classifier_params['memory_size']
-
+        self.sample_interval = sample_interval
+        self.pre_predict_interval = pre_predict_interval
+        self.memory_size = memory_size
         self.trade_dates = DB.get_open_cal_date(end_date=self.end_date, period=self.memory_size)
+        self.feature_assembly = Assembly(end_date=self.end_date, sample_interval=self.sample_interval, pre_predict_interval=self.pre_predict_interval)
+
+        if code_id == '':
+            codes = DB.get_latestopendays_code_list(
+                latest_open_days=self.sample_interval + self.pre_predict_interval + self.feature_assembly.max_window)
+            self.codes = codes['code_id']
+        else:
+            self.codes = [code_id]
 
     def run(self):
-        feature_assembly = Assembly(end_date=self.end_date, sample_interval=self.sample_interval, pre_predict_interval=self.pre_predict_interval)
-        codes = DB.get_latestopendays_code_list(latest_open_days=self.sample_interval + self.pre_predict_interval + feature_assembly.max_window)
-        for code_id in codes['code_id']:
-            features = feature_assembly.pack_features(code_id)
+        for code_id in self.codes:
+            features = self.feature_assembly.pack_features(code_id)
             X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(features), columns=features.columns, index=features.index)
-            Y = feature_assembly.pack_targets()
+            Y = self.feature_assembly.pack_targets()
 
             Y_true = Y[-self.memory_size:]
             features_groups = DB.get_features_groups()

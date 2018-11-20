@@ -20,7 +20,7 @@ create table features_groups(
 
 create table classifiers(
    id INT NOT NULL AUTO_INCREMENT,
-   class_name varchar(10) not null comment'分类器名，例如：knn',
+   type varchar(10) not null comment'分类器类型，例如：knn',
    params text null comment '参数值，json格式',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id)
@@ -45,4 +45,4 @@ create table classified_v(
 
 
 # batch插入数据
-insert into classifiers (class_name, params) values ('knn_60', '{"sample_interval":240,"pre_predict_interval":5,"memory_size":60}')
+insert into classifiers (type, params) values ('knn', '{"sample_interval":240,"pre_predict_interval":5,"memory_size":60}')

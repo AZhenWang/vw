@@ -80,9 +80,10 @@ class DB(object):
                           cls.engine, params=['D', delist_date, ts_code])
 
     @classmethod
-    def get_classifier(cls, classifier_id):
-        classifier = pd.io.sql.execute('SELECT class_name , params from classifiers where id=%s', cls.engine, params=[classifier_id]).fetchone()
-        return classifier
+    def get_classifiers(cls, classifier_type):
+        classifiers = pd.read_sql(
+            sa.text('SELECT id, params from classifiers where type = :t'), cls.engine, params={'t':classifier_type})
+        return classifiers
 
     @classmethod
     def get_code_info(cls, code_id, start_date='', end_date='', period=''):
