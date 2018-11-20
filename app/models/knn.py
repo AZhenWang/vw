@@ -41,12 +41,6 @@ class Knn(Interface):
         else:
             self.codes = [single_code_id]
             self.store = False  # 如果传了单只股票id,就不保存结果到数据库，而是返回预测结果
-        print(end_date,
-                 classifier_id,
-                 sample_interval,
-                 pre_predict_interval,
-                 memory_size,
-                 single_code_id,)
 
     def run(self):
         for code_id in self.codes:
