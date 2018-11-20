@@ -84,14 +84,11 @@ class Assembly(object):
 
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         Amplitude.fillna(1, inplace=True)
-        print(data)
         Turnover_rate = data['turnover_rate_f']
 
         feature_dict = {}
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
-
-        print(pd.DataFrame(feature_dict))
 
         X = pd.DataFrame(feature_dict).dropna()
         self.adj_close = Adj_close
