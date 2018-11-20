@@ -17,7 +17,9 @@ def execute(start_date='', end_date=''):
                       classifier_id=classifier_id,
                       sample_interval=sample_interval,
                       pre_predict_interval=pre_predict_interval,
-                      memory_size=memory_size)
+                      memory_size=memory_size,
+                      single_code_id=3
+            )
             model.run()
 
 

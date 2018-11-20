@@ -30,7 +30,7 @@ class Knn(Interface):
         self.sample_interval = sample_interval
         self.pre_predict_interval = pre_predict_interval
         self.memory_size = memory_size
-        self.trade_dates = DB.get_open_cal_date(end_date=self.end_date, period=self.memory_size)
+        # self.trade_dates = DB.get_open_cal_date(end_date=self.end_date, period=self.memory_size)
         self.feature_assembly = Assembly(end_date=self.end_date, sample_interval=self.sample_interval, pre_predict_interval=self.pre_predict_interval)
 
         if single_code_id == '':
@@ -49,34 +49,38 @@ class Knn(Interface):
             Y = self.feature_assembly.pack_targets()
 
             Y_true = Y[-self.memory_size:]
+
+            trade_dates = Y_true.index
             features_groups = DB.get_features_groups()
             gp = features_groups.groupby('group_number')
 
             for group_number, group_data in gp:
                 existed_classified_v = DB.get_classified_v(code_id, group_number)
                 old_classified_v = existed_classified_v[
-                    existed_classified_v['date_id'].isin(self.trade_dates['date_id'])]
-                new_dates = self.trade_dates[~self.trade_dates['date_id'].isin(existed_classified_v['date_id'])]
+                    existed_classified_v['date_id'].isin(trade_dates)]
+                new_dates = trade_dates[~trade_dates.isin(existed_classified_v['date_id'])]
                 if not new_dates.empty:
                     new_classified_v = pd.DataFrame(columns=fields_map['classified_v'])
-                    for predict_date_id in new_dates['date_id']:
+                    for predict_date_id in new_dates:
                         y_hat = self.knn_predict(X[group_data['name']].copy(), Y, predict_idx=predict_date_id)
-                        # 保存Y_hat到数据库
-                        new_classified_v.loc[predict_date_id] = {
-                            'date_id' : predict_date_id,
-                            'code_id' : code_id,
-                            'classifier_id': self.classifier_id,
-                            'classifier_v': y_hat,
-                            'feature_group_number' : group_number,
-                            'metric_type' : 'R2_SCORE',
-                            'metric_v': -0,
-                        }
+                        if not np.isnan(y_hat):
+                            # 保存Y_hat到数据库
+                            new_classified_v.loc[predict_date_id] = {
+                                'date_id' : predict_date_id,
+                                'code_id' : code_id,
+                                'classifier_id': self.classifier_id,
+                                'classifier_v': y_hat,
+                                'feature_group_number' : group_number,
+                                'metric_type' : 'R2_SCORE',
+                                'metric_v': -0,
+                            }
 
                     new_rows = old_classified_v.append(new_classified_v)
                     new_rows.set_index('date_id', inplace=True, drop=False)
-                    Y_hat = new_rows['classifier_v']
-                    score = r2_score(Y_true.dropna(), Y_hat[Y_true.notna()])
-                    new_rows.iloc[-1, -1] = str(score)
+                    if not new_rows.empty:
+                        Y_hat = new_rows['classifier_v']
+                        score = r2_score(Y_true.dropna(), Y_hat.dropna()[Y_true.notna()])
+                        new_rows.iloc[-1, -1] = str(score)
                     if self.store:
                         #  delete first, add later
                         DB.delete_classified_v(code_id, self.classifier_id, group_number)

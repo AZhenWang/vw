@@ -21,4 +21,4 @@ cp conf/myapp_example.py conf/myapp.py
     更新日线行情基本信息
 
 *** python index.py -n run_knn_model
-    每日跑一次knn模型
+    每日跑一次knn模型, 每当执行一次init_features命令之后，就需要truncate classified_v表，再执行这个操作
