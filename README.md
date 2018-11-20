@@ -9,8 +9,7 @@ cp conf/myapp_example.py conf/myapp.py
 *** python index.py -n fetch_data --sd='' --ed='20000101'
 *** python index.py -n fetch_data --sd='20000101' --ed='20100101'
 *** python index.py -n fetch_data --sd='20100101' --ed=''
-*** python index.py -n update_basic_tables  --sd='' --ed='20180101'
-*** python index.py -n update_basic_tables  --sd='20180101' --ed=''
+
     初始化表，初始化基本日线行情信息
 
 *** python index.py -n init_features

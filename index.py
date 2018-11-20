@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 
 def usage():
-    print("-f: batch文件名\n-n: batch文件类名\n-h：提供版本")
+    print("-n: batch文件类名\n-h：提供版本")
 
 
 file_name = ""

@@ -32,8 +32,7 @@ fields_map = {
         'class_name', 'params',
     ],
     'classified_v': [
-        'date_id', 'code_id', 'classifier_id', 'feature_group_id',
-        'classifier_v', 'metric_type', 'metric_v'
+        'date_id', 'code_id', 'classifier_id', 'classifier_v', 'feature_group_number', 'metric_type', 'metric_v'
     ],
 }
 

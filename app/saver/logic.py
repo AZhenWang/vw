@@ -33,6 +33,8 @@ class DB(object):
                 cls.engine,
                 params={'ed': end_date, 'period': period}
             )
+
+        trade_cal.sort_values(by='cal_date', inplace=True)
         return trade_cal
 
     @classmethod
@@ -45,6 +47,21 @@ class DB(object):
             )
         else:
             code_list = pd.read_sql(sa.text('SELECT id as code_id, ts_code, list_status FROM stock_basic'),cls.engine)
+        return code_list
+
+    @classmethod
+    def get_latestopendays_code_list(cls, latest_open_days=''):
+        code_list = pd.read_sql(
+            sa.text(' select af.code_id FROM adj_factor af '
+                    ' left join stock_basic sb on sb.id = af.code_id'
+                    ' where sb.list_status=:ls'
+                    ' group by af.code_id'
+                    ' having count(af.code_id) >= :latest_open_days'
+                    ),
+            cls.engine,
+            params={'ls':'L', 'latest_open_days': latest_open_days}
+        )
+
         return code_list
 
     @classmethod
@@ -63,29 +80,40 @@ class DB(object):
                           cls.engine, params=['D', delist_date, ts_code])
 
     @classmethod
+    def get_classifier(cls, classifier_id):
+        classifier = pd.io.sql.execute('SELECT class_name , params from classifiers where id=%s', cls.engine, params=[classifier_id]).fetchone()
+        return classifier
+
+    @classmethod
     def get_code_info(cls, code_id, start_date='', end_date='', period=''):
         if start_date != '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
+                    ' SELECT tc.cal_date, d.date_id, d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed'),
+                    ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed'
+                    ' order by tc.cal_date desc '),
                 cls.engine,
                 params={'code_id': code_id, 'sd': start_date, 'ed': end_date}
             )
         else:
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cat_date, d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
+                    ' SELECT tc.cal_date, d.date_id, d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' where d.code_id = :code_id and tc.cal_date <= :ed order by tc.cal_date desc limit :period'),
+                    ' where d.code_id = :code_id and tc.cal_date <= :ed '
+                    ' order by tc.cal_date desc '
+                    ' limit :period'),
                 cls.engine,
                 params={'code_id': code_id, 'ed': end_date, 'period': period}
             )
+
+        code_info.sort_values(by='cal_date', inplace=True)
+        code_info.set_index('date_id', inplace=True)
 
         return code_info
 
@@ -124,6 +152,24 @@ class DB(object):
                 sa.text(' select f.name, fg.group_number from features_groups fg '
                         ' left join features f on f.id = fg.feature_id'), cls.engine)
         return features_groups
+
+    @classmethod
+    def get_classified_v(cls, code_id, group_number):
+        existed_classified_v = pd.read_sql(
+            sa.text(' select cv.date_id, cv.code_id, cv.classifier_id, cv.classifier_v, cv.feature_group_number, cv.metric_type, cv.metric_v '
+                    ' from classified_v cv'
+                    ' left join trade_cal tc on tc.id = cv.date_id'
+                    ' where cv.code_id = :ci and cv.feature_group_number = :gn'), cls.engine,
+            params={'ci': code_id, 'gn': group_number})
+
+        return existed_classified_v
+
+    @classmethod
+    def delete_classified_v(cls, code_id, classifier_id, feature_group_number):
+        pd.io.sql.execute('delete from classified_v where code_id=%s and classifier_id=%s and feature_group_number=%s',
+                          cls.engine,
+                          params=[code_id, classifier_id, feature_group_number])
+
 
     # @staticmethod
     # def validate_field(columns, fields):

@@ -4,11 +4,14 @@ from app.common import function as CF
 
 class Assembly(object):
 
-    def __init__(self, end_date='', period=21):
+    def __init__(self, end_date='', sample_interval=12*20, pre_predict_interval=5):
         self.end_date = end_date
-        self.period = period
+        self.max_window = 20
+        self.pre_predict_interval = pre_predict_interval
+        self.sample_interval = sample_interval
         self.features = DB.get_features()
         self.adj_close = []
+        self.date_idxs = []
 
 
     @staticmethod
@@ -34,15 +37,18 @@ class Assembly(object):
         ids = features['id'].astype('str')
         combined_cols_set = CF.combine_cols(ids)
 
-        group_number = 0
+        group_id = 0
+        group_prefix = 'daily_'
         for combined_cols in combined_cols_set:
             for cols in combined_cols:
-                group_number += 1
+                group_id += 1
+                group_number = group_prefix+str(group_id)
                 for feature_id in cols:
                     DB.insert_features_groups(feature_id, group_number)
 
     def pack_features(self, code_id):
-        data = DB.get_code_info(code_id=code_id, end_date=self.end_date, period=self.period)
+        period = self.sample_interval + self.max_window + self.pre_predict_interval
+        data = DB.get_code_info(code_id=code_id, end_date=self.end_date, period=period)
         data = data[data['vol'] != 0]
         Adj_close = data['close'] * data['adj_factor']
 
@@ -78,15 +84,19 @@ class Assembly(object):
 
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         Amplitude.fillna(1, inplace=True)
-
+        print(data)
         Turnover_rate = data['turnover_rate_f']
 
         feature_dict = {}
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
 
+        print(pd.DataFrame(feature_dict))
+
         X = pd.DataFrame(feature_dict).dropna()
         self.adj_close = Adj_close
+        self.date_idxs = X.index
+
         return X
 
     def get_threshold(self):
@@ -102,14 +112,16 @@ class Assembly(object):
         threshold[(rate_sma_supershort > 0.05) & (rate_sma_long > 0.15)] = up_threshold
         return threshold
 
-    def pack_targets(self, pre_predict_interval):
+    def pack_targets(self):
         threshold = self.get_threshold()  # when the trend is up, it is 0.05, when the trend is downward, it is 0.03
-        target_max = self.adj_close.shift(-pre_predict_interval).rolling(pre_predict_interval).max()
-        target_min = self.adj_close.shift(-pre_predict_interval).rolling(pre_predict_interval).min()
+        target_max = self.adj_close.shift(-self.pre_predict_interval).rolling(self.pre_predict_interval).max()
+        target_min = self.adj_close.shift(-self.pre_predict_interval).rolling(self.pre_predict_interval).min()
         compare_v = (target_min - self.adj_close) / self.adj_close
         refer_target = target_min[compare_v <= threshold].add(target_max[compare_v > threshold], fill_value=0)
         diff = refer_target - self.adj_close
         fm = self.adj_close[diff >= 0].add(refer_target[diff < 0], fill_value=0)
         targets = diff / fm
+
+        targets = targets[self.date_idxs]
 
         return targets

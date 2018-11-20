@@ -10,7 +10,7 @@ create table features(
 create table features_groups(
    id INT NOT NULL AUTO_INCREMENT,
    feature_id int not null comment'特征id',
-   group_number int not null comment '组号',
+   group_number varchar(16) not null comment '组号, 例如daily-1',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(`group_number`),
@@ -28,21 +28,21 @@ create table classifiers(
 
 
 create table classified_v(
-   id INT NOT NULL AUTO_INCREMENT,
    date_id INT NOT NULL,
    code_id INT NOT NULL,
    classifier_id int not null comment'聚类模型表id',
-   features_groups_number int not null default 1 comment'特征组合表的组号',
+   feature_group_number varchar(16) not null comment'特征组合表的组号',
    classifier_v float not null comment'预测值',
    metric_type varchar(10) null comment'指标类型，R2: R2分数， RODR: rate of daily return日收益率变化率',
    metric_v float null comment '指标值',
    created_at timestamp not null default CURRENT_TIMESTAMP,
-   PRIMARY KEY(id),
    KEY (code_id),
    KEY (classifier_id),
+   KEY (feature_group_number),
    CONSTRAINT `classifier_id_v` FOREIGN KEY (`classifier_id`) REFERENCES `classifiers` (`id`) on delete cascade on update cascade,
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
+   unique KEY `unique_code_date`(`date_id`, `code_id`, `classifier_id`, `feature_group_number`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8 comment'聚类模型预测值';
 
 
 # batch插入数据
+insert into classifiers (class_name, params) values ('knn_60', '{"sample_interval":240,"pre_predict_interval":5,"memory_size":60}')
