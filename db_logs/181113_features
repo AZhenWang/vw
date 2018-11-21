@@ -17,6 +17,19 @@ create table features_groups(
    index(`feature_id`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8 comment'特征组合表';
 
+create table thresholds(
+   id INT NOT NULL AUTO_INCREMENT,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
+   SMS_month float not null comment'20天的收盘价的简单移动和，simple moving sum',
+   SMS_year float not null comment'244天的收盘价的简单移动和，simple moving sum',
+   simple_threshold_v float null comment'SMS_month > 0.05 and SMS_year > 0.15 ？0.05 : 0.03',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`code_id`),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'特征组合表';
+
 
 create table classifiers(
    id INT NOT NULL AUTO_INCREMENT,

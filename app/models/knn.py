@@ -108,7 +108,6 @@ class Knn(Interface):
             sample_start_iloc = 0
         else:
             sample_start_iloc = predict_iloc - self.sample_interval
-
         sample_end_iloc = predict_iloc - self.pre_predict_interval + 1
         training_X = X.iloc[sample_start_iloc:sample_end_iloc]
         training_Y = Y.iloc[sample_start_iloc:sample_end_iloc]

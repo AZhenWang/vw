@@ -18,22 +18,23 @@ class DB(object):
         return existed_cal_date
 
     @classmethod
-    def get_open_cal_date(cls, start_date='', end_date='', period=1):
-        if start_date != '':
+    def get_open_cal_date(cls, start_date='', end_date='', period=''):
+        if period != '':
+            trade_cal = pd.read_sql(
+                sa.text(
+                    'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date >= :sd and cal_date <= :ed order by cal_date desc limit :period'),
+                cls.engine,
+                params={'sd': start_date, 'ed': end_date, 'period': period}
+            )
+
+        else:
+            print('hjbl')
             trade_cal = pd.read_sql(
                 sa.text(
                     'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date >= :sd and cal_date <= :ed'),
                 cls.engine,
                 params={'sd': start_date, 'ed': end_date}
             )
-        else:
-            trade_cal = pd.read_sql(
-                sa.text(
-                    'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date <= :ed order by cal_date desc limit :period'),
-                cls.engine,
-                params={'ed': end_date, 'period': period}
-            )
-
         trade_cal.sort_values(by='cal_date', inplace=True)
         return trade_cal
 
@@ -52,11 +53,11 @@ class DB(object):
     @classmethod
     def get_latestopendays_code_list(cls, latest_open_days=''):
         code_list = pd.read_sql(
-            sa.text(' select af.code_id FROM adj_factor af '
-                    ' left join stock_basic sb on sb.id = af.code_id'
+            sa.text(' select d.code_id FROM daily d '
+                    ' left join stock_basic sb on sb.id = d.code_id'
                     ' where sb.list_status=:ls'
-                    ' group by af.code_id'
-                    ' having count(af.code_id) >= :latest_open_days'
+                    ' group by d.code_id'
+                    ' having count(d.code_id) >= :latest_open_days'
                     ),
             cls.engine,
             params={'ls':'L', 'latest_open_days': latest_open_days}
@@ -73,6 +74,16 @@ class DB(object):
             params={'date_id': date_id}
         )
         return existed_codes
+
+    @classmethod
+    def get_trade_codes(cls, date_id):
+        trade_codes = pd.read_sql(
+            sa.text(
+                'SELECT d.code_id from daily d where d.date_id=:date_id'),
+            cls.engine,
+            params={'date_id': date_id}
+        )
+        return trade_codes
 
     @classmethod
     def update_delist_date(cls, ts_code, delist_date):
@@ -153,6 +164,28 @@ class DB(object):
                 sa.text(' select f.name, fg.group_number from features_groups fg '
                         ' left join features f on f.id = fg.feature_id'), cls.engine)
         return features_groups
+
+    @classmethod
+    def insert_threshold(cls, code_id, date_id, SMS_month, SMS_year, simple_threshold_v):
+        existed = pd.read_sql(
+            sa.text(' select 1 from thresholds'
+                    ' where date_id = :date_id and code_id = :code_id'), cls.engine,
+            params={'date_id': str(date_id), 'code_id': str(code_id)})
+        if existed.empty:
+            print('进来起')
+            pd.io.sql.execute('insert into thresholds (code_id, date_id, SMS_month, SMS_year, simple_threshold_v) values (%s, %s, %s, %s, %s)',
+                          cls.engine, params=[str(code_id), str(date_id), str(SMS_month), str(SMS_year), str(simple_threshold_v)])
+
+    @classmethod
+    def get_thresholds(cls, code_id, start_date_id='', end_date_id=''):
+        existed_codes = pd.read_sql(
+            sa.text(' select t.code_id, t.date_id, t.SMS_month, t.SMS_year, t.simple_threshold_v from thresholds t'
+                    ' where t.code_id = :code_id and t.date_id >= :sdi and t.date_id <= :edi '), cls.engine,
+            params={'code_id': code_id, 'sdi': str(start_date_id), 'edi': str(end_date_id)})
+
+        existed_codes.sort_values(by='date_id', inplace=True)
+        existed_codes.set_index('date_id', inplace=True)
+        return existed_codes
 
     @classmethod
     def get_classified_v(cls, code_id, group_number):

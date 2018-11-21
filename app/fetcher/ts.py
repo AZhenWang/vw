@@ -66,7 +66,7 @@ class Ts(Interface):
 
     def query(self, api):
         # 按trade_date依次拉取所有股票信息
-        for date_id,cal_date in self.trade_dates[['date_id', 'cal_date']].values:
+        for date_id, cal_date in self.trade_dates[['date_id', 'cal_date']].values:
             flag = True
             while flag:
                 try:
