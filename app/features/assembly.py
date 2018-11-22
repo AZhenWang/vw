@@ -58,6 +58,7 @@ class Assembly(object):
         codes = DB.get_code_list(list_status='L')
         for code_id in codes['code_id']:
             cls.update_threshold(code_id, cal_date=end_date)
+            break
 
     @classmethod
     def update_threshold(cls, code_id, cal_date, period=''):
@@ -81,7 +82,21 @@ class Assembly(object):
             'SMS_year': rate_sma_year,
             'simple_threshold_v': simple_threshold_v
         }).dropna()
+
+        old_thresholds = DB.get_thresholds(code_id=code_id, start_date_id=thresholds.index[0], end_date_id=thresholds.index[-1])
+        if not old_thresholds.empty:
+            thresholds = thresholds[~thresholds['date_id'].isin(old_thresholds['date_id'])]
+
         thresholds.to_sql('thresholds', DB.engine, index=False, if_exists='append', chunksize=1000)
+
+    @classmethod
+    def update_threshold_by_date(cls, start_date='', end_date=''):
+        trade_dates = DB.get_open_cal_date(start_date, end_date)
+        if not trade_dates.empty:
+            for date_id, cal_date in trade_dates[['date_id', 'cal_date']].values:
+                codes = DB.get_trade_codes(date_id)
+                for code_id in codes['code_id']:
+                    cls.update_threshold(code_id=code_id, cal_date=cal_date, period=cls.year_period+1)
 
     def pack_features(self, code_id):
         self.code_id = code_id
@@ -134,12 +149,10 @@ class Assembly(object):
         return X
 
     def pack_targets(self):
+        self.code_id = 1022
         thresholds = DB.get_thresholds(code_id=self.code_id, start_date_id=self.date_idxs[0],
                                        end_date_id=self.date_idxs[-1])
-        if thresholds.empty:
-            self.update_threshold(code_id=self.code_id, cal_date=self.end_date, period=2*self.year_period+1)
-            thresholds = DB.get_thresholds(code_id=self.code_id, start_date_id=self.date_idxs[0],
-                                           end_date_id=self.date_idxs[-1])
+
         threshold = pd.Series(-0.03, index=self.date_idxs)
         threshold.loc[thresholds.index] = thresholds['simple_threshold_v']
         target_max = self.adj_close.shift(-self.pre_predict_interval).rolling(self.pre_predict_interval).max()

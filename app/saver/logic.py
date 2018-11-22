@@ -124,7 +124,7 @@ class DB(object):
                 params={'code_id': code_id, 'sd': start_date, 'ed': end_date, 'period': period}
             )
 
-        code_info.sort_values(by='cal_date', inplace=True)
+        code_info.sort_values(by='date_id', inplace=True)
         code_info.set_index('date_id', inplace=True)
 
         return code_info
@@ -188,7 +188,7 @@ class DB(object):
             params={'code_id': code_id, 'sdi': str(start_date_id), 'edi': str(end_date_id)})
 
         existed_codes.sort_values(by='date_id', inplace=True)
-        existed_codes.set_index('date_id', inplace=True)
+        existed_codes.set_index('date_id', inplace=True, drop=False)
         return existed_codes
 
     @classmethod
