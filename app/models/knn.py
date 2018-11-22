@@ -31,11 +31,12 @@ class Knn(Interface):
         self.pre_predict_interval = pre_predict_interval
         self.memory_size = memory_size
         # self.trade_dates = DB.get_open_cal_date(end_date=self.end_date, period=self.memory_size)
-        self.feature_assembly = Assembly(end_date=self.end_date, sample_interval=self.sample_interval, pre_predict_interval=self.pre_predict_interval)
+        self.feature_assembly = Assembly(end_date=self.end_date, sample_interval=self.sample_interval,
+                                         pre_predict_interval=self.pre_predict_interval)
 
         if single_code_id == '':
             codes = DB.get_latestopendays_code_list(
-                latest_open_days=2 * self.feature_assembly.year_period + 1)
+                latest_open_days=self.sample_interval + self.feature_assembly.year_period + 1)
             self.codes = codes['code_id']
             self.store = True # 如果不传single_code_id,就遍历所有股票，存储结果，
         else:
@@ -66,12 +67,12 @@ class Knn(Interface):
                         if not np.isnan(y_hat):
                             # 保存Y_hat到数据库
                             new_classified_v.loc[predict_date_id] = {
-                                'date_id' : predict_date_id,
-                                'code_id' : code_id,
+                                'date_id': predict_date_id,
+                                'code_id': code_id,
                                 'classifier_id': self.classifier_id,
                                 'classifier_v': y_hat,
                                 'feature_group_number' : group_number,
-                                'metric_type' : 'R2_SCORE',
+                                'metric_type': 'R2_SCORE',
                                 'metric_v': -0,
                             }
 
