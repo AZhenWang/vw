@@ -54,11 +54,10 @@ class Assembly(object):
     @classmethod
     def init_thresholds_table(cls, end_date):
         # 只在初始化项目的时候使用
-        DB.truncate_thresholds()
+        # DB.truncate_thresholds()
         codes = DB.get_code_list(list_status='L')
         for code_id in codes['code_id']:
             cls.update_threshold(code_id, cal_date=end_date)
-            break
 
     @classmethod
     def update_threshold(cls, code_id, cal_date, period=''):
@@ -86,8 +85,8 @@ class Assembly(object):
         old_thresholds = DB.get_thresholds(code_id=code_id, start_date_id=thresholds.index[0], end_date_id=thresholds.index[-1])
         if not old_thresholds.empty:
             thresholds = thresholds[~thresholds['date_id'].isin(old_thresholds['date_id'])]
-
-        thresholds.to_sql('thresholds', DB.engine, index=False, if_exists='append', chunksize=1000)
+        if not thresholds.empty:
+            thresholds.to_sql('thresholds', DB.engine, index=False, if_exists='append', chunksize=1000)
 
     @classmethod
     def update_threshold_by_date(cls, start_date='', end_date=''):
