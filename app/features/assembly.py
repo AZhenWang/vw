@@ -82,12 +82,12 @@ class Assembly(object):
             'SMS_year': rate_sma_year,
             'simple_threshold_v': simple_threshold_v
         }).dropna()
-
-        old_thresholds = DB.get_thresholds(code_id=code_id, start_date_id=thresholds.index[0], end_date_id=thresholds.index[-1])
-        if not old_thresholds.empty:
-            thresholds = thresholds[~thresholds['date_id'].isin(old_thresholds['date_id'])]
         if not thresholds.empty:
-            thresholds.to_sql('thresholds', DB.engine, index=False, if_exists='append', chunksize=1000)
+            old_thresholds = DB.get_thresholds(code_id=code_id, start_date_id=thresholds.index[0], end_date_id=thresholds.index[-1])
+            if not old_thresholds.empty:
+                thresholds = thresholds[~thresholds['date_id'].isin(old_thresholds['date_id'])]
+            if not thresholds.empty:
+                thresholds.to_sql('thresholds', DB.engine, index=False, if_exists='append', chunksize=1000)
 
     @classmethod
     def update_threshold_by_date(cls, start_date='', end_date=''):
