@@ -98,7 +98,7 @@ class DB(object):
 
     @classmethod
     def get_code_info(cls, code_id, start_date='', end_date='', period=''):
-        if start_date != '':
+        if period == '':
             code_info = pd.read_sql(
                 sa.text(
                     ' SELECT tc.cal_date, d.date_id, d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM  daily d '
@@ -117,11 +117,11 @@ class DB(object):
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' where d.code_id = :code_id and tc.cal_date <= :ed '
+                    ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed '
                     ' order by tc.cal_date desc '
                     ' limit :period'),
                 cls.engine,
-                params={'code_id': code_id, 'ed': end_date, 'period': period}
+                params={'code_id': code_id, 'sd': start_date, 'ed': end_date, 'period': period}
             )
 
         code_info.sort_values(by='cal_date', inplace=True)
@@ -164,6 +164,10 @@ class DB(object):
                 sa.text(' select f.name, fg.group_number from features_groups fg '
                         ' left join features f on f.id = fg.feature_id'), cls.engine)
         return features_groups
+
+    @classmethod
+    def truncate_thresholds(cls):
+        pd.io.sql.execute('truncate thresholds', cls.engine)
 
     @classmethod
     def insert_threshold(cls, code_id, date_id, SMS_month, SMS_year, simple_threshold_v):

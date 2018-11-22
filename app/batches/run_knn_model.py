@@ -5,8 +5,6 @@ import json
 
 def execute(start_date='', end_date=''):
 
-    Assembly.update_threshold(start_date, end_date)
-
     classifiers = DB.get_classifiers(classifier_type='knn')
     if not classifiers.empty:
         for classifier_id, params in classifiers[['id', 'params']].values:

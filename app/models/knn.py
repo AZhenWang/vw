@@ -35,7 +35,7 @@ class Knn(Interface):
 
         if single_code_id == '':
             codes = DB.get_latestopendays_code_list(
-                latest_open_days=self.sample_interval + self.pre_predict_interval + self.feature_assembly.max_window)
+                latest_open_days=2 * self.feature_assembly.year_period + 1)
             self.codes = codes['code_id']
             self.store = True # 如果不传single_code_id,就遍历所有股票，存储结果，
         else:

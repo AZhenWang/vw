@@ -5,6 +5,10 @@ from app.common import function as CF
 
 class Assembly(object):
 
+    year_period = 244
+    up_threshold = -0.05
+    down_threshold = -0.03
+
     def __init__(self, end_date='', sample_interval=12*20, pre_predict_interval=5):
         self.end_date = end_date
         self.period = sample_interval + pre_predict_interval + 20
@@ -47,37 +51,37 @@ class Assembly(object):
                 for feature_id in cols:
                     DB.insert_features_groups(feature_id, group_number)
 
-    @staticmethod
-    def update_threshold(start_date='', end_date=''):
-        year_period = 244
-        up_threshold = -0.05
-        down_threshold = -0.03
+    @classmethod
+    def init_thresholds_table(cls, end_date):
+        # 只在初始化项目的时候使用
+        DB.truncate_thresholds()
+        codes = DB.get_code_list(list_status='L')
+        for code_id in codes['code_id']:
+            cls.update_threshold(code_id, cal_date=end_date)
 
-        trade_dates = DB.get_open_cal_date(start_date, end_date)
-        if not trade_dates.empty:
-            for date_id, cal_date in trade_dates[['date_id', 'cal_date']].values:
-                codes = DB.get_trade_codes(date_id)
-                for code_id in codes['code_id']:
-                    data = DB.get_code_info(code_id=code_id,  end_date=cal_date, period=2*year_period+1)
-                    data = data[data['vol'] != 0]
-                    adj_close = data['close'] * data['adj_factor']
+    @classmethod
+    def update_threshold(cls, code_id, cal_date, period=''):
+        data = DB.get_code_info(code_id=code_id, end_date=cal_date, period=period)
+        data = data[data['vol'] != 0]
+        adj_close = data['close'] * data['adj_factor']
 
-                    next_adj_close = adj_close.shift(-1)
-                    fm = pd.concat([next_adj_close, adj_close], axis=1).min(axis=1)
-                    rate = (next_adj_close - adj_close) / fm
+        next_adj_close = adj_close.shift(-1)
+        fm = pd.concat([next_adj_close, adj_close], axis=1).min(axis=1)
+        rate = (next_adj_close - adj_close) / fm
 
-                    rate_sma_supershort = rate.rolling(window=20).sum()
-                    rate_sma_long = rate.rolling(window=year_period).sum()
-                    if not rate_sma_long.empty and not rate_sma_long.dropna().empty:
-                        latest_idx = rate_sma_long.index[-2]
-                        SMS_month = rate_sma_supershort.loc[latest_idx]
-                        SMS_year = rate_sma_long.loc[latest_idx]
-                        simple_threshold_v = down_threshold
-                        if SMS_month > 0.05 and SMS_year > 0.15:
-                            simple_threshold_v = up_threshold
-                        DB.insert_threshold(code_id=code_id, date_id=latest_idx, SMS_month=SMS_month, SMS_year=SMS_year,
-                                            simple_threshold_v=simple_threshold_v)
+        rate_sma_month = rate.rolling(window=20).sum()
+        rate_sma_year = rate.rolling(window=cls.year_period).sum()
 
+        simple_threshold_v = pd.Series(cls.down_threshold, index=adj_close.index)
+        simple_threshold_v[(rate_sma_month > 0.05) & (rate_sma_year > 0.15)] = cls.up_threshold
+        thresholds = pd.DataFrame({
+            'date_id': data.index,
+            'code_id': code_id,
+            'SMS_month': rate_sma_month,
+            'SMS_year': rate_sma_year,
+            'simple_threshold_v': simple_threshold_v
+        }).dropna()
+        thresholds.to_sql('thresholds', DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def pack_features(self, code_id):
         self.code_id = code_id
@@ -132,6 +136,10 @@ class Assembly(object):
     def pack_targets(self):
         thresholds = DB.get_thresholds(code_id=self.code_id, start_date_id=self.date_idxs[0],
                                        end_date_id=self.date_idxs[-1])
+        if thresholds.empty:
+            self.update_threshold(code_id=self.code_id, cal_date=self.end_date, period=2*self.year_period+1)
+            thresholds = DB.get_thresholds(code_id=self.code_id, start_date_id=self.date_idxs[0],
+                                           end_date_id=self.date_idxs[-1])
         threshold = pd.Series(-0.03, index=self.date_idxs)
         threshold.loc[thresholds.index] = thresholds['simple_threshold_v']
         target_max = self.adj_close.shift(-self.pre_predict_interval).rolling(self.pre_predict_interval).max()
