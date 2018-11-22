@@ -1,12 +1,18 @@
-from conf.myapp import db_config
+from conf.myapp import db_config, environment
 import sqlalchemy as sa
 from sqlalchemy import create_engine
 import pandas as pd
 
+
 class DB(object):
 
+    if environment == 'official':
+        log = False
+    else:
+        log = True
+
     engine = create_engine(
-        'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config), echo=True)
+        'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config), echo=log)
 
     @classmethod
     def get_cal_date(cls, start_date, end_date):
