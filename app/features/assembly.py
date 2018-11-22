@@ -56,7 +56,6 @@ class Assembly(object):
         # 只在初始化项目的时候使用
         # DB.truncate_thresholds()
         codes = DB.get_code_list(list_status='L')
-        codes = codes[codes['code_id'] > 2884]
         for code_id in codes['code_id']:
             cls.update_threshold(code_id, cal_date=end_date)
 
@@ -149,7 +148,6 @@ class Assembly(object):
         return X
 
     def pack_targets(self):
-        self.code_id = 1022
         thresholds = DB.get_thresholds(code_id=self.code_id, start_date_id=self.date_idxs[0],
                                        end_date_id=self.date_idxs[-1])
 

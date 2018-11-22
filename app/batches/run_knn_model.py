@@ -5,8 +5,10 @@ import json
 
 
 def execute(start_date='', end_date=''):
+
     # 先更新threshold表
-    Assembly.update_threshold_by_date(start_date, end_date)
+    if start_date == end_date:
+        Assembly.update_threshold_by_date(start_date, end_date)
 
     classifiers = DB.get_classifiers(classifier_type='knn')
     if not classifiers.empty:
