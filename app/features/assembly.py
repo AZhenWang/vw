@@ -56,7 +56,7 @@ class Assembly(object):
         # 只在初始化项目的时候使用
         # DB.truncate_thresholds()
         codes = DB.get_code_list(list_status='L')
-        codes = codes[codes['code_id'] > 2596]
+        codes = codes[codes['code_id'] > 2652]
         for code_id in codes['code_id']:
             cls.update_threshold(code_id, cal_date=end_date)
 
