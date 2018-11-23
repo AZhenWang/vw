@@ -29,8 +29,8 @@ class Ts(Interface):
 
     def update_trade_cal(self):
         api = 'trade_cal'
-        existed_cal_date = DB.get_cal_date(self.start_date, self.end_date)
-        new_rows = self.pro.query(api, fields=fields_map[api], start_date=self.start_date, end_date=self.end_date)
+        existed_cal_date = DB.get_cal_date(start_date='', end_date=self.end_date)
+        new_rows = self.pro.query(api, fields=fields_map[api], start_date=existed_cal_date.iloc[-1]['cal_date'], end_date=self.end_date)
         if not existed_cal_date.empty:
             new_rows = new_rows[~new_rows['cal_date'].isin(existed_cal_date['cal_date'])]
         if not new_rows.empty:

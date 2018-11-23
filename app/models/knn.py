@@ -38,7 +38,7 @@ class Knn(Interface):
             codes = DB.get_latestopendays_code_list(
                 latest_open_days=self.sample_interval + self.feature_assembly.year_period + 1)
             self.codes = codes['code_id']
-            self.store = True # 如果不传single_code_id,就遍历所有股票，存储结果，
+            self.store = True   # 如果不传single_code_id,就遍历所有股票，存储结果，
         else:
             self.codes = [single_code_id]
             self.store = False  # 如果传了单只股票id,就不保存结果到数据库，而是返回预测结果
@@ -76,17 +76,17 @@ class Knn(Interface):
                                 'metric_v': -0,
                             }
 
-                    new_rows = old_classified_v.append(new_classified_v)
-                    new_rows.set_index('date_id', inplace=True, drop=False)
-                    if not new_rows.empty:
-                        Y_hat = new_rows['classifier_v']
+                    if not new_classified_v.empty:
+                        Y_hat = old_classified_v['classifier_v'].append(new_classified_v['classifier_v'])
                         score = r2_score(Y_true.dropna(), Y_hat.dropna()[Y_true.notna()])
-                        new_rows.iloc[-1, -1] = str(score)
+                        new_classified_v.iloc[-1, -1] = str(round(score, 2))
+
                     if self.store:
-                        #  delete first, add later
-                        DB.delete_classified_v(code_id, self.classifier_id, group_number)
-                        new_rows.to_sql('classified_v', DB.engine, index=False, if_exists='append', chunksize=1000)
+                        new_classified_v.to_sql('classified_v', DB.engine, index=False, if_exists='append', chunksize=1000)
+
                     else:
+                        new_rows = old_classified_v.append(new_classified_v)
+                        new_rows.sort_index(inplace=True)
                         return new_rows
 
     def knn_predict(self, X, Y, predict_idx):

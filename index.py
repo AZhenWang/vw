@@ -43,9 +43,12 @@ if file_name:
                 yesterday = (now - timedelta(1)).strftime('%Y%m%d')
                 hour = now.hour
                 if hour < 17:
-                    print(yesterday)
+                    if start_date == end_date:
+                        start_date = yesterday
                     end_date = yesterday
                 else:
+                    if start_date == end_date:
+                        start_date = today
                     end_date = today
             executor.execute(start_date, end_date)
         else:
