@@ -41,6 +41,7 @@ create table classifiers(
 
 
 create table classified_v(
+   id INT NOT NULL AUTO_INCREMENT,
    date_id INT NOT NULL,
    code_id INT NOT NULL,
    classifier_id int not null comment'聚类模型表id',
@@ -49,6 +50,7 @@ create table classified_v(
    metric_type varchar(10) null comment'指标类型，R2: R2分数， RODR: rate of daily return日收益率变化率',
    metric_v float null comment '指标值',
    created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
    KEY (code_id),
    KEY (classifier_id),
    KEY (feature_group_number),

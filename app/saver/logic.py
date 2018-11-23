@@ -200,7 +200,7 @@ class DB(object):
     @classmethod
     def get_classified_v(cls, code_id, group_number):
         existed_classified_v = pd.read_sql(
-            sa.text(' select cv.date_id, cv.code_id, cv.classifier_id, cv.classifier_v, cv.feature_group_number, cv.metric_type, cv.metric_v '
+            sa.text(' select cv.id, cv.date_id, cv.code_id, cv.classifier_id, cv.classifier_v, cv.feature_group_number, cv.metric_type, cv.metric_v '
                     ' from classified_v cv'
                     ' left join trade_cal tc on tc.id = cv.date_id'
                     ' where cv.code_id = :ci and cv.feature_group_number = :gn'), cls.engine,
@@ -209,10 +209,10 @@ class DB(object):
         return existed_classified_v
 
     @classmethod
-    def delete_classified_v(cls, code_id, classifier_id, feature_group_number):
-        pd.io.sql.execute('delete from classified_v where code_id=%s and classifier_id=%s and feature_group_number=%s',
+    def delete_classified_v(cls, classified_v_id):
+        pd.io.sql.execute('delete from classified_v where id=%s',
                           cls.engine,
-                          params=[code_id, classifier_id, feature_group_number])
+                          params=[classified_v_id])
 
 
     # @staticmethod
