@@ -35,6 +35,7 @@ class Ts(Interface):
             new_rows = new_rows[~new_rows['cal_date'].isin(existed_cal_date['cal_date'])]
         if not new_rows.empty:
             new_rows = new_rows[fields_map[api]]
+            new_rows.sort_values(by='cal_date', inplace=True)
             new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def set_code_list(self):
