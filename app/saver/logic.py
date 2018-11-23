@@ -190,7 +190,7 @@ class DB(object):
     def get_thresholds(cls, code_id, start_date_id='', end_date_id=''):
         existed_codes = pd.read_sql(
             sa.text(' select t.code_id, t.date_id, t.SMS_month, t.SMS_year, t.simple_threshold_v from thresholds t'
-                    ' where t.code_id = :code_id and t.date_id >= :sdi and t.date_id <= :edi '), cls.engine,
+                    ' where t.date_id >= :sdi and t.date_id <= :edi and t.code_id = :code_id'), cls.engine,
             params={'code_id': code_id, 'sdi': str(start_date_id), 'edi': str(end_date_id)})
 
         existed_codes.sort_values(by='date_id', inplace=True)
