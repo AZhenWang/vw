@@ -140,10 +140,10 @@ class Assembly(object):
         feature_dict = {}
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
-
         X = pd.DataFrame(feature_dict).dropna()
-        self.adj_close = Adj_close
+
         self.date_idxs = X.index
+        self.adj_close = Adj_close
 
         return X
 
@@ -151,8 +151,8 @@ class Assembly(object):
         thresholds = DB.get_thresholds(code_id=self.code_id, start_date_id=self.date_idxs[0],
                                        end_date_id=self.date_idxs[-1])
 
-        threshold = pd.Series(-0.03, index=self.date_idxs)
-        threshold.loc[thresholds.index] = thresholds['simple_threshold_v']
+        # threshold = pd.Series(-0.03, index=self.date_idxs)
+        threshold = thresholds.loc[self.date_idxs]['simple_threshold_v']
         target_max = self.adj_close.shift(-self.pre_predict_interval).rolling(self.pre_predict_interval).max()
         target_min = self.adj_close.shift(-self.pre_predict_interval).rolling(self.pre_predict_interval).min()
         target_max = target_max[self.date_idxs]

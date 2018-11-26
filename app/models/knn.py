@@ -49,7 +49,6 @@ class Knn(Interface):
             features = self.feature_assembly.pack_features(code_id)
             X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(features), columns=features.columns, index=features.index)
             Y = self.feature_assembly.pack_targets()
-
             Y_true = Y[-self.memory_size:]
 
             trade_dates = Y_true.index
