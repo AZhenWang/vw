@@ -24,14 +24,12 @@ class Assembly(object):
         features = {
             'RSI5': '5日移动RSI',
             'RSI10': '10日移动RSI',
-            'Adj_SMA20_ratio': '复权价与20日移动平均线的比',
             'Adj_SMA10_ratio': '复权价与10日移动平均线的比',
             'Adj_SMA5_ratio': '复权价与5日移动平均线的比',
             'Turnover_rate': '换手率（自由流通股）',
             'Boll_ratio': '20日移动平均线的布尔比率',
             'Volume_SMA': '20日移动平均交易量',
             'Amplitude': '日实际变化幅度占当天总波动比率',
-            'Adj_close': '复权收盘价'
         }
         DB.truncate_features()
         for name in features:
@@ -109,7 +107,6 @@ class Assembly(object):
         SMA20 = dr_window20.mean()
         SMA10 = dr_window10.mean()
         SMA5 = dr_window5.mean()
-        Adj_SMA20_ratio = Adj_close / SMA20
         Adj_SMA10_ratio = Adj_close / SMA10
         Adj_SMA5_ratio = Adj_close / SMA5
 
