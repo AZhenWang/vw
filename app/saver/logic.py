@@ -66,7 +66,7 @@ class DB(object):
                     ' having count(d.code_id) >= :latest_open_days'
                     ),
             cls.engine,
-            params={'ls':'L', 'latest_open_days': latest_open_days}
+            params={'ls': 'L', 'latest_open_days': latest_open_days}
         )
 
         return code_list

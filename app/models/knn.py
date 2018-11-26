@@ -44,6 +44,8 @@ class Knn(Interface):
 
     def run(self):
         for code_id in self.codes:
+            if code_id <= 563:
+                continue
             features = self.feature_assembly.pack_features(code_id)
             X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(features), columns=features.columns, index=features.index)
             Y = self.feature_assembly.pack_targets()
