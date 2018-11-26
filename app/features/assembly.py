@@ -93,10 +93,8 @@ class Assembly(object):
         trade_dates = DB.get_open_cal_date(start_date, end_date)
         if not trade_dates.empty:
             for date_id, cal_date in trade_dates[['date_id', 'cal_date']].values:
-                # codes = DB.get_trade_codes(date_id)
-                sample_codes = [865]
-                # for code_id in codes['code_id']:
-                for code_id in sample_codes:
+                codes = DB.get_trade_codes(date_id)
+                for code_id in codes['code_id']:
                     cls.update_threshold(code_id=code_id, cal_date=cal_date, period=cls.year_period+1)
 
     def pack_features(self, code_id):
