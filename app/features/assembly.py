@@ -149,7 +149,9 @@ class Assembly(object):
                                        end_date_id=self.date_idxs[-1])
 
         # threshold = pd.Series(-0.03, index=self.date_idxs)
-        threshold = thresholds.loc[self.date_idxs]['simple_threshold_v']
+
+        threshold = thresholds['simple_threshold_v']
+        threshold = threshold.reindex(self.date_idxs, method='ffill')
         target_max = self.adj_close.shift(-self.pre_predict_interval).rolling(self.pre_predict_interval).max()
         target_min = self.adj_close.shift(-self.pre_predict_interval).rolling(self.pre_predict_interval).min()
         target_max = target_max[self.date_idxs]
