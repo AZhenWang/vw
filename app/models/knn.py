@@ -19,7 +19,7 @@ class Knn(Interface):
                  classifier_id='',
                  sample_interval=12*20,
                  pre_predict_interval=5,
-                 memory_size=60,
+                 memory_size=40,
                  single_code_id='',
                  ):
         """ knn 预测模型
@@ -85,11 +85,9 @@ class Knn(Interface):
                         Y_hat = old_classified_v['classifier_v'].append(new_classified_v['classifier_v'])
                         score = r2_score(Y_true.dropna(), Y_hat.dropna()[Y_true.notna()])
                         new_classified_v.iloc[-1, -1] = str(round(score, 2))
-
                     if self.store:
                         if not new_classified_v.empty:
-                            for classified_v_id in expired_classified_v['id']:
-                                DB.delete_classified_v(classified_v_id)
+                            DB.batch_delete_classified_v(expired_classified_v['id'])
                             new_classified_v.to_sql('classified_v', DB.engine, index=False, if_exists='append', chunksize=1000)
                     else:
                         new_rows = old_classified_v.append(new_classified_v)

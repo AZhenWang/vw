@@ -214,6 +214,13 @@ class DB(object):
                           cls.engine,
                           params=[classified_v_id])
 
+    @classmethod
+    def batch_delete_classified_v(cls, classified_v_ids):
+        if len(classified_v_ids) >= 1:
+            pd.io.sql.execute(
+                'delete from classified_v where id in (' + ('%s,' * len(classified_v_ids)).strip(',') + ')',
+                cls.engine,
+                params=[classified_v_ids])
 
     # @staticmethod
     # def validate_field(columns, fields):
