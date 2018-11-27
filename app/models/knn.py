@@ -48,7 +48,6 @@ class Knn(Interface):
         max_portfolio = 5
         features_groups = DB.get_features_groups()
         gp = features_groups.groupby('group_number')
-        self.codes = [865]
         for group_number, group_data in gp:
             if group_data.shape[0] > max_portfolio or group_data.shape[0] < min_portfolio:
                 continue
