@@ -9,7 +9,7 @@ class Assembly(object):
     up_threshold = -0.05
     down_threshold = -0.03
 
-    def __init__(self, end_date='', sample_interval=12*20, pre_predict_interval=5):
+    def __init__(self, end_date='', sample_interval=244, pre_predict_interval=5):
         self.end_date = end_date
         self.period = sample_interval + pre_predict_interval + 20
         self.pre_predict_interval = pre_predict_interval
@@ -52,7 +52,7 @@ class Assembly(object):
     @classmethod
     def init_thresholds_table(cls, end_date):
         # 只在初始化项目的时候使用
-        # DB.truncate_thresholds()
+        DB.truncate_thresholds()
         codes = DB.get_code_list(list_status='L')
         for code_id in codes['code_id']:
             cls.update_threshold(code_id, cal_date=end_date)

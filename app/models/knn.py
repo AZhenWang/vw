@@ -48,18 +48,20 @@ class Knn(Interface):
         max_portfolio = 5
         features_groups = DB.get_features_groups()
         gp = features_groups.groupby('group_number')
-        for group_number, group_data in gp:
-            if group_data.shape[0] > max_portfolio or group_data.shape[0] < min_portfolio:
-                continue
-            for code_id in self.codes:
-                features = self.feature_assembly.pack_features(code_id)
-                X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(features), columns=features.columns, index=features.index)
-                Y = self.feature_assembly.pack_targets()
-                Y_true = Y[-self.memory_size:]
 
-                trade_dates = Y_true.index
+        for code_id in self.codes:
+            features = self.feature_assembly.pack_features(code_id)
+            X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(features), columns=features.columns,
+                             index=features.index)
+            Y = self.feature_assembly.pack_targets()
+            Y_true = Y[-self.memory_size:]
+            trade_dates = Y_true.index
 
-                existed_classified_v = DB.get_classified_v(code_id, group_number)
+            for group_number, group_data in gp:
+                if group_data.shape[0] > max_portfolio or group_data.shape[0] < min_portfolio:
+                    continue
+
+                existed_classified_v = DB.get_classified_v(code_id, group_number, self.classifier_id)
                 expired_classified_v = existed_classified_v[
                     ~existed_classified_v['date_id'].isin(trade_dates)]
                 old_classified_v = existed_classified_v[
