@@ -49,6 +49,7 @@ create table classified_v(
    classifier_v float not null comment'预测值',
    metric_type varchar(10) null comment'指标类型，R2: R2分数， RODR: rate of daily return日收益率变化率',
    metric_v float null comment '指标值',
+   holding bool default 0 comment '是否建议持有',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    KEY (code_id),

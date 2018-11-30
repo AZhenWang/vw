@@ -40,6 +40,41 @@ def combine_cols(columns=[]):
     return combined_cols_set
 
 
+def get_cum_return(adj_prices, holdings=[]):
+    """
+    组装累积收益率
+    :param adj_closes:
+    :param holdings:
+    :return:
+    """
+    cum_return_set = [0] * 2
+    cum_return = 0
+    return_from_entry = 0
+    buy_price = 0
+    fee_rate = 0.004  # include tax rate and brokerage charges
+    for i in range(2, len(holdings)):
+
+        if holdings[i - 1] == 1 and holdings[i - 2] != 1:
+            buy_price = adj_prices[i]
+            cum_return -= fee_rate
+
+        if holdings[i - 1] == 0 and holdings[i - 2] != 0 and buy_price != 0:
+            cum_return -= fee_rate * adj_prices[i] / buy_price
+
+        if holdings[i - 1] == 1:
+            sell_price = adj_prices[i]
+            diff = sell_price - buy_price
+            return_from_entry = diff / min([sell_price, buy_price])
+
+        cum_return_set.append(cum_return + return_from_entry)
+
+        if holdings[i - 1] == 0 and holdings[i - 2] == 1:
+            cum_return += return_from_entry
+            return_from_entry = 0
+
+    return cum_return, cum_return_set
+
+
 def send_email(subject='趋势预测', text=''):
     import smtplib
     from email.mime.text import MIMEText

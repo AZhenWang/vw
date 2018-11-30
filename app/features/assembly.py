@@ -100,6 +100,7 @@ class Assembly(object):
         data = DB.get_code_info(code_id=code_id, end_date=self.end_date, period=self.period)
         data = data[data['vol'] != 0]
         Adj_close = data['close'] * data['adj_factor']
+        Adj_open = data['open'] * data['adj_factor']
 
         dr_window5 = Adj_close.rolling(window=5)
         dr_window10 = Adj_close.rolling(window=10)

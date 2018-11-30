@@ -2,6 +2,7 @@ from app.models.common import Interface
 from app.features.assembly import Assembly
 from app.saver.logic import DB
 from app.saver.tables import fields_map
+from app.common.function import get_cum_return
 
 from sklearn.neighbors import KNeighborsRegressor, NearestNeighbors
 from sklearn.metrics import r2_score
@@ -17,7 +18,7 @@ class Knn(Interface):
     def __init__(self,
                  end_date='',
                  classifier_id='',
-                 sample_interval=12*20,
+                 sample_interval=244,
                  pre_predict_interval=5,
                  memory_size=40,
                  single_code_id='',
@@ -48,7 +49,6 @@ class Knn(Interface):
         max_portfolio = 5
         features_groups = DB.get_features_groups()
         gp = features_groups.groupby('group_number')
-
         for code_id in self.codes:
             features = self.feature_assembly.pack_features(code_id)
             X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(features), columns=features.columns,
@@ -78,15 +78,21 @@ class Knn(Interface):
                                 'code_id': code_id,
                                 'classifier_id': self.classifier_id,
                                 'classifier_v': y_hat,
-                                'feature_group_number' : group_number,
-                                'metric_type': 'R2_SCORE',
+                                'feature_group_number': group_number,
+                                'metric_type': 'CUM_RATE',
                                 'metric_v': -0,
+                                'holding': 0,
                             }
-
                     if not new_classified_v.empty:
                         Y_hat = old_classified_v['classifier_v'].append(new_classified_v['classifier_v'])
-                        score = r2_score(Y_true.dropna(), Y_hat.dropna()[Y_true.notna()])
-                        new_classified_v.iloc[-1, -1] = str(round(score, 2))
+                        # score = r2_score(Y_true.dropna(), Y_hat.dropna()[Y_true.notna()])
+                        # new_classified_v.iloc[-1, -1] = str(round(score, 3))
+                        adj_prices = self.feature_assembly.adj_close[trade_dates].values
+                        holdings = self.get_holdings(Y_hat.values)
+                        cum_return, _ = get_cum_return(adj_prices=adj_prices, holdings=holdings)
+                        new_classified_v.iloc[-1, -2] = str(round(cum_return, 3))
+                        new_classified_v.iloc[-1, -1] = holdings[-1]
+
                     if self.store:
                         if not new_classified_v.empty:
                             DB.batch_delete_classified_v(expired_classified_v['id'])
@@ -120,9 +126,22 @@ class Knn(Interface):
         training_X = X.iloc[sample_start_iloc:sample_end_iloc]
         training_Y = Y.iloc[sample_start_iloc:sample_end_iloc]
         testing_x = X.iloc[predict_iloc]
-        knn = KNeighborsRegressor(n_neighbors=5)
+        knn = KNeighborsRegressor(n_neighbors=8)
         knn.fit(training_X, training_Y)
         predicted_Y = knn.predict([testing_x])
         y_hat = predicted_Y[0]
         return y_hat
 
+    @staticmethod
+    def get_holdings(Y_hat):
+        holdings = [0] * 2
+        holding = 0
+        for i in range(2, len(Y_hat)):
+            if Y_hat[i] <= 0 and Y_hat[i - 1] <= 0:
+                holding = 0
+            elif (Y_hat[i] > Y_hat[i - 1]) and (Y_hat[i - 1] > 0.01):
+                holding = 1
+
+            holdings.append(holding)
+
+        return holdings
