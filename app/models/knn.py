@@ -45,7 +45,7 @@ class Knn(Interface):
 
     def run(self):
         # 取2-5个特征一组
-        min_portfolio = 2
+        min_portfolio = 3
         max_portfolio = 5
         features_groups = DB.get_features_groups()
         gp = features_groups.groupby('group_number')
