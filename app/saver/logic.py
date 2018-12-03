@@ -200,7 +200,7 @@ class DB(object):
     @classmethod
     def get_classified_v(cls, code_id, group_number, classifier_id):
         existed_classified_v = pd.read_sql(
-            sa.text(' select cv.id, cv.date_id, cv.code_id, cv.classifier_id, cv.classifier_v, cv.feature_group_number, cv.metric_type, cv.metric_v '
+            sa.text(' select cv.id, cv.date_id, cv.code_id, cv.classifier_id, cv.classifier_v, cv.feature_group_number '
                     ' from classified_v cv'
                     ' left join trade_cal tc on tc.id = cv.date_id'
                     ' where cv.code_id = :ci and cv.feature_group_number = :gn and cv.classifier_id = :classifier_id'), cls.engine,
