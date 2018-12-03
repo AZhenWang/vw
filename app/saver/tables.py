@@ -33,7 +33,7 @@ fields_map = {
     ],
     'classified_v': [
         'date_id', 'code_id', 'classifier_id', 'classifier_v', 'feature_group_number',
-        'metric_type', 'metric_v', 'holding'
+        'r2_score', 'cum_return', 'holding'
     ],
 }
 

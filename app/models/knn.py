@@ -79,17 +79,19 @@ class Knn(Interface):
                                 'classifier_id': self.classifier_id,
                                 'classifier_v': y_hat,
                                 'feature_group_number': group_number,
-                                'metric_type': 'CUM_RATE',
-                                'metric_v': -0,
+                                'r2_score': -0,
+                                'cum_return': -0,
                                 'holding': 0,
                             }
                     if not new_classified_v.empty:
                         Y_hat = old_classified_v['classifier_v'].append(new_classified_v['classifier_v'])
-                        # score = r2_score(Y_true.dropna(), Y_hat.dropna()[Y_true.notna()])
-                        # new_classified_v.iloc[-1, -1] = str(round(score, 3))
+                        score = r2_score(Y_true.dropna(), Y_hat.dropna()[Y_true.notna()])
+
                         adj_prices = self.feature_assembly.adj_close[trade_dates].values
                         holdings = self.get_holdings(Y_hat.values)
                         cum_return, _ = get_cum_return(adj_prices=adj_prices, holdings=holdings)
+
+                        new_classified_v.iloc[-1, -3] = str(round(score, 3))
                         new_classified_v.iloc[-1, -2] = str(round(cum_return, 3))
                         new_classified_v.iloc[-1, -1] = holdings[-1]
 
