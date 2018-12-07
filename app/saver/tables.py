@@ -35,5 +35,10 @@ fields_map = {
         'date_id', 'code_id', 'classifier_id', 'classifier_v', 'feature_group_number',
         'r2_score', 'cum_return', 'holding'
     ],
+
+    # 股票预测
+    'recommend_stocks': [
+        'date_id', 'code_id', 'recommend_type', 'recommend_id', 'recommend_v'
+    ],
 }
 

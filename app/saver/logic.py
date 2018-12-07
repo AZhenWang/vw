@@ -34,7 +34,6 @@ class DB(object):
             )
 
         else:
-            print('hjbl')
             trade_cal = pd.read_sql(
                 sa.text(
                     'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date >= :sd and cal_date <= :ed'),
@@ -221,6 +220,37 @@ class DB(object):
                 'delete from classified_v where id in (' + ('%s,' * len(classified_v_ids)).strip(',') + ')',
                 cls.engine,
                 params=[classified_v_ids])
+
+    @classmethod
+    def recommend_stock_by_classifier(cls, classifier_id, current_date_id, last_date_id):
+        stocks = pd.read_sql(
+            sa.text(' select cv.id, cv.code_id, cv.r2_score, cv.classifier_v'
+                    ' from classified_v cv'
+                    ' left join trade_cal tc on tc.id = cv.date_id'
+                    ' where cv.date_id = :date_id'
+                    ' and cv.classifier_id = :classifier_id'
+                    ' and cv.code_id in '
+                    ' (select cv2.code_id from classified_v cv2 where cv2.date_id =:last_date_id and cv2.classifier_v > 0.04)'
+                    ' and cv.classifier_v > 0.05 and cv.r2_score > 0.01 and cv.classifier_v > 0.05'
+                    ' order by cv.r2_score desc'
+                    ),
+            cls.engine,
+            params={'date_id': str(current_date_id), 'last_date_id': str(last_date_id), 'classifier_id': classifier_id})
+        return stocks
+
+    @classmethod
+    def get_max_r2_score(cls, code_id, date_id, limit=1):
+        data = pd.read_sql(
+            sa.text(' select cv.id, cv.feature_group_number'
+                    ' from classified_v cv'
+                    ' where cv.date_id = :date_id'
+                    ' and cv.code_id = :code_id '
+                    ' order by r2_score desc '
+                    ' limit :limit'
+                    ),
+            cls.engine,
+            params={'code_id': str(code_id), 'date_id': str(date_id), 'limit': limit})
+        return data
 
     # @staticmethod
     # def validate_field(columns, fields):

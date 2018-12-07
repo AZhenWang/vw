@@ -1,0 +1,11 @@
+create table recommend_stocks(
+   id INT NOT NULL AUTO_INCREMENT,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
+   recommend_type varchar(16) null comment'被哪个模型推荐, 为空就表示自主添加',
+   recommend_id INT NOT NULL comment'推荐模型表id',
+   recommend_v float not null comment'推荐值',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`date_id`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'股票推荐';

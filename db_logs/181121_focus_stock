@@ -1,8 +1,0 @@
-create table focus_stocks(
-   id INT NOT NULL AUTO_INCREMENT,
-   code_id int NOT NULL,
-   recommended_by int null comment'被哪个模型classifier_id推荐, 为空就表示自主添加',
-   created_at timestamp not null default CURRENT_TIMESTAMP,
-   PRIMARY KEY(id),
-   index(`code_id`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'特征定义';
