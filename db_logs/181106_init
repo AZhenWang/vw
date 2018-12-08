@@ -8,6 +8,7 @@ create table daily(
    high FLOAT4 not null,
    close FLOAT4 not null,
    low FLOAT4 not null,
+   pct_chg FLOAT4 not null comment'涨跌幅',
    vol double null comment'成交量（手）',
    amount double null comment'成交额 （千元）',
    created_at timestamp not null default CURRENT_TIMESTAMP,

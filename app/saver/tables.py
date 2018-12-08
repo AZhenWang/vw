@@ -4,7 +4,7 @@ fields_map = {
 
     # 股票基本信息表
     'daily': [
-        'date_id', 'code_id', 'open', 'high', 'close', 'low', 'vol', 'amount',
+        'date_id', 'code_id', 'open', 'high', 'close', 'low', 'vol', 'amount', 'pct_chg'
     ],
     'daily_basic': [
         'date_id', 'code_id', 'close', 'turnover_rate', 'turnover_rate_f', 'pe', 'pe_ttm',
