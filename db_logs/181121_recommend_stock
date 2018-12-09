@@ -7,5 +7,6 @@ create table recommend_stocks(
    average float not null comment'推荐平均值',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   index(`date_id`)
+   index(`code_id`),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8 comment'股票推荐';
