@@ -3,8 +3,8 @@ create table recommend_stocks(
    date_id INT NOT NULL,
    code_id INT NOT NULL,
    recommend_type varchar(16) null comment'被哪个模型推荐, 为空就表示自主添加',
-   recommend_id INT NOT NULL comment'推荐模型表id',
-   recommend_v float not null comment'推荐值',
+   star_idx int null comment'推荐星数',
+   average float not null comment'推荐平均值',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(`date_id`)
