@@ -27,3 +27,6 @@ cp conf/myapp_example.py conf/myapp.py
 
 *** today=$(date +%Y%m%d) && python index.py -n run_knn_model --sd=$today --ed=$today
     每日跑一次knn模型, 每当执行一次init_features命令之后，就需要truncate classified_v表，再执行这个run_knn_model操作
+
+*** today=$(date +%Y%m%d) && python index.py -n recommend_stocks --ed=$today
+    每日推荐一次股票

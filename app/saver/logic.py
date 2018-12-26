@@ -252,6 +252,25 @@ class DB(object):
             params={'code_id': str(code_id), 'date_id': str(date_id), 'limit': limit})
         return data
 
+    @classmethod
+    def delete_recommend_stock_logs(cls, date_id):
+        pd.io.sql.execute('delete from recommend_stocks where date_id=%s',
+                          cls.engine,
+                          params=[str(date_id)])
+
+    @classmethod
+    def count_threshold_group_by_date_id(cls, start_date_id, end_date_id):
+        data = pd.read_sql(
+            sa.text(' select tc.cal_date, count(t.code_id) as up_stock_number from thresholds  t'
+                    ' left join trade_cal tc on tc.id = t.date_id'
+                    ' where t.simple_threshold_v < -0.03 and t.date_id between :start_date_id and :end_date_id'
+                    ' group by t.date_id'
+                    ' order by date_id desc'
+                    ),
+            cls.engine,
+            params={'start_date_id': str(start_date_id), 'end_date_id': str(end_date_id)})
+        return data
+
     # @staticmethod
     # def validate_field(columns, fields):
     #     valid_fields = list((set(columns).union(set(fields))) ^ (set(columns) ^ set(fields)))
