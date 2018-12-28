@@ -40,5 +40,20 @@ fields_map = {
     'recommend_stocks': [
         'date_id', 'code_id', 'recommend_type', 'star_idx', 'average'
     ],
+
+    # 指数
+    'index_basic': [
+        'ts_code', 'name', 'market', 'publisher', 'category', 'base_date', 'base_point',
+        'weight_rule', 'desc', 'exp_date'
+    ],
+    'index_daily': [
+        'index_id', 'date_id', 'close', 'open', 'high', 'low', 'pre_close', 'change', 'pct_chg', 'vol', 'amount'
+    ],
+    'index_dailybasic': [
+        'index_id', 'date_id', 'total_mv', 'float_mv', 'total_share', 'float_share', 'free_share',
+        'turnover_rate', 'turnover_rate_f', 'pe', 'pe_ttm', 'pb'
+    ],
+
+
 }
 

@@ -1,0 +1,56 @@
+create table index_basic(
+   `id` INT NOT NULL AUTO_INCREMENT,
+   `ts_code`	VARCHAR(12) NOT NULL	comment'TS代码',
+   `name` VARCHAR(64) NOT NULL comment'简称',
+   `market`	VARCHAR(4) NOT NULL comment'市场',
+   `publisher`	VARCHAR(24) NOT NULL comment'发布方',
+   `category`	VARCHAR(32) NOT NULL comment'指数类别',
+   `base_date`	VARCHAR(8)  NULL comment'基期',
+   `base_point`	float  NULL comment'基点',
+   `weight_rule`	text null comment'加权方式',
+   `desc` text null	comment'描述',
+   `exp_date` VARCHAR(8)  NULL comment'终止日期',
+   PRIMARY KEY(id),
+   UNIQUE `ts_code_idx`  (`ts_code`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'指数列表';
+
+
+create table index_daily(
+   `id` INT NOT NULL AUTO_INCREMENT,
+   `index_id` int NOT NULL comment'index_basic表id',
+   `date_id` int NOT NULL	comment'trade_cal表id',
+   `close`	float NOT NULL	comment'收盘点位',
+   `open`	float NOT NULL	comment'开盘点位',
+   `high`	float NOT NULL	comment'最高点位',
+   `low` float NOT NULL	comment'最低点位',
+   `pre_close`	float NULL	comment'昨日收盘点',
+   `change`	float  NULL	comment'涨跌点',
+   `pct_chg` float  NULL	comment'涨跌幅',
+   `vol` float  NULL	comment'	成交量（手）',
+   `amount`	float  null comment'成交额（千元)',
+   `created_at` timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`index_id`),
+   CONSTRAINT symbol UNIQUE KEY `unique_index_date`(`date_id`, `index_id`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'指数日线行情';
+
+create table index_dailybasic(
+   `id` INT NOT NULL AUTO_INCREMENT,
+   `index_id` int NOT NULL comment'index_basic表id',
+   `date_id` int NOT NULL	comment'trade_cal表id',
+   `total_mv` bigint  NULL	comment'当日总市值（元）',
+   `float_mv`	bigint  NULL	comment'当日流通市值（元）',
+   `total_share`	bigint  NULL	comment'当日总股本（股）',
+   `float_share`	bigint  NULL	comment'当日流通股本（股）',
+   `free_share`	bigint  NULL	comment'当日自由流通股本（股）',
+   `turnover_rate`	float  NULL	comment'换手率',
+   `turnover_rate_f`	float  NULL	comment'换手率(基于自由流通股本)',
+   `pe`	float  NULL	comment'市盈率',
+   `pe_ttm`	float  NULL	comment'市盈率TTM',
+   `pb`	float  NULL	comment'市净率',
+   `created_at` timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`index_id`),
+   CONSTRAINT symbol UNIQUE KEY `unique_index_date`(`date_id`, `index_id`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'大盘指数每日指标';
+

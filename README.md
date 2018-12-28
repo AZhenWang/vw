@@ -30,3 +30,6 @@ cp conf/myapp_example.py conf/myapp.py
 
 *** today=$(date +%Y%m%d) && python index.py -n recommend_stocks --ed=$today
     每日推荐一次股票
+
+*** today=$(date +%Y%m%d) && python index.py -n run_threshold_model --ed=$today
+    每日发送一次threshold统计邮件

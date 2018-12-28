@@ -87,7 +87,8 @@ def send_email(subject='趋势预测', msgs=[]):
     mail_pass = "mfhgotjzrvmabdeb"  # 口令
 
     sender = '865820954@qq.com'
-    receivers = ['865820954@qq.com', '535362768@qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
+    receivers = ['865820954@qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
+    # receivers = ['865820954@qq.com', '535362768@qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
     outer = MIMEMultipart()
     outer['From'] = Header("蓬头小龙虾", 'utf-8')
     outer['Subject'] = Header(subject, 'utf-8')

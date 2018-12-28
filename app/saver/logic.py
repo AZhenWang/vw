@@ -56,6 +56,18 @@ class DB(object):
         return code_list
 
     @classmethod
+    def get_index_list(cls, market=''):
+        if market != '':
+            index_list = pd.read_sql(
+                sa.text('SELECT id as index_id, ts_code FROM index_basic where market=:market'),
+                cls.engine,
+                params={'market': market}
+            )
+        else:
+            index_list = pd.read_sql(sa.text('SELECT id as index_id, ts_code, market FROM index_basic'), cls.engine)
+        return index_list
+
+    @classmethod
     def get_latestopendays_code_list(cls, latest_open_days=''):
         code_list = pd.read_sql(
             sa.text(' select d.code_id FROM daily d '
@@ -77,6 +89,18 @@ class DB(object):
                 'SELECT sb.ts_code FROM ' + table_name + ' as api left join stock_basic as sb on sb.id = api.code_id where api.date_id=:date_id'),
             cls.engine,
             params={'date_id': date_id}
+        )
+        return existed_codes
+
+    @classmethod
+    def get_existed_index(cls, table_name, index_id, start_date, end_date):
+        existed_codes = pd.read_sql(
+            sa.text(
+                ' SELECT tc.cal_date FROM ' + table_name + ' as api '
+                ' left join trade_cal tc on tc.id = api.date_id'
+                ' where api.index_id = :index_id and tc.cal_date between :start_date and :end_date'),
+            cls.engine,
+            params={'index_id': index_id, 'start_date': start_date, 'end_date': end_date}
         )
         return existed_codes
 
@@ -261,7 +285,10 @@ class DB(object):
     @classmethod
     def count_threshold_group_by_date_id(cls, start_date_id, end_date_id):
         data = pd.read_sql(
-            sa.text(' select tc.cal_date, count(t.code_id) as up_stock_number from thresholds  t'
+            sa.text(' select tc.cal_date, count(t.code_id) as up_stock_number, '
+                    ' (select count(*) from stock_basic sb where sb.list_status = "L" '
+                    ' and sb.list_date < tc.cal_date) as list_stock_number'
+                    ' from thresholds  t'
                     ' left join trade_cal tc on tc.id = t.date_id'
                     ' where t.simple_threshold_v < -0.03 and t.date_id between :start_date_id and :end_date_id'
                     ' group by t.date_id'
