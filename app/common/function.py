@@ -40,10 +40,10 @@ def combine_cols(columns=[]):
     return combined_cols_set
 
 
-def get_cum_return(adj_prices, holdings=[]):
+def get_cum_return(prices, holdings=[]):
     """
     组装累积收益率
-    :param adj_closes:
+    :param prices:
     :param holdings:
     :return:
     """
@@ -55,14 +55,14 @@ def get_cum_return(adj_prices, holdings=[]):
     for i in range(2, len(holdings)):
 
         if holdings[i - 1] == 1 and holdings[i - 2] != 1:
-            buy_price = adj_prices[i]
+            buy_price = prices[i]
             cum_return -= fee_rate
 
         if holdings[i - 1] == 0 and holdings[i - 2] != 0 and buy_price != 0:
-            cum_return -= fee_rate * adj_prices[i] / buy_price
+            cum_return -= fee_rate * prices[i] / buy_price
 
         if holdings[i - 1] == 1:
-            sell_price = adj_prices[i]
+            sell_price = prices[i]
             diff = sell_price - buy_price
             return_from_entry = diff / min([sell_price, buy_price])
 
@@ -73,6 +73,25 @@ def get_cum_return(adj_prices, holdings=[]):
             return_from_entry = 0
 
     return cum_return, cum_return_set
+
+
+def get_buy_sell_points(holdings):
+    import numpy as np
+
+    buy, sell = [], []
+    for i in range(len(holdings)):
+        if i >= 1 and holdings[i] != holdings[i - 1]:
+            if holdings[i] == 1:
+                buy.append(1)
+                sell.append(np.nan)
+            else:
+                sell.append(1)
+                buy.append(np.nan)
+        else:
+            buy.append(np.nan)
+            sell.append(np.nan)
+
+    return buy, sell
 
 
 def send_email(subject='趋势预测', msgs=[]):
@@ -103,3 +122,4 @@ def send_email(subject='趋势预测', msgs=[]):
         print("邮件发送成功")
     except smtplib.SMTPException:
         print("Error: 无法发送邮件")
+

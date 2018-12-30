@@ -89,7 +89,7 @@ class Knn(Interface):
 
                         adj_prices = self.feature_assembly.adj_close[trade_dates].values
                         holdings = self.get_holdings(Y_hat.values)
-                        cum_return, _ = get_cum_return(adj_prices=adj_prices, holdings=holdings)
+                        cum_return, _ = get_cum_return(prices=adj_prices, holdings=holdings)
 
                         new_classified_v.iloc[-1, -3] = str(round(score, 3))
                         new_classified_v.iloc[-1, -2] = str(round(cum_return, 3))

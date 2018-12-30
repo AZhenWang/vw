@@ -68,6 +68,29 @@ class DB(object):
         return index_list
 
     @classmethod
+    def get_index_daily(cls, ts_code='', start_date_id='', end_date_id=''):
+        if ts_code != '':
+            index_list = pd.read_sql(
+                sa.text(' SELECT tc.cal_date, ib.ts_code, id.close, id.vol FROM index_daily id '
+                        ' left join index_basic ib on ib.id = id.index_id'
+                        ' left join trade_cal tc on tc.id = id.date_id'
+                        ' where ib.ts_code=:ts_code'
+                        ' and id.date_id between :sdi and :edi'),
+                cls.engine,
+                params={'ts_code': ts_code, 'sdi': str(start_date_id), 'edi': str(end_date_id)}
+            )
+        else:
+            index_list = pd.read_sql(
+                sa.text(' SELECT tc.cal_date, ib.ts_code, id.close, id.vol FROM index_daily id '
+                        ' left join index_basic ib on ib.id = id.index_id'
+                        ' left join trade_cal tc on tc.id = id.date_id'
+                        ' and id.date_id between :sdi and :edi'),
+                cls.engine,
+                params={'sdi': str(start_date_id), 'edi': str(end_date_id)}
+            )
+        return index_list
+
+    @classmethod
     def get_latestopendays_code_list(cls, latest_open_days=''):
         code_list = pd.read_sql(
             sa.text(' select d.code_id FROM daily d '

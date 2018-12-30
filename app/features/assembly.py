@@ -71,7 +71,7 @@ class Assembly(object):
         rate_sma_year = rate.rolling(window=cls.year_period).sum()
 
         simple_threshold_v = pd.Series(cls.down_threshold, index=adj_close.index)
-        simple_threshold_v[(rate_sma_month > 0.05) & (rate_sma_year > 0.15)] = cls.up_threshold
+        simple_threshold_v[(rate_sma_month > 0.06) & (rate_sma_year > 0.15)] = cls.up_threshold
         thresholds = pd.DataFrame({
             'date_id': data.index,
             'code_id': code_id,
