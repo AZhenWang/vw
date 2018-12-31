@@ -63,9 +63,13 @@ class Assembly(object):
         data = data[data['vol'] != 0]
         adj_close = data['close'] * data['adj_factor']
 
-        next_adj_close = adj_close.shift(-1)
-        fm = pd.concat([next_adj_close, adj_close], axis=1).min(axis=1)
-        rate = (next_adj_close - adj_close) / fm
+        # next_adj_close = adj_close.shift(-1)
+        # fm = pd.concat([next_adj_close, adj_close], axis=1).min(axis=1)
+        # rate = (next_adj_close - adj_close) / fm
+
+        pre_adj_close = adj_close.shift()
+        fm = pd.concat([pre_adj_close, adj_close], axis=1).min(axis=1)
+        rate = (adj_close - pre_adj_close) / fm
 
         rate_sma_month = rate.rolling(window=20).sum()
         rate_sma_year = rate.rolling(window=cls.year_period).sum()

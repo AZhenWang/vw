@@ -8,7 +8,7 @@ from app.common.function import get_cum_return, get_buy_sell_points
 
 
 def execute(start_date='', end_date=''):
-    trade_cal = DB.get_open_cal_date(end_date=end_date, period=300)
+    trade_cal = DB.get_open_cal_date(end_date=end_date, period=40)
     start_date_id = trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-2]['date_id']
     data = DB.count_threshold_group_by_date_id(start_date_id=start_date_id, end_date_id=end_date_id)
@@ -21,27 +21,46 @@ def execute(start_date='', end_date=''):
     data.sort_values(by='cal_date', ascending=True, inplace=True)
     data.reset_index(inplace=True)
 
-    index_daily = DB.get_index_daily(ts_code='000001.SH', start_date_id=start_date_id, end_date_id=end_date_id)
-    index_daily.sort_values(by='cal_date', ascending=True, inplace=True)
-    index_daily.reset_index(inplace=True)
-
     holdings = get_holdings(data['up_stock_ratio'])
-    buy, sell = get_buy_sell_points(holdings)
-    cum_return, cum_return_set = get_cum_return(index_daily['close'], holdings)
+    # buy, sell = get_buy_sell_points(holdings)
 
     fig, ax = plt.subplots(2, 1, figsize=(16, 16), sharex=True)
 
-    color = 'tab:grey'
-    ax0 = ax[0]
-    ax0.plot(data['up_stock_ratio'], color=color, label='up_stock_ratio')
-    ax0.grid()
-    ax0.legend(loc=2, ncol=6)
-    plt.title('Up-stock percentage by threshold')
-    plt.xlabel('Time')
-    plt.ylabel('Up-stock ratio')
+    index_daily = DB.get_index_daily(start_date_id=start_date_id, end_date_id=end_date_id)
+    index_daily.sort_values(by='cal_date', ascending=True, inplace=True)
+    gp = index_daily.groupby('ts_code')
+    for ts_code, group_data in gp:
+        name = group_data.iloc[0]['name']
+        group_data = group_data.set_index('cal_date')
+        group_data = group_data.reindex(data['cal_date'], method='ffill')
+        group_data = group_data.reset_index()
+        adj_index = group_data['close'] / group_data.iloc[0]['close']
+        cum_return_set = get_cum_return(group_data['close'], holdings)
 
-    max_loc = len(data)-1
+        ax0_0 = ax[0]
+        ax0_0.plot(adj_index, label=ts_code)
+        # ax0_0.plot(np.multiply(index_daily['close'], buy), 'r^', label='buy')
+        # ax0_0.plot(np.multiply(index_daily['close'], sell), 'g^', label='sell')
+        ax1 = ax[1]
+        ax1.plot(cum_return_set, label=ts_code + '=' + str(round(cum_return_set[-1], 2)))
+
+    max_loc = len(data) - 1
     xticks_loc = [round(i / 7 * max_loc) for i in np.arange(0, 8)]
+    plt.xticks(xticks_loc, data.iloc[xticks_loc]['cal_date'], rotation=60)
+
+    index_lable = {
+        0.1: '0.1',
+        0.2: '0.2',
+        0.5: '0.5',
+        1: '1',
+        2: '2',
+    }
+    ax0_0 = ax[0]
+    ax0_0.legend(loc=2, ncol=4)
+    # ax0_0.yaxis.set_ticks(list(index_lable.keys()))
+    # ax0_0.yaxis.set_ticklabels(list(index_lable.values()))
+    ax0_0.set_ylabel('Index')
+
     ratio_lable = {
         1: '1',
         2: '2',
@@ -55,43 +74,30 @@ def execute(start_date='', end_date=''):
         45: '45',
         55: '55',
         61.8: '61.8',
+        76: '76',
         80: '80',
         89: '89'
     }
-    plt.xticks(xticks_loc, data.iloc[xticks_loc]['cal_date'], rotation=60)
-    # ratio_lable = {
-    #     1: '1',
-    #     16.18: '16.18',
-    #     32.36: '32.36',
-    #     38.2: '38.2',
-    #     50: '50',
-    #     55: '55',
-    #     61.8: '61.8',
-    #     75: '75',
-    #     80: '80',
-    # }
-
-    ax0.yaxis.set_ticks(list(ratio_lable.keys()))
-    ax0.yaxis.set_ticklabels(list(ratio_lable.values()))
-    ax0.tick_params(axis='y', labelcolor=color)
-
     color = 'tab:blue'
-    ax0_1 = ax0.twinx()
-    ax0_1.plot(index_daily['close'], color=color, label='index')
-    ax0_1.plot(np.multiply(index_daily['close'], buy), 'r^', label='buy')
-    ax0_1.plot(np.multiply(index_daily['close'], sell), 'g^', label='sell')
+    ax0_1 = ax[0].twinx()
+    ax0_1.plot(data['up_stock_ratio'], color=color, label='up_stock_ratio', linestyle='dashed', linewidth=2)
+    ax0_1.yaxis.set_ticks(list(ratio_lable.keys()))
+    ax0_1.yaxis.set_ticklabels(list(ratio_lable.values()))
     ax0_1.tick_params(axis='y', labelcolor=color)
+    ax0_1.grid()
+    ax0_1.legend(loc=1)
+    ax0_1.set_title('Up-stock percentage by threshold')
+    ax0_1.set_xlabel('Time')
+    ax0_1.set_ylabel('Up-stock ratio')
 
-    color = 'tab:red'
     ax1 = ax[1]
-    ax1.plot(cum_return_set, color=color, label='cum_return=' + str(cum_return))
-    ax1.legend(loc=1, ncol=8)
+    ax1.legend(loc=2, ncol=4)
     ax1.set_title('Cum Return', fontsize=12)
     ax1.set_ylabel('Return', fontsize=10)
     ax1.set_xlabel('Time', fontsize=10)
     ax1.grid()
 
-    plt.legend()
+    plt.show()
 
     fig.savefig('threshold_picture.png')
     image_msg = MIMEImage(open('threshold_picture.png', 'rb').read())

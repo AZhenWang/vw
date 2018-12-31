@@ -72,7 +72,7 @@ def get_cum_return(prices, holdings=[]):
             cum_return += return_from_entry
             return_from_entry = 0
 
-    return cum_return, cum_return_set
+    return cum_return_set
 
 
 def get_buy_sell_points(holdings):
