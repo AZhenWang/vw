@@ -31,7 +31,7 @@ def execute(start_date='', end_date=''):
             for val in last_top_five_group:
                 yester = val.classifier_v
                 today = info[val.feature_group_number].classifier_v
-                if 0.01 < yester < today:
+                if 0.01 < yester < today or (yester + today) > 0.10:
                     star.append(yester)
             star_idx = len(star)
             if star_idx > 0:

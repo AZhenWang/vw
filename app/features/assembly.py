@@ -137,7 +137,7 @@ class Assembly(object):
 
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         Amplitude.fillna(1, inplace=True)
-        Turnover_rate = data['turnover_rate_f']
+        Turnover_rate = data['turnover_rate_f'].rolling(window=5).mean()
 
         feature_dict = {}
         for feature in self.features['name']:
