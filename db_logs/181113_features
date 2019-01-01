@@ -55,7 +55,6 @@ create table classified_v(
    KEY (code_id),
    KEY (classifier_id),
    KEY (feature_group_number),
-   CONSTRAINT `classifier_id_v` FOREIGN KEY (`classifier_id`) REFERENCES `classifiers` (`id`) on delete cascade on update cascade,
    unique KEY `unique_code_date`(`date_id`, `code_id`, `classifier_id`, `feature_group_number`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8 comment'聚类模型预测值';
 
