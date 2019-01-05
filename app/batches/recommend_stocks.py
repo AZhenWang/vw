@@ -3,10 +3,10 @@ from app.orm.classified_v import ClassifiedV as CV
 import numpy as np
 import pandas as pd
 from app.saver.tables import fields_map
+from app.common.function import send_sms
 
 
 def execute(start_date='', end_date=''):
-
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=2)
     code_list = DB.get_code_list(list_status='L')
     for i in range(1, len(trade_cal)):

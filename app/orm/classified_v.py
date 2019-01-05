@@ -16,7 +16,7 @@ class M(Base):
     created_at = Column(TIMESTAMP)
 
 
-class classified():
+class ClassifiedV(object):
 
     session = Session()
     instance = session.query(M)

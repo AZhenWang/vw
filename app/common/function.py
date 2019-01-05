@@ -94,7 +94,32 @@ def get_buy_sell_points(holdings):
     return buy, sell
 
 
+def send_sms(text):
+    """
+    发送短信
+    :param text:
+    :return:
+    """
+    from twilio.rest import Client
+    from conf.myapp import twilio
+
+    client = Client(twilio['account_sid'], twilio['auth_token'])
+
+    message = client.messages.create(
+        body=text,
+        from_='+19159955943',
+        to='+8613267210646'
+    )
+    return message
+
+
 def send_email(subject='趋势预测', msgs=[]):
+    """
+    发送邮件
+    :param subject:
+    :param msgs:
+    :return:
+    """
     import smtplib
 
     from email.header import Header
