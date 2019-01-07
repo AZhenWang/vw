@@ -118,7 +118,7 @@ class Assembly(object):
         std = dr_window20.std()
         Boll_ratio = (Adj_close - SMA20) / (2 * std)
 
-        Volume_SMA = data['vol'] / data['vol'].rolling(window=20).mean()
+        Volume_SMA = data['vol'] / data['vol'].rolling(window=5).mean()
 
         pre_adj_close = Adj_close.shift(1)
         fm = pd.concat([Adj_close, pre_adj_close], axis=1).min(axis=1)
@@ -137,7 +137,7 @@ class Assembly(object):
 
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         Amplitude.fillna(1, inplace=True)
-        Turnover_rate = data['turnover_rate_f'].rolling(window=5).mean()
+        Turnover_rate = data['turnover_rate_f']
 
         feature_dict = {}
         for feature in self.features['name']:
