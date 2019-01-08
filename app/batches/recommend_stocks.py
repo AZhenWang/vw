@@ -32,21 +32,22 @@ def execute(start_date='', end_date=''):
             info[val.feature_group_number] = val
         # 获取这五个昨天的回报值
         last_top_five_group = CV.get_info(code_id=code_id, date_id=last_date_id, limit=5, feature_group_number=groups)
-        star = []
-        for val in last_top_five_group:
-            yester = val.classifier_v
-            today = info[val.feature_group_number].classifier_v
-            if 0.01 < yester < today or (yester + today) > 0.10:
-                star.append((yester + today)/2)
-        star_idx = len(star)
-        if star_idx > 0:
-            average = np.array(star).mean()
-            data.loc[j] = {
-                            'code_id': code_id,
-                            'date_id': current_date_id,
-                            'recommend_type': 'classified_v',
-                            'star_idx': star_idx,
-                            'average': average,
-                            }
-            data.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
-            j += 1
+        if not last_top_five_group.empty:
+            star = []
+            for val in last_top_five_group:
+                yester = val.classifier_v
+                today = info[val.feature_group_number].classifier_v
+                if 0.01 < yester < today or (yester + today) > 0.10:
+                    star.append((yester + today)/2)
+            star_idx = len(star)
+            if star_idx > 0:
+                average = np.array(star).mean()
+                data.loc[j] = {
+                                'code_id': code_id,
+                                'date_id': current_date_id,
+                                'recommend_type': 'classified_v',
+                                'star_idx': star_idx,
+                                'average': average,
+                                }
+                data.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
+                j += 1
