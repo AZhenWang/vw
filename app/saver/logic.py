@@ -306,6 +306,17 @@ class DB(object):
                           params=[str(date_id)])
 
     @classmethod
+    def get_up_stocks_by_threshold(cls, date_id):
+        data = pd.read_sql(
+            sa.text(' select t.code_id'
+                    ' from thresholds  t'
+                    ' where t.simple_threshold_v < -0.03 and t.date_id = :date_id'
+                    ),
+            cls.engine,
+            params={'date_id': str(date_id)})
+        return data
+
+    @classmethod
     def count_threshold_group_by_date_id(cls, start_date_id, end_date_id):
         data = pd.read_sql(
             sa.text(' select tc.cal_date, count(t.code_id) as up_stock_number, '
