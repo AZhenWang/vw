@@ -129,7 +129,7 @@ class Knn(Interface):
         training_X = X.iloc[sample_start_iloc:sample_end_iloc]
         training_Y = Y.iloc[sample_start_iloc:sample_end_iloc]
         testing_x = X.iloc[predict_iloc]
-        knn = KNeighborsRegressor(n_neighbors=8)
+        knn = KNeighborsRegressor(n_neighbors=5)
         knn.fit(training_X, training_Y)
         predicted_Y = knn.predict([testing_x])
         y_hat = predicted_Y[0]

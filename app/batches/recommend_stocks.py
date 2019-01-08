@@ -32,7 +32,7 @@ def execute(start_date='', end_date=''):
                 yester = val.classifier_v
                 today = info[val.feature_group_number].classifier_v
                 if 0.01 < yester < today or (yester + today) > 0.10:
-                    star.append(yester)
+                    star.append((yester + today)/2)
             star_idx = len(star)
             if star_idx > 0:
                 average = np.array(star).mean()

@@ -24,7 +24,9 @@ def execute(start_date='', end_date=''):
     start_date_id = trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
     data = DB.count_threshold_group_by_date_id(start_date_id=start_date_id, end_date_id=end_date_id)
+
     data.eval('up_stock_ratio=up_stock_number/list_stock_number*100', inplace=True)
+    data['up_stock_ratio'] = data['up_stock_ratio'].apply(np.round, decimals=2)
 
     text = data[['cal_date', 'up_stock_ratio']].to_string(index=False)
     msgs = []
@@ -42,7 +44,6 @@ def execute(start_date='', end_date=''):
     index_daily.sort_values(by='cal_date', ascending=True, inplace=True)
     gp = index_daily.groupby('ts_code')
     for ts_code, group_data in gp:
-        name = group_data.iloc[0]['name']
         group_data = group_data.set_index('cal_date')
         group_data = group_data.reindex(data['cal_date'], method='ffill')
         group_data = group_data.reset_index()
@@ -57,7 +58,7 @@ def execute(start_date='', end_date=''):
         ax1.plot(cum_return_set, label=ts_code + '=' + str(round(cum_return_set[-1], 2)))
 
     max_loc = len(data) - 1
-    xticks_loc = [round(i / 7 * max_loc) for i in np.arange(0, 8)]
+    xticks_loc = [round(i / 14 * max_loc) for i in np.arange(0, 15)]
     plt.xticks(xticks_loc, data.iloc[xticks_loc]['cal_date'], rotation=60)
 
     ax0_0 = ax[0]
