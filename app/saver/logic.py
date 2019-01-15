@@ -286,6 +286,26 @@ class DB(object):
         return stocks
 
     @classmethod
+    def get_recommended_stocks(cls, cal_date=''):
+        stocks = pd.read_sql(
+            sa.text(' select rs.* from recommend_stocks rs '
+                    ' left join trade_cal tc on tc.id = rs.date_id'
+                    ' where tc.cal_date=:cd'
+                    ' order by tc.id desc'),
+            cls.engine,
+            params={'cd': cal_date}
+        )
+        return stocks
+
+    @classmethod
+    def get_focus_stocks(cls):
+        stocks = pd.read_sql(
+            sa.text(' select rs.* from focus_stocks rs '),
+            cls.engine
+        )
+        return stocks
+
+    @classmethod
     def get_max_r2_score(cls, code_id, date_id, limit=1):
         data = pd.read_sql(
             sa.text(' select cv.id, cv.feature_group_number'
@@ -300,10 +320,10 @@ class DB(object):
         return data
 
     @classmethod
-    def delete_recommend_stock_logs(cls, date_id):
-        pd.io.sql.execute('delete from recommend_stocks where date_id=%s',
+    def delete_recommend_stock_logs(cls, date_id, recommend_type=''):
+        pd.io.sql.execute('delete from recommend_stocks where date_id=%s and recommend_type=%s',
                           cls.engine,
-                          params=[str(date_id)])
+                          params=[str(date_id), recommend_type])
 
     @classmethod
     def get_up_stocks_by_threshold(cls, date_id):

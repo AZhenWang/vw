@@ -55,14 +55,14 @@ def get_cum_return(prices, holdings=[]):
     for i in range(2, len(holdings)):
 
         if holdings[i - 1] == 1 and holdings[i - 2] != 1:
-            buy_price = prices[i]
+            buy_price = prices.iloc[i]
             cum_return -= fee_rate
 
         if holdings[i - 1] == 0 and holdings[i - 2] != 0 and buy_price != 0:
-            cum_return -= fee_rate * prices[i] / buy_price
+            cum_return -= fee_rate * prices.iloc[i] / buy_price
 
         if holdings[i - 1] == 1:
-            sell_price = prices[i]
+            sell_price = prices.iloc[i]
             diff = sell_price - buy_price
             return_from_entry = diff / min([sell_price, buy_price])
 
@@ -73,6 +73,30 @@ def get_cum_return(prices, holdings=[]):
             return_from_entry = 0
 
     return cum_return_set
+
+
+def get_cum_return_rate(prices, holdings=[]):
+    """
+    组装累积收益率
+    :param prices:
+    :param holdings:
+    :return:
+    """
+    cum_return_rate_set = [0] * 2
+    cum_return_rate = 0
+    fee_rate = 0.004  # include tax rate and brokerage charges
+    for i in range(2, len(holdings)):
+
+        if holdings[i - 1] != holdings[i - 2]:
+            cum_return_rate -= fee_rate
+
+        if holdings[i - 1] == 1:
+            diff = prices.iloc[i] - prices.iloc[i-1]
+            cum_return_rate += diff / min([prices.iloc[i], prices.iloc[i-1]])
+
+        cum_return_rate_set.append(cum_return_rate)
+
+    return cum_return_rate_set
 
 
 def get_buy_sell_points(holdings):

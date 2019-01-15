@@ -53,6 +53,9 @@ fields_map = {
         'index_id', 'date_id', 'total_mv', 'float_mv', 'total_share', 'float_share', 'free_share',
         'turnover_rate', 'turnover_rate_f', 'pe', 'pe_ttm', 'pb'
     ],
+    'focus_stocks': [
+        'code_id',
+    ]
 
 
 }

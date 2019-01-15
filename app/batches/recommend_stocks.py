@@ -12,7 +12,7 @@ def execute(start_date='', end_date=''):
     last_date_id = trade_cal.iloc[0]['date_id']
 
     # 清空当天的预测记录
-    DB.delete_recommend_stock_logs(date_id=current_date_id)
+    DB.delete_recommend_stock_logs(date_id=current_date_id, recommend_type='classified_v')
 
     # 获取当前处于上升通道的股票
     code_list = DB.get_up_stocks_by_threshold(date_id=current_date_id)
