@@ -34,7 +34,7 @@ def execute(start_date='', end_date=''):
         plan_number = 60
         holdings = get_holdings(sample_pca, sample_prices, plan_number=plan_number)
         daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
-        if holdings[-1] != 0 and daily.at[0, 'pct_chg'] > 5:
+        if holdings[-1] != 0 and (holdings[-1] == 1 or holdings[-1] == -1 or daily.at[0, 'pct_chg'] > 9.99):
             new_rows.loc[i] = {
                 'date_id': date_id,
                 'code_id': code_id,
@@ -90,7 +90,6 @@ def get_holdings(sample_pca, sample_prices, plan_number=3):
 
     start_loc = len(Y) - 5
     holdings = [0] * start_loc
-    holding = 0
     bottom_dis = 20
     peak_dis = 40
 
@@ -105,7 +104,7 @@ def get_holdings(sample_pca, sample_prices, plan_number=3):
 
             if plan_number & 1 and Y[i - 1] > mean + 1.5 * std > Y[i]:
                 # 大顶部
-                holding = 0
+                holding = -1
                 print('大顶部')
 
             elif plan_number & 2 and Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
@@ -115,25 +114,25 @@ def get_holdings(sample_pca, sample_prices, plan_number=3):
                 holding = 1
                 print('大双底部')
 
-            elif plan_number & 4 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and Y[i] > mean + std and Y[
-                    i - 1] < mean < Y[i - 2]:
+            elif plan_number & 4 and (Y[i] - Y[i-2:i].min()) > 2*std and Y[i-2:i].min() < mean and Y[i] > mean + std:
+                # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
+                holding = 2
+                print('疯牛的多个板的底部的冲锋i=', i)
+
+            elif plan_number & 8 and Y[i] > mean + 2 * std and Y[i] > Y[i - 1] > mean + 1.5 * std and Y[i - 2] > Y[
+                i - 1]:
+                # 疯牛的多个板的顶部形态， 最少还有3-5个板
+                holding = 3
+                print('疯牛的4-6个板的顶部形态i=', i)
+
+            elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and Y[i] > mean + std and Y[
+                    i - 1] < mean < Y[i-3:i-1].max():
                 # 中间3个板的反弹，最少还有2个板。
                 # 优化备注：要求当前的涨幅>5个点，才有2天5个点以上的收益。当天涨幅10%，才有可能连续3个板
                 print('中间3个板的反弹i=', i)
-                holding = 2
-
-            elif plan_number & 8 and (Y[i] - Y[i-2:i].min()) > 2*std and Y[i] > mean + std:
-                # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
-                holding = 3
-                print('疯牛的多个板的底部的冲锋i=', i)
-
-            elif plan_number & 16 and Y[i] > mean + 2 * std and Y[i] > Y[i - 1] > mean + 1.5 * std and Y[i - 2] > Y[
-                i - 1]:
-                # 疯牛的多个板的顶部形态， 最少还有3-5个板
                 holding = 4
-                print('疯牛的4-6个板的顶部形态i=', i)
 
-            elif plan_number & 32 and holding != 0:
+            else:
                 holding = 0
                 print('哟西')
 
@@ -141,7 +140,7 @@ def get_holdings(sample_pca, sample_prices, plan_number=3):
             # 负相关
             if plan_number & 1 and Y[i - 1] < mean - 1.5 * std < Y[i]:
                 # 大底部
-                holding = 0
+                holding = -1
                 print('大底部')
 
             elif plan_number & 2 and Y[i - bottom_dis: i - 2].max() > Y[i - 2] > Y[i - 1] > Y[i] \
@@ -150,24 +149,24 @@ def get_holdings(sample_pca, sample_prices, plan_number=3):
                 holding = 1
                 print('大双顶部')
 
-            elif plan_number & 4 and Y[i - peak_dis:i - 2].min() < mean - 1.5 * std \
-                    and Y[i] < mean - std and Y[i - 1] > mean > Y[i - 2]:
-                # 中间3个板的反弹，最少还有2个板
-                holding = 2
-                print('中间3个板的反弹i=', i)
-
-            elif plan_number & 8 and (Y[i] - Y[i-2:i].max()) < -2*std and Y[i] < mean - std:
+            elif plan_number & 4 and (Y[i] - Y[i-2:i].max()) < -2*std and Y[i-2:i].max() > mean and Y[i] < mean - std:
                 # 疯牛的多个板的底部的冲锋形态，最少还有2个板，可能连接着 多个板的顶部形态
-                holding = 3
+                holding = 2
                 print('疯牛的多个板的底部的冲锋i=', i)
 
-            elif plan_number & 16 and Y[i] < mean - 2 * std and Y[i] < Y[i - 1] < mean - 1.5 * std and Y[i - 2] < Y[
+            elif plan_number & 8 and Y[i] < mean - 2 * std and Y[i] < Y[i - 1] < mean - 1.5 * std and Y[i - 2] < Y[
                 i - 1]:
                 # 疯牛的多个板的顶部形态， 最少还有2个板
-                holding = 4
+                holding = 3
                 print('疯牛的多个板的顶部形态i=', i)
 
-            elif plan_number & 32 and holding != 0:
+            elif plan_number & 16 and Y[i - peak_dis:i - 2].min() < mean - 1.5 * std \
+                    and Y[i] < mean - std and Y[i - 1] > mean > Y[i - 3:i - 1].min():
+                # 中间3个板的反弹，最少还有2个板
+                holding = 4
+                print('中间3个板的反弹i=', i)
+
+            else:
                 holding = 0
                 print('哟西')
 
