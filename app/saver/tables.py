@@ -55,6 +55,9 @@ fields_map = {
     ],
     'focus_stocks': [
         'code_id',
+    ],
+    'rate_yearly': [
+        'plan_number', 'code_id', 'date_id', 'rate_yearly', 'min_rate', 'max_rate', 'mean_rate'
     ]
 
 

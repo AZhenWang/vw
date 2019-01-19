@@ -84,7 +84,7 @@ def get_cum_return_rate(prices, holdings=[]):
     """
     cum_return_rate_set = [0] * 2
     cum_return_rate = 0
-    fee_rate = 0.004  # include tax rate and brokerage charges
+    fee_rate = 0.4  # include tax rate and brokerage charges
     for i in range(2, len(holdings)):
 
         if holdings[i - 1] != holdings[i - 2]:
@@ -92,7 +92,7 @@ def get_cum_return_rate(prices, holdings=[]):
 
         if holdings[i - 1] == 1:
             diff = prices.iloc[i] - prices.iloc[i-1]
-            cum_return_rate += diff / min([prices.iloc[i], prices.iloc[i-1]])
+            cum_return_rate += diff / min([prices.iloc[i], prices.iloc[i-1]]) * 100
 
         cum_return_rate_set.append(cum_return_rate)
 

@@ -149,6 +149,13 @@ class DB(object):
         return classifiers
 
     @classmethod
+    def get_code_daily(cls, code_id='', date_id=''):
+        daily = pd.read_sql(
+            sa.text('select * from daily where date_id = :date_id and code_id = :code_id'), cls.engine,
+            params={'code_id': str(code_id), 'date_id': str(date_id)})
+        return daily
+
+    @classmethod
     def get_code_info(cls, code_id, start_date='', end_date='', period=''):
         if period == '':
             code_info = pd.read_sql(
@@ -298,11 +305,24 @@ class DB(object):
         return stocks
 
     @classmethod
-    def get_focus_stocks(cls):
-        stocks = pd.read_sql(
-            sa.text(' select rs.* from focus_stocks rs '),
-            cls.engine
-        )
+    def insert_pca_recommend_stocks(cls, code_id, date_id):
+        pd.io.sql.execute('insert into recommend_stocks (code_id, date_id, recommend_type) values (%s, %s)', cls.engine,
+                          params=[str(code_id), str(date_id)])
+    @classmethod
+    def insert_focus_stocks(cls, code_id):
+        pd.io.sql.execute('insert into focus_stocks (code_id) values (%s)', cls.engine,
+                          params=[str(code_id)])
+    @classmethod
+    def get_focus_stocks(cls, limit=''):
+        if limit != '':
+            stocks = pd.read_sql(
+                sa.text(' select rs.* from focus_stocks rs order by id asc limit :limit'),
+                cls.engine,
+                params={'limit': limit})
+        else:
+            stocks = pd.read_sql(
+                sa.text(' select rs.* from focus_stocks rs order by id asc'),
+                cls.engine)
         return stocks
 
     @classmethod
@@ -324,16 +344,30 @@ class DB(object):
         pd.io.sql.execute('delete from recommend_stocks where date_id=%s and recommend_type=%s',
                           cls.engine,
                           params=[str(date_id), recommend_type])
+    @classmethod
+    def delete_focus_stocks(cls):
+        pd.io.sql.execute('delete from focus_stocks',
+                          cls.engine)
 
     @classmethod
-    def get_up_stocks_by_threshold(cls, date_id):
-        data = pd.read_sql(
-            sa.text(' select t.code_id'
-                    ' from thresholds  t'
-                    ' where t.simple_threshold_v < -0.03 and t.date_id = :date_id'
-                    ),
-            cls.engine,
-            params={'date_id': str(date_id)})
+    def get_up_stocks_by_threshold(cls, date_id='', cal_date=''):
+        if date_id != '':
+            data = pd.read_sql(
+                sa.text(' select t.code_id'
+                        ' from thresholds  t'
+                        ' where t.simple_threshold_v < -0.03 and t.date_id = :date_id'
+                        ),
+                cls.engine,
+                params={'date_id': str(date_id)})
+        else:
+            data = pd.read_sql(
+                sa.text(' select t.code_id'
+                        ' from thresholds  t'
+                        ' left join trade_cal tc on tc.id = t.date_id'
+                        ' where t.simple_threshold_v < -0.03 and tc.cal_date = :cd'
+                        ),
+                cls.engine,
+                params={'cd': str(cal_date)})
         return data
 
     @classmethod
