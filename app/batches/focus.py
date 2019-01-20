@@ -19,7 +19,7 @@ def execute(start_date='', end_date=''):
         sample_len = 122
         DB.delete_recommend_stock_logs(date_id=date_id, recommend_type='pca')
         codes = DB.get_latestopendays_code_list(
-            latest_open_days=sample_len+25)
+            latest_open_days=sample_len+25, date_id=date_id)
         pca = Pca(cal_date=end_date)
         i = 0
         code_ids = codes['code_id']

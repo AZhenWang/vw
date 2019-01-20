@@ -91,17 +91,29 @@ class DB(object):
         return index_list
 
     @classmethod
-    def get_latestopendays_code_list(cls, latest_open_days=''):
-        code_list = pd.read_sql(
-            sa.text(' select d.code_id FROM daily d '
-                    ' left join stock_basic sb on sb.id = d.code_id'
-                    ' where sb.list_status=:ls'
-                    ' group by d.code_id'
-                    ' having count(d.code_id) >= :latest_open_days'
-                    ),
-            cls.engine,
-            params={'ls': 'L', 'latest_open_days': latest_open_days}
-        )
+    def get_latestopendays_code_list(cls, latest_open_days='', date_id=''):
+        if date_id == '':
+            code_list = pd.read_sql(
+                sa.text(' select d.code_id FROM daily d '
+                        ' left join stock_basic sb on sb.id = d.code_id'
+                        ' where sb.list_status=:ls'
+                        ' group by d.code_id'
+                        ' having count(d.code_id) >= :latest_open_days'
+                        ),
+                cls.engine,
+                params={'ls': 'L', 'latest_open_days': latest_open_days}
+            )
+        else:
+            code_list = pd.read_sql(
+                sa.text(' select d.code_id FROM daily d '
+                        ' left join stock_basic sb on sb.id = d.code_id'
+                        ' where sb.list_status=:ls and d.date_id <= :di'
+                        ' group by d.code_id'
+                        ' having count(d.code_id) >= :latest_open_days'
+                        ),
+                cls.engine,
+                params={'ls': 'L', 'di': date_id, 'latest_open_days': latest_open_days}
+            )
 
         return code_list
 
