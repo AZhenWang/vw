@@ -29,7 +29,7 @@ def execute(start_date='', end_date=''):
         for code_id in code_ids:
             sample_pca, sample_prices = pca.run(code_id, sample_len)
             # 标示holding状态码
-            plan_number = 60
+            plan_number = 31
             holdings = get_holdings(sample_pca, sample_prices, plan_number=plan_number)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if holdings[-1] != 0 and (holdings[-1] == 1 or holdings[-1] == -1 or daily.at[0, 'pct_chg'] > 9.99):
