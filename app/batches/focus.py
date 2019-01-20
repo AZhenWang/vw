@@ -32,6 +32,8 @@ def execute(start_date='', end_date=''):
             plan_number = 31
             holdings = get_holdings(sample_pca, sample_prices, plan_number=plan_number)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
+            if daily.empty:
+                continue
             if holdings[-1] != 0 and (holdings[-1] == 1 or holdings[-1] == -1 or daily.at[0, 'pct_chg'] > 9.99):
                 new_rows.loc[i] = {
                     'date_id': date_id,
