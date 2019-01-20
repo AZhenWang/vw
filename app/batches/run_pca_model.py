@@ -7,12 +7,13 @@ import pandas as pd
 from app.saver.tables import fields_map
 
 
+sample_len = 122
+
 def execute(start_date='', end_date=''):
-    end_date = '20181024'
+    end_date = '20190102'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
-    sample_len = 122
-    # sample_len = 40
+
     pca = Pca(cal_date=end_date)
 
     # recommended_codes = DB.get_recommended_stocks(cal_date=end_date)
@@ -23,12 +24,12 @@ def execute(start_date='', end_date=''):
     new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     draw = False
     draw = True
-    codes = [2496]
+    codes = [2678]
     # codes = [2082, 2496]
     # 此股形态特别备注：像edit一样，50个点的涨幅
     # codes = [2678]
     i = 0
-    plan_number = 60
+    plan_number = 31
     # plan_number = 7
     # plan_number = 15
     n_components = 2
@@ -39,6 +40,7 @@ def execute(start_date='', end_date=''):
         sample_std = sample_pca.std()
         column_loc = 0
         mean = sample_mean[column_loc]
+        mean = mean * sample_len / (sample_len - 1)
         std = sample_std[column_loc]
 
         holdings = get_holdings(sample_pca, sample_prices, plan_number=plan_number)
@@ -116,6 +118,9 @@ def get_holdings(sample_pca, sample_prices, plan_number):
     sample_std = sample_pca.std()
     column_loc = 0
     mean = sample_mean[column_loc]
+    # mean = 0
+    print('old_mean=', mean)
+    mean = mean * sample_len / (sample_len-1)
     std = sample_std[column_loc]
     correlation = sample_pca.col_0.corr(sample_prices.reset_index(drop=True))
 
@@ -125,13 +130,17 @@ def get_holdings(sample_pca, sample_prices, plan_number):
     peak_dis = 40
 
     print('std=', std)
+    print('mean+1.328std', mean + 1.328 * std)
     print('mean+1.5std', mean + 1.5*std)
+    print('mean+1.94std', mean + 1.94 * std)
     print('mean+2std', mean + 2 * std)
     print('mean+3std', mean + 3 * std)
     print('mean+1std', mean + 1 * std)
     print('mean=', mean)
     print('mean-std', mean - 1 * std)
+    print('mean-1.328std', mean - 1.328 * std)
     print('mean-1.5std', mean - 1.5 * std)
+    print('mean-1.94std', mean - 1.94 * std)
     print('mean-2std', mean - 2 * std)
     print('mean-3std', mean - 3 * std)
     print('correlation=', correlation)
@@ -144,20 +153,7 @@ def get_holdings(sample_pca, sample_prices, plan_number):
 
         if correlation > 0:
             # 正相关
-
-            if plan_number & 1 and Y[i - 1] > mean + 1.5 * std > Y[i]:
-                # 大顶部
-                holding = -1
-                print('大顶部')
-
-            elif plan_number & 2 and Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
-                    and Y[i - bottom_dis:i - 2].min() < mean - 2 * std and Y[i - 2] < mean - 1.5 * std:
-                print(Y[i - 2], mean, std, mean - 1.5 * std)
-                # 大双底部
-                holding = 1
-                print('大双底部')
-
-            elif plan_number & 4 and (Y[i] - Y[i-2:i].min()) > 2*std and (mean - 1.5*std) < Y[i-2:i].min() < mean and Y[i] > mean + std:
+            if plan_number & 4 and (Y[i] - Y[i-2:i].min()) > 2*std and (mean - 1.5*std) < Y[i-2:i].min() < mean and Y[i] > mean + std:
                 # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
                 holding = 2
                 print('疯牛的多个板的底部的冲锋i=', i)
@@ -175,24 +171,26 @@ def get_holdings(sample_pca, sample_prices, plan_number):
                 print('中间3个板的反弹i=', i)
                 holding = 4
 
+            elif plan_number & 1 and Y[i - 1] > mean + 1.5 * std > Y[i]:
+                # 大顶部
+                holding = -1
+                print('大顶部')
+
+            elif plan_number & 2 and Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
+                    and Y[i - bottom_dis:i - 2].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
+                print(Y[i - 2], mean, std, mean - 1.5 * std)
+                # 大双底部
+                # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
+                holding = 1
+                print('大双底部')
+
             else:
                 holding = 0
                 print('哟西')
 
         else:
             # 负相关
-            if plan_number & 1 and Y[i - 1] < mean - 1.5 * std < Y[i]:
-                # 大底部
-                holding = -1
-                print('大底部')
-
-            elif plan_number & 2 and Y[i - bottom_dis: i - 2].max() > Y[i - 2] > Y[i - 1] > Y[i] \
-                    and Y[i - bottom_dis: i - 2].max() > mean + 2 * std and Y[i - 2] > mean + 1.45 * std:
-                # 大双顶部
-                holding = 1
-                print('大双顶部')
-
-            elif plan_number & 4 and (Y[i] - Y[i-2:i].max()) < -2*std and (mean + 1.5*std) > Y[i-2:i].max() > mean and Y[i] < mean - std:
+            if plan_number & 4 and (Y[i] - Y[i-2:i].max()) < -2*std and (mean + 1.5*std) > Y[i-2:i].max() > mean and Y[i] < mean - std:
                 # 疯牛的多个板的底部的冲锋形态，最少还有2个板，可能连接着 多个板的顶部形态
                 holding = 2
                 print('疯牛的多个板的底部的冲锋i=', i)
@@ -208,6 +206,17 @@ def get_holdings(sample_pca, sample_prices, plan_number):
                 # 中间3个板的反弹，最少还有2个板
                 holding = 4
                 print('中间3个板的反弹i=', i)
+
+            elif plan_number & 1 and Y[i - 1] < mean - 1.5 * std < Y[i]:
+                # 大底部
+                holding = -1
+                print('大底部')
+
+            elif plan_number & 2 and Y[i - bottom_dis: i - 2].max() > Y[i - 2] > Y[i - 1] > Y[i] \
+                    and Y[i - bottom_dis: i - 2].max() > mean + 1.5 * std and Y[i - 2] > mean + 1 * std:
+                # 大双顶部
+                holding = 1
+                print('大双顶部')
 
             else:
                 holding = 0
