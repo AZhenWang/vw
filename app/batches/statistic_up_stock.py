@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from matplotlib import pyplot as plt
 import numpy as np
-from app.common.function import get_cum_return, get_buy_sell_points
+from app.common.function import get_cum_return_rate, get_buy_sell_points
 
 ratio_lable = {
     8: '8',
@@ -48,7 +48,7 @@ def execute(start_date='', end_date=''):
         group_data = group_data.reindex(data['cal_date'], method='ffill')
         group_data = group_data.reset_index()
         adj_index = group_data['close'] / group_data.iloc[0]['close']
-        cum_return_set = get_cum_return(group_data['close'], holdings)
+        cum_return_set = get_cum_return_rate(group_data['close'], holdings)
 
         ax0_0 = ax[0]
         ax0_0.plot(adj_index, label=ts_code)

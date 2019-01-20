@@ -14,10 +14,10 @@ def execute(start_date='', end_date=''):
     worker.set_trade_dates()
 
     if not worker.trade_dates.empty:
-        ts_apis = ['daily', 'daily_basic', 'adj_factor']
-        for api in ts_apis:
-            worker.query(api)
-
         idx_apis = ['index_daily', 'index_dailybasic']
         for idx_api in idx_apis:
             worker.query_index(idx_api)
+
+        ts_apis = ['daily', 'daily_basic', 'adj_factor']
+        for api in ts_apis:
+            worker.query(api)

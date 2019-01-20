@@ -102,9 +102,9 @@ def get_cum_return_rate(prices, holdings=[]):
 def get_buy_sell_points(holdings):
     import numpy as np
 
-    buy, sell = [], []
-    for i in range(len(holdings)):
-        if i >= 1 and holdings[i] != holdings[i - 1]:
+    buy, sell = [np.nan], [np.nan]
+    for i in range(1, len(holdings)):
+        if holdings[i] != holdings[i - 1]:
             if holdings[i] == 1:
                 buy.append(1)
                 sell.append(np.nan)

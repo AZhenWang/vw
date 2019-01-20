@@ -1,18 +1,18 @@
 from app.models.pca import Pca
 from app.saver.logic import DB
 import matplotlib.pylab as plt
-from app.common.function import get_cum_return_rate, get_buy_sell_points
+from app.common.function import get_cum_return_rate
 import numpy as np
 import pandas as pd
 from app.saver.tables import fields_map
 
 
 def execute(start_date='', end_date=''):
-    end_date = '20190102'
+    end_date = '20181024'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
     sample_len = 122
-    # sample_len = 100
+    # sample_len = 40
     pca = Pca(cal_date=end_date)
 
     # recommended_codes = DB.get_recommended_stocks(cal_date=end_date)
@@ -23,10 +23,10 @@ def execute(start_date='', end_date=''):
     new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     draw = False
     draw = True
-    # codes = [2496]
+    codes = [2496]
     # codes = [2082, 2496]
     # 此股形态特别备注：像edit一样，50个点的涨幅
-    codes = [2678]
+    # codes = [2678]
     i = 0
     plan_number = 60
     # plan_number = 7
@@ -42,9 +42,12 @@ def execute(start_date='', end_date=''):
         std = sample_std[column_loc]
 
         holdings = get_holdings(sample_pca, sample_prices, plan_number=plan_number)
-        print('holdings = ', holdings[-20:])
+        print('holdings = ', holdings)
         cum_return_rate_set = get_cum_return_rate(sample_prices, holdings)
         buy, sell = get_buy_sell_points(holdings)
+        print('buy=', buy)
+        print('sell=', sell)
+        print('len(holding)=', len(holdings), ', len(buy)=', len(buy))
         print('code_id=', code_id, ' rate_yearly=', cum_return_rate_set[-1],
               ' diff=', (sample_prices.iloc[-1] - sample_prices.iloc[20])/sample_prices.iloc[20],
               ' holding=', np.sum(holdings)
@@ -76,13 +79,11 @@ def execute(start_date='', end_date=''):
             ax1.set_ylabel('pca')
             ax1.axhline(mean - 3 * std, color='b')
             ax1.axhline(mean - 2 * std, color='c')
-            ax1.axhline(mean - 1.618 * std, color='r')
             ax1.axhline(mean - 1.5 * std, color='r')
             ax1.axhline(mean - 1 * std, color='green')
             ax1.axhline(mean, color='black')
             ax1.axhline(mean + 1 * std, color='green')
             ax1.axhline(mean + 1.5 * std, color='r')
-            ax1.axhline(mean + 1.618 * std, color='r')
             ax1.axhline(mean + 2 * std, color='c')
             ax1.axhline(mean + 3 * std, color='b')
 
@@ -120,7 +121,6 @@ def get_holdings(sample_pca, sample_prices, plan_number):
 
     start_loc = len(Y) - 5
     holdings = [0] * start_loc
-    holding = 0
     bottom_dis = 20
     peak_dis = 40
 
@@ -187,7 +187,7 @@ def get_holdings(sample_pca, sample_prices, plan_number):
                 print('大底部')
 
             elif plan_number & 2 and Y[i - bottom_dis: i - 2].max() > Y[i - 2] > Y[i - 1] > Y[i] \
-                    and Y[i - bottom_dis: i - 2].max() > mean + 2 * std and Y[i - 2] > mean + 1.5 * std:
+                    and Y[i - bottom_dis: i - 2].max() > mean + 2 * std and Y[i - 2] > mean + 1.45 * std:
                 # 大双顶部
                 holding = 1
                 print('大双顶部')
@@ -217,3 +217,23 @@ def get_holdings(sample_pca, sample_prices, plan_number):
 
     return holdings
 
+
+def get_buy_sell_points(holdings):
+    print('范德萨发大')
+    buy, sell = [np.nan], [np.nan]
+    for i in range(1, len(holdings)):
+        if holdings[i] != holdings[i - 1]:
+            if holdings[i] != -1 and holdings[i] != 0:
+                buy.append(1)
+                sell.append(np.nan)
+            elif holdings[i] == -1:
+                sell.append(1)
+                buy.append(np.nan)
+            else:
+                buy.append(np.nan)
+                sell.append(np.nan)
+        else:
+            buy.append(np.nan)
+            sell.append(np.nan)
+
+    return buy, sell
