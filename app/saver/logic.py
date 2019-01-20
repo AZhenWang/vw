@@ -107,7 +107,7 @@ class DB(object):
             code_list = pd.read_sql(
                 sa.text(' select d.code_id FROM daily d '
                         ' left join stock_basic sb on sb.id = d.code_id'
-                        ' where sb.list_status=:ls and d.date_id <= :di'
+                        ' where d.date_id <= :di and sb.list_status=:ls'
                         ' group by d.code_id'
                         ' having count(d.code_id) >= :latest_open_days'
                         ),

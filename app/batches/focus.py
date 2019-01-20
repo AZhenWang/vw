@@ -18,11 +18,11 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
 
-    for date_id in trade_cal['date_id']:
+    for cal_date, date_id in trade_cal[['cal_date', 'date_id']].values:
         DB.delete_recommend_stock_logs(date_id=date_id, recommend_type='pca')
         codes = DB.get_latestopendays_code_list(
             latest_open_days=sample_len+25, date_id=date_id)
-        pca = Pca(cal_date=end_date)
+        pca = Pca(cal_date=cal_date)
         i = 0
         code_ids = codes['code_id']
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
