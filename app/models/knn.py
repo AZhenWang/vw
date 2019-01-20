@@ -2,9 +2,9 @@ from app.models.common import Interface
 from app.features.assembly import Assembly
 from app.saver.logic import DB
 from app.saver.tables import fields_map
-from app.common.function import get_cum_return
+from app.common.function import get_cum_return_rate
 
-from sklearn.neighbors import KNeighborsRegressor, NearestNeighbors
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import r2_score
 import pandas as pd
 import numpy as np
@@ -62,11 +62,13 @@ class Knn(Interface):
                     continue
 
                 existed_classified_v = DB.get_classified_v(code_id, group_number, self.classifier_id)
+
                 expired_classified_v = existed_classified_v[
                     ~existed_classified_v['date_id'].isin(trade_dates)]
                 old_classified_v = existed_classified_v[
                     existed_classified_v['date_id'].isin(trade_dates)]
                 new_dates = trade_dates[~trade_dates.isin(existed_classified_v['date_id'])]
+
                 if not new_dates.empty:
                     new_classified_v = pd.DataFrame(columns=fields_map['classified_v'])
                     for predict_date_id in new_dates:
@@ -83,13 +85,13 @@ class Knn(Interface):
                                 'cum_return': -0,
                                 'holding': 0,
                             }
+
                     if not new_classified_v.empty:
                         Y_hat = old_classified_v['classifier_v'].append(new_classified_v['classifier_v'])
                         score = r2_score(Y_true.dropna(), Y_hat.dropna()[Y_true.notna()])
-
-                        adj_prices = self.feature_assembly.adj_close[trade_dates].values
+                        adj_prices = self.feature_assembly.adj_close[trade_dates]
                         holdings = self.get_holdings(Y_hat.values)
-                        cum_return_set = get_cum_return(prices=adj_prices, holdings=holdings)
+                        cum_return_set = get_cum_return_rate(prices=adj_prices, holdings=holdings)
                         cum_return = cum_return_set[-1]
 
                         new_classified_v.iloc[-1, -3] = str(round(score, 3))

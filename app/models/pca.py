@@ -17,9 +17,9 @@ class Pca(object):
     def run(self, code_id, sample_len=240, n_components=2):
         feature_assembly = Assembly(end_date=self.cal_date)
         X = feature_assembly.pack_features(code_id)
+        X = X[['RSI5', 'RSI10', 'Adj_SMA10_ratio', 'Adj_SMA5_ratio', 'Boll_ratio', 'Volume_SMA', 'Amplitude']]
         prices = feature_assembly.adj_close
 
-        X = X.drop(columns=['Turnover_rate'])
         X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(X), columns=X.columns, index=X.index)
         samples = X.iloc[-sample_len:]
         sample_prices = prices[-sample_len:]

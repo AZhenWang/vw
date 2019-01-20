@@ -30,7 +30,6 @@ class Assembly(object):
             'RSI10': '10日移动RSI',
             'Adj_SMA10_ratio': '复权价与10日移动平均线的比',
             'Adj_SMA5_ratio': '复权价与5日移动平均线的比',
-            'Turnover_rate': '换手率（自由流通股）',
             'Boll_ratio': '20日移动平均线的布尔比率',
             'Volume_SMA': '20日移动平均交易量',
             'Amplitude': '日实际变化幅度占当天总波动比率',
@@ -141,7 +140,6 @@ class Assembly(object):
 
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         Amplitude.fillna(1, inplace=True)
-        Turnover_rate = data['turnover_rate_f']
 
         feature_dict = {}
         for feature in self.features['name']:

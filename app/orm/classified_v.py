@@ -28,7 +28,7 @@ class ClassifiedV(object):
         if len(feature_group_number) > 0:
             model = model.filter(M.feature_group_number.in_(feature_group_number))
 
-        info = model.order_by(M.r2_score.desc()).limit(limit).all()
+        info = model.order_by(M.cum_return.desc()).limit(limit).all()
         return info
 
 
