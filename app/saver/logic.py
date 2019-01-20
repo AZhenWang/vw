@@ -15,11 +15,29 @@ class DB(object):
         'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'.format(**db_config), echo=log)
 
     @classmethod
+    def test_select(cls, code_id):
+        daily = pd.read_sql(
+            sa.text('SELECT d.* FROM daily d'
+                    ' left join trade_cal tc on tc.id = d.date_id'
+                    '  where d.code_id = :code_id'
+                    ' order by tc.cal_date asc'),
+            cls.engine,
+            params={'code_id': code_id}
+        )
+        daily.set_index('date_id', inplace=True)
+        return daily
+
+    @classmethod
+    def test_update(cls, code_id, date_id, pct_chg):
+        pd.io.sql.execute('update daily set pct_chg=%s where date_id =%s and code_id =%s',
+                          cls.engine, params=[str(pct_chg), str(date_id), str(code_id)])
+
+    @classmethod
     def get_cal_date(cls, start_date, end_date):
         existed_cal_date = pd.read_sql(
             sa.text('SELECT cal_date FROM trade_cal where cal_date >= :sd and cal_date <= :ed'),
             cls.engine,
-            params={'sd': start_date, 'ed':end_date}
+            params={'sd': start_date, 'ed': end_date}
         )
         return existed_cal_date
 

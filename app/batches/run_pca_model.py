@@ -10,7 +10,7 @@ from app.saver.tables import fields_map
 sample_len = 122
 
 def execute(start_date='', end_date=''):
-    end_date = '20190102'
+    end_date = '20180301'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
 
@@ -24,7 +24,7 @@ def execute(start_date='', end_date=''):
     new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     draw = False
     draw = True
-    codes = [2678]
+    codes = [868]
     # codes = [2082, 2496]
     # 此股形态特别备注：像edit一样，50个点的涨幅
     # codes = [2678]
