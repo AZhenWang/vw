@@ -5,5 +5,4 @@ conf/myapp.py
 threshold_picture.png
 .ipynb_checkpoints
 *ipynb
-app/batches/test.py
 app/batches/run_pca_model.py
