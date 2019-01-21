@@ -10,7 +10,7 @@ from app.saver.tables import fields_map
 sample_len = 122
 
 def execute(start_date='', end_date=''):
-    end_date = '20180301'
+    end_date = '20181221'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
 
@@ -24,7 +24,8 @@ def execute(start_date='', end_date=''):
     new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     draw = False
     draw = True
-    codes = [868]
+    codes = [707]
+    # codes = [1174, 2553]
     # codes = [2082, 2496]
     # 此股形态特别备注：像edit一样，50个点的涨幅
     # codes = [2678]
@@ -32,23 +33,25 @@ def execute(start_date='', end_date=''):
     plan_number = 31
     # plan_number = 7
     # plan_number = 15
-    n_components = 2
+    n_components = 1
     for code_id in codes:
         sample_pca, sample_prices = pca.run(code_id=code_id, sample_len=sample_len, n_components=n_components)
+        Y = sample_pca.col_0
+        correlation = Y.corr(sample_prices.reset_index(drop=True))
+        if correlation < 0:
+            # 负相关的先反过来
+            Y = (-1) * Y
 
-        sample_mean = sample_pca.mean()
-        sample_std = sample_pca.std()
-        column_loc = 0
-        mean = sample_mean[column_loc]
+        mean = np.mean(Y)
         mean = mean * sample_len / (sample_len - 1)
-        std = sample_std[column_loc]
+        std = np.std(Y)
 
         holdings = get_holdings(sample_pca, sample_prices, plan_number=plan_number)
-        print('holdings = ', holdings)
+        print('holdings = ', holdings[-5:])
         cum_return_rate_set = get_cum_return_rate(sample_prices, holdings)
         buy, sell = get_buy_sell_points(holdings)
-        print('buy=', buy)
-        print('sell=', sell)
+        print('buy=', buy[-5:])
+        print('sell=', sell[-5:])
         print('len(holding)=', len(holdings), ', len(buy)=', len(buy))
         print('code_id=', code_id, ' rate_yearly=', cum_return_rate_set[-1],
               ' diff=', (sample_prices.iloc[-1] - sample_prices.iloc[20])/sample_prices.iloc[20],
@@ -56,6 +59,7 @@ def execute(start_date='', end_date=''):
               )
         print('explained_variance_ratio_=', pca.explained_variance_ratio_)
         print('col_0= ', sample_pca.col_0.corr(sample_prices.reset_index(drop=True)))
+        print('reverse_col_0= ', Y.corr(sample_prices.reset_index(drop=True)))
         # print('col_1= ', sample_pca.col_1.corr(sample_prices.reset_index(drop=True)))
         # print('col_0 corr col_1 = ', sample_pca.col_0.corr(sample_pca.col_1))
 
@@ -70,14 +74,13 @@ def execute(start_date='', end_date=''):
             'mean_rate': np.mean(cum_return_rate_set),
         }
 
-        print(new_rows)
         i += 1
 
         if draw:
             fig, ax = plt.subplots(2, 1, figsize=(16, 8))
             x_axis = [i for i in range(sample_len)]
             ax1 = ax[0]
-            ax1.plot(x_axis, sample_pca)
+            ax1.plot(x_axis, Y)
             ax1.set_ylabel('pca')
             ax1.axhline(mean - 3 * std, color='b')
             ax1.axhline(mean - 2 * std, color='c')
@@ -108,26 +111,20 @@ def execute(start_date='', end_date=''):
 
             plt.show()
 
-    if not draw:
-        new_rows.to_sql('rate_yearly', DB.engine, index=False, if_exists='append', chunksize=1000)
+    # if not draw:
+        # new_rows.to_sql('rate_yearly', DB.engine, index=False, if_exists='append', chunksize=1000)
 
 
 def get_holdings(sample_pca, sample_prices, plan_number):
     Y = sample_pca.col_0
-    sample_mean = sample_pca.mean()
-    sample_std = sample_pca.std()
-    column_loc = 0
-    mean = sample_mean[column_loc]
-    # mean = 0
-    print('old_mean=', mean)
-    mean = mean * sample_len / (sample_len-1)
-    std = sample_std[column_loc]
-    correlation = sample_pca.col_0.corr(sample_prices.reset_index(drop=True))
+    correlation = Y.corr(sample_prices.reset_index(drop=True))
+    if correlation < 0:
+        Y = (-1) * Y
+        correlation = (-1) * correlation
 
-    start_loc = len(Y) - 5
-    holdings = [0] * start_loc
-    bottom_dis = 20
-    peak_dis = 40
+    mean = np.mean(Y)
+    mean = mean * sample_len / (sample_len - 1)
+    std = np.std(Y)
 
     print('std=', std)
     print('mean+1.328std', mean + 1.328 * std)
@@ -144,91 +141,72 @@ def get_holdings(sample_pca, sample_prices, plan_number):
     print('mean-2std', mean - 2 * std)
     print('mean-3std', mean - 3 * std)
     print('correlation=', correlation)
-    print(Y[-peak_dis:])
-    if np.abs(correlation) < 0.2:
+    print(Y[-7:])
+
+    if correlation < 0.01:
         holdings = [0] * len(Y)
         return holdings
 
+    start_loc = len(Y) - 5
+    holdings = [0] * start_loc
+    bottom_dis = 20
+    peak_dis = 40
+
     for i in range(start_loc, len(Y)):
 
-        if correlation > 0:
-            # 正相关
-            if plan_number & 4 and (Y[i] - Y[i-2:i].min()) > 2*std and (mean - 1.5*std) < Y[i-2:i].min() < mean and Y[i] > mean + std:
-                # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
-                holding = 2
-                print('疯牛的多个板的底部的冲锋i=', i)
+        # 正相关
+        if plan_number & 4 and (Y[i] - Y[i-2:i].min()) > 2*std and (mean - 1.5*std) < Y[i-2:i].min() < mean and Y[i] > mean + std:
+            # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
+            holding = 2
+            print('疯牛的多个板的底部的冲锋i=', i)
+            # 实测备注：此讯号可靠性高，此讯号包含3连板的形态，如果前几天出现1的信号，则加大此信号的可靠性，一般会有大于3个板的涨幅。
+            # 实测备注：发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态
 
-            elif plan_number & 8 and Y[i] > mean + 2 * std and Y[i] > Y[i - 1] > mean + 1.5 * std and Y[i - 2] > Y[
-                i - 1]:
-                # 疯牛的多个板的顶部形态， 最少还有3-5个板
-                holding = 3
-                print('疯牛的4-6个板的顶部形态i=', i)
+        elif plan_number & 8 and mean > 0.05 and Y[i] > mean + 1.5 * std and Y[i] > Y[i - 1] > mean + std and Y[i - 2] > Y[
+            i - 1]:
+            # elif plan_number & 8 and Y[i] > 2 * std and Y[i] > Y[i - 1] > 1.5 * std and Y[i - 2] > Y[
+            #     i - 1]:
+            # 疯牛的多个板的顶部形态， 最少还有3-5个板
+            # 实测备注：当接下来的几天出现第二个3时，一般在第二天会出现最高值，第二天必卖，第三天大概率会跌。
+            # 当连续几天的涨幅已经很大了，比如100%，这个3的信号都是一个危险预警信号，第二天大概率出现-1的信号。
+            # 实测备注：出现此信号时，保险的操作是静待明天的收盘价，如果第二天收盘价走高，就确认此信号延续，否则就是触顶信号
+            holding = 3
+            print('疯牛的4-6个板的顶部形态i=', i)
 
-            elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and Y[i] > mean + std and Y[
-                    i - 1] < mean < Y[i-3:i-1].max():
-                # 中间3个板的反弹，最少还有2个板。
-                # 优化备注：要求当前的涨幅>5个点，才有2天5个点以上的收益。当天涨幅10%，才有可能连续3个板
-                print('中间3个板的反弹i=', i)
-                holding = 4
+        elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and (Y[i] - Y[i-4:i].min()) > 1.5*std \
+                and mean < Y[i-5:i-2].max():
+            # elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and Y[i] > mean + std and Y[
+            #     i - 1] < mean < Y[i - 3:i - 1].max():
+            # 中间3个板的反弹，最少还有2个板。
+            # 优化备注：要求当前的涨幅>5个点，才有2天5个点以上的收益。当天涨幅10%，才有可能连续3个板
+            # 实测备注：此讯号不可靠，10次9错
+            print('中间3个板的反弹i=', i)
+            holding = 4
 
-            elif plan_number & 1 and Y[i - 1] > mean + 1.5 * std > Y[i]:
-                # 大顶部
-                holding = -1
-                print('大顶部')
+        elif plan_number & 1 and Y[i - 1] > mean + 1.5 * std > Y[i]:
+            # 大顶部
+            # 实测备注：如果是连续大涨幅，则第二天还会有反弹，第二天收盘价卖
+            holding = -1
+            print('大顶部')
 
-            elif plan_number & 2 and Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
-                    and Y[i - bottom_dis:i - 2].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
-                print(Y[i - 2], mean, std, mean - 1.5 * std)
-                # 大双底部
-                # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
-                holding = 1
-                print('大双底部')
-
-            else:
-                holding = 0
-                print('哟西')
+        elif plan_number & 2 and Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
+                and Y[i - bottom_dis:i - 2].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
+            print(Y[i - 2], mean, std, mean - 1.5 * std)
+            # 大双底部
+            # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
+            holding = 1
+            print('大双底部')
 
         else:
-            # 负相关
-            if plan_number & 4 and (Y[i] - Y[i-2:i].max()) < -2*std and (mean + 1.5*std) > Y[i-2:i].max() > mean and Y[i] < mean - std:
-                # 疯牛的多个板的底部的冲锋形态，最少还有2个板，可能连接着 多个板的顶部形态
-                holding = 2
-                print('疯牛的多个板的底部的冲锋i=', i)
+            holding = 0
+            print('哟西')
 
-            elif plan_number & 8 and Y[i] < mean - 2 * std and Y[i] < Y[i - 1] < mean - 1.5 * std and Y[i - 2] < Y[
-                i - 1]:
-                # 疯牛的多个板的顶部形态， 最少还有2个板
-                holding = 3
-                print('疯牛的多个板的顶部形态i=', i)
-
-            elif plan_number & 16 and Y[i - peak_dis:i - 2].min() < mean - 1.5 * std \
-                    and Y[i] < mean - std and Y[i - 1] > mean > Y[i - 3:i - 1].min():
-                # 中间3个板的反弹，最少还有2个板
-                holding = 4
-                print('中间3个板的反弹i=', i)
-
-            elif plan_number & 1 and Y[i - 1] < mean - 1.5 * std < Y[i]:
-                # 大底部
-                holding = -1
-                print('大底部')
-
-            elif plan_number & 2 and Y[i - bottom_dis: i - 2].max() > Y[i - 2] > Y[i - 1] > Y[i] \
-                    and Y[i - bottom_dis: i - 2].max() > mean + 1.5 * std and Y[i - 2] > mean + 1 * std:
-                # 大双顶部
-                holding = 1
-                print('大双顶部')
-
-            else:
-                holding = 0
-                print('哟西')
-
-        holdings.append(holding)
+    holdings.append(holding)
 
     return holdings
 
 
 def get_buy_sell_points(holdings):
-    print('范德萨发大')
     buy, sell = [np.nan], [np.nan]
     for i in range(1, len(holdings)):
         if holdings[i] != holdings[i - 1]:

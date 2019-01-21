@@ -24,7 +24,6 @@ def execute(start_date='', end_date=''):
         pca = Pca(cal_date=cal_date)
         i = 0
         code_ids = codes['code_id']
-        code_ids = code_ids[:100]
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         for code_id in code_ids:
             sample_pca, sample_prices = pca.run(code_id, sample_len)
