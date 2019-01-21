@@ -17,7 +17,6 @@ def execute(start_date='', end_date=''):
     :return:
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
-
     for cal_date, date_id in trade_cal[['cal_date', 'date_id']].values:
         DB.delete_recommend_stock_logs(date_id=date_id, recommend_type='pca')
         codes = DB.get_latestopendays_code_list(
@@ -25,6 +24,7 @@ def execute(start_date='', end_date=''):
         pca = Pca(cal_date=cal_date)
         i = 0
         code_ids = codes['code_id']
+        code_ids = code_ids[:100]
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         for code_id in code_ids:
             sample_pca, sample_prices = pca.run(code_id, sample_len)
@@ -35,12 +35,21 @@ def execute(start_date='', end_date=''):
             if daily.empty:
                 continue
             if holdings[-1] != 0 and (holdings[-1] == 1 or holdings[-1] == -1 or daily.at[0, 'pct_chg'] > 9.96):
+                Y = sample_pca.col_0
+                correlation = Y.corr(sample_prices.reset_index(drop=True))
+                if correlation < 0:
+                    Y = (-1) * Y
+
+                mean = np.mean(Y)
+                mean = mean * sample_len / (sample_len - 1)
+                mean = round(mean, 3)
+
                 new_rows.loc[i] = {
                     'date_id': date_id,
                     'code_id': code_id,
                     'recommend_type': 'pca',
                     'star_idx': holdings[-1],
-                    'average': daily.at[0, 'pct_chg']
+                    'average': mean
                 }
             i += 1
         if not new_rows.empty:
@@ -49,90 +58,77 @@ def execute(start_date='', end_date=''):
 
 def get_holdings(sample_pca, sample_prices, plan_number=3):
     Y = sample_pca.col_0
-    sample_mean = sample_pca.mean()
-    sample_std = sample_pca.std()
-    column_loc = 0
-    mean = sample_mean[column_loc]
+    correlation = Y.corr(sample_prices.reset_index(drop=True))
+    if correlation < 0:
+        Y = (-1) * Y
+        correlation = (-1) * correlation
+
+    mean = np.mean(Y)
     mean = mean * sample_len / (sample_len - 1)
-    std = sample_std[column_loc]
-    correlation = sample_pca.col_0.corr(sample_prices.reset_index(drop=True))
-    if np.abs(correlation) < 0.1:
+    std = np.std(Y)
+
+    if correlation < 0.01:
         holdings = [0] * len(Y)
         return holdings
 
-    start_loc = len(Y) - 5
+    start_loc = len(Y) - 1
     holdings = [0] * start_loc
     bottom_dis = 20
     peak_dis = 40
 
-    if np.abs(correlation) < 0.2:
-        holdings = [0] * len(Y)
-        return holdings
-
     for i in range(start_loc, len(Y)):
 
-        if correlation > 0:
-            # 正相关
-            if plan_number & 4 and (Y[i] - Y[i - 2:i].min()) > 2 * std and (mean - 1.5 * std) < Y[
-                                                                                                i - 2:i].min() < mean and \
-                    Y[i] > mean + std:
-                # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
-                holding = 2
+        # 正相关
+        if plan_number & 4 and (Y[i] - Y[i - 2:i].min()) > 2 * std and (mean - 1.5 * std) < Y[
+                                                                                            i - 2:i].min() < mean and \
+                Y[i] > mean + std:
+            # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
+            holding = 2
+            print('疯牛的多个板的底部的冲锋i=', i)
+            # 实测备注：此讯号可靠性高，此讯号包含3连板的形态，如果前几天出现1的信号，则加大此信号的可靠性，一般会有大于3个板的涨幅。
+            # 实测备注：发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态
 
-            elif plan_number & 8 and Y[i] > mean + 2 * std and Y[i] > Y[i - 1] > mean + 1.5 * std and Y[i - 2] > Y[
-                i - 1]:
-                # 疯牛的多个板的顶部形态， 最少还有3-5个板
-                holding = 3
+        elif plan_number & 8 and mean > 0.05 and Y[i] > mean + 1.5 * std and Y[i] > Y[i - 1] > mean + std and Y[
+            i - 2] > Y[
+            i - 1]:
+            # elif plan_number & 8 and Y[i] > 2 * std and Y[i] > Y[i - 1] > 1.5 * std and Y[i - 2] > Y[
+            #     i - 1]:
+            # 疯牛的多个板的顶部形态， 最少还有3-5个板
+            # 实测备注：当接下来的几天出现第二个3时，一般在第二天会出现最高值，第二天必卖，第三天大概率会跌。
+            # 当连续几天的涨幅已经很大了，比如100%，这个3的信号都是一个危险预警信号，第二天大概率出现-1的信号。
+            # 实测备注：出现此信号时，保险的操作是静待明天的收盘价，如果第二天收盘价走高，就确认此信号延续，否则就是触顶信号
+            holding = 3
+            print('疯牛的4-6个板的顶部形态i=', i)
 
-            elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and Y[i] > mean + std and Y[
-                i - 1] < mean < Y[i - 3:i - 1].max():
-                # 中间3个板的反弹，最少还有2个板。
-                # 优化备注：要求当前的涨幅>5个点，才有2天5个点以上的收益。当天涨幅10%，才有可能连续3个板
-                holding = 4
+        elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and (
+                Y[i] - Y[i - 4:i].min()) > 1.5 * std \
+                and mean < Y[i - 5:i - 2].max():
+            # elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and Y[i] > mean + std and Y[
+            #     i - 1] < mean < Y[i - 3:i - 1].max():
+            # 中间3个板的反弹，最少还有2个板。
+            # 优化备注：要求当前的涨幅>5个点，才有2天5个点以上的收益。当天涨幅10%，才有可能连续3个板
+            # 实测备注：此讯号不可靠，10次9错
+            print('中间3个板的反弹i=', i)
+            holding = 4
 
-            elif plan_number & 1 and Y[i - 1] > mean + 1.5 * std > Y[i]:
-                # 大顶部
-                holding = -1
+        elif plan_number & 1 and Y[i - 1] > mean + 1.5 * std > Y[i]:
+            # 大顶部
+            # 实测备注：如果是连续大涨幅，则第二天还会有反弹，第二天收盘价卖
+            holding = -1
+            print('大顶部')
 
-            elif plan_number & 2 and Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
-                    and Y[i - bottom_dis:i - 2].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
-                # 大双底部
-                # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
-                holding = 1
-
-            else:
-                holding = 0
+        elif plan_number & 2 and Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
+                and Y[i - bottom_dis:i - 2].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
+            print(Y[i - 2], mean, std, mean - 1.5 * std)
+            # 大双底部
+            # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
+            holding = 1
+            print('大双底部')
 
         else:
-            # 负相关
-            if plan_number & 4 and (Y[i] - Y[i - 2:i].max()) < -2 * std and (mean + 1.5 * std) > Y[
-                                                                                                 i - 2:i].max() > mean and \
-                    Y[i] < mean - std:
-                # 疯牛的多个板的底部的冲锋形态，最少还有2个板，可能连接着 多个板的顶部形态
-                holding = 2
+            holding = 0
+            print('哟西')
 
-            elif plan_number & 8 and Y[i] < mean - 2 * std and Y[i] < Y[i - 1] < mean - 1.5 * std and Y[i - 2] < Y[
-                i - 1]:
-                # 疯牛的多个板的顶部形态， 最少还有2个板
-                holding = 3
-
-            elif plan_number & 16 and Y[i - peak_dis:i - 2].min() < mean - 1.5 * std \
-                    and Y[i] < mean - std and Y[i - 1] > mean > Y[i - 3:i - 1].min():
-                # 中间3个板的反弹，最少还有2个板
-                holding = 4
-
-            elif plan_number & 1 and Y[i - 1] < mean - 1.5 * std < Y[i]:
-                # 大底部
-                holding = -1
-
-            elif plan_number & 2 and Y[i - bottom_dis: i - 2].max() > Y[i - 2] > Y[i - 1] > Y[i] \
-                    and Y[i - bottom_dis: i - 2].max() > mean + 1.5 * std and Y[i - 2] > mean + 1 * std:
-                # 大双顶部
-                holding = 1
-
-            else:
-                holding = 0
-
-        holdings.append(holding)
+    holdings.append(holding)
 
     return holdings

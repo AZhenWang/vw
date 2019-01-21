@@ -14,7 +14,7 @@ class Pca(object):
         self.cal_date = cal_date
         self.explained_variance_ratio_ = []
 
-    def run(self, code_id, sample_len=240, n_components=2):
+    def run(self, code_id, sample_len=240, n_components=1):
         feature_assembly = Assembly(end_date=self.cal_date)
         X = feature_assembly.pack_features(code_id)
         X = X[['RSI5', 'RSI10', 'Adj_SMA10_ratio', 'Adj_SMA5_ratio', 'Boll_ratio', 'Volume_SMA', 'Amplitude']]
