@@ -34,7 +34,7 @@ def execute(start_date='', end_date=''):
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty:
                 continue
-            if holdings[-1] != 0 and (holdings[-1] == 1 or holdings[-1] == -1 or daily.at[0, 'pct_chg'] > 9.99):
+            if holdings[-1] != 0 and (holdings[-1] == 1 or holdings[-1] == -1 or daily.at[0, 'pct_chg'] > 9.96):
                 new_rows.loc[i] = {
                     'date_id': date_id,
                     'code_id': code_id,
