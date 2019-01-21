@@ -128,6 +128,6 @@ def get_holdings(sample_pca, sample_prices, plan_number=3):
             holding = 0
             print('哟西')
 
-    holdings.append(holding)
+        holdings.append(holding)
 
     return holdings
