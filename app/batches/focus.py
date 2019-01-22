@@ -77,16 +77,21 @@ def get_holdings(sample_pca, sample_prices):
 
     for i in range(start_loc, len(Y)):
         # 正相关
-        if Y[i - 10: i - 2].max() > (mean + std) and (Y[i] - Y[i - 2:i].min()) > 2 * std \
-                and (mean - 1.5 * std) < Y[i - 2:i].min() and Y[i] > mean + std:
+        if Y[i - 10: i - 2].max() > (mean + std) and (Y[i] - Y[i - 2:i].min()) > 2 * std and (mean - 1.5 * std) < Y[
+                                                                                                                  i - 2:i].min() and \
+                Y[i] > mean + std:
             # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
             holding = 2
             print('疯牛的多个板的底部的冲锋i=', i)
             # 实测备注：此讯号可靠性高，此讯号包含3连板的形态，如果前几天出现1的信号，则加大此信号的可靠性，一般会有大于3个板的涨幅。
-            # 实测备注：发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态
+            # 实测备注：两种形态：
+            #   一、发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态。
+            #   二、5、10、20均线均已向上发展
+            #   三、前一天的涨幅<2个点，负的更好，如果前一天已经涨的多了，这个信号就失效了
+            # 20190122: -0.1 < mean < 0.1, 此时2的信号更可靠
 
-        elif mean > 0.05 and Y[i] > mean + 1.5 * std and Y[i] > Y[i - 1] > mean + std and Y[i - 2] > Y[
-            i - 1]:
+        elif ((mean > 0.05 and Y[i] > mean + 1.5 * std) or Y[i] > mean + 2 * std) \
+                and Y[i] > Y[i - 1] > mean + std and Y[i - 2] > Y[i - 1]:
             # elif plan_number & 8 and Y[i] > 2 * std and Y[i] > Y[i - 1] > 1.5 * std and Y[i - 2] > Y[
             #     i - 1]:
             # 疯牛的多个板的顶部形态， 最少还有3-5个板
@@ -96,8 +101,7 @@ def get_holdings(sample_pca, sample_prices):
             holding = 3
             print('疯牛的4-6个板的顶部形态i=', i)
 
-        elif (Y[i - 5:i].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
-                and Y[i] < mean + 1.5 * std < Y[i - 1]:
+        elif (Y[i - 5:i].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) and Y[i] < mean + 1.5 * std < Y[i - 1]:
             # 大顶部
             # 实测备注：如果是连续大涨幅，则第二天还会有反弹，第二天收盘价卖
             holding = -2
@@ -109,7 +113,7 @@ def get_holdings(sample_pca, sample_prices):
             holding = -1
             print('大顶部')
 
-        elif mean > 0.05 and (Y[i - 10:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
+        elif (Y[i - 10:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
                 and (Y[i] - Y[i - 4:i].min()) > 1.328 * std \
                 and mean < Y[i - 5:i - 2].max():
             # 3个板的反弹。

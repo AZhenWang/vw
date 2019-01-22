@@ -10,7 +10,7 @@ from app.saver.tables import fields_map
 sample_len = 122
 
 def execute(start_date='', end_date=''):
-    end_date = '20190118'
+    end_date = '20190115'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
 
@@ -24,7 +24,9 @@ def execute(start_date='', end_date=''):
     new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     draw = False
     draw = True
-    codes = [2553]
+    codes = [1027]
+    # 涨std, 1402:0.367/-0.002, 190:0.344/-0.084, 2553:0.389/-0.075,
+    # 跌std, 411:0.384/-0.117, 1174:0.387/0.013, 2597:0.362/-0.216， 2802：0.344/-0.144,
     # codes = [3548]
     # codes = [1174, 2553]
     # codes = [2082, 2496]
@@ -49,6 +51,7 @@ def execute(start_date='', end_date=''):
 
         holdings = get_holdings(sample_pca, sample_prices, plan_number=plan_number)
         print('holdings = ', holdings[-5:])
+        print('std=', std)
         cum_return_rate_set = get_cum_return_rate(sample_prices, holdings)
         buy, sell = get_buy_sell_points(holdings)
         print('buy=', buy[-5:])
@@ -160,10 +163,14 @@ def get_holdings(sample_pca, sample_prices, plan_number):
             holding = 2
             print('疯牛的多个板的底部的冲锋i=', i)
             # 实测备注：此讯号可靠性高，此讯号包含3连板的形态，如果前几天出现1的信号，则加大此信号的可靠性，一般会有大于3个板的涨幅。
-            # 实测备注：发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态
+            # 实测备注：两种形态：
+            #   一、发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态。
+            #   二、5、10、20均线均已向上发展
+            #   三、前一天的涨幅<2个点，负的更好，如果前一天已经涨的多了，这个信号就失效了
+            # 20190122: -0.1 < mean < 0.1, 此时2的信号更可靠
 
-        elif mean > 0.05 and Y[i] > mean + 1.5 * std and Y[i] > Y[i - 1] > mean + std and Y[i - 2] > Y[
-            i - 1]:
+        elif ((mean > 0.05 and Y[i] > mean + 1.5 * std) or Y[i] > mean + 2 * std) \
+                and Y[i] > Y[i - 1] > mean + std and Y[i - 2] > Y[i - 1]:
             # elif plan_number & 8 and Y[i] > 2 * std and Y[i] > Y[i - 1] > 1.5 * std and Y[i - 2] > Y[
             #     i - 1]:
             # 疯牛的多个板的顶部形态， 最少还有3-5个板
@@ -185,7 +192,7 @@ def get_holdings(sample_pca, sample_prices, plan_number):
             holding = -1
             print('大顶部')
 
-        elif mean > 0.05 and (Y[i - 10:i - 2].sort_values()[-2:] > (mean+1.5*std)).all(axis=None) \
+        elif (Y[i - 10:i - 2].sort_values()[-2:] > (mean+1.5*std)).all(axis=None) \
                 and (Y[i] - Y[i-4:i].min()) > 1.328*std \
                 and mean < Y[i-5:i-2].max():
             # 3个板的反弹。
