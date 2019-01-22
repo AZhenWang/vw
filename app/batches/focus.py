@@ -26,13 +26,16 @@ def execute(start_date='', end_date=''):
         code_ids = codes['code_id']
         # todo 测试
         # code_ids = code_ids[:100]
+        code_ids = [1335]
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         for code_id in code_ids:
             sample_pca, sample_prices = pca.run(code_id, sample_len)
             holdings = get_holdings(sample_pca, sample_prices)
+            print(holdings)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty:
                 continue
+            print(daily)
             if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 9.9):
                 Y = sample_pca.col_0
                 correlation = Y.corr(sample_prices.reset_index(drop=True))
@@ -52,6 +55,8 @@ def execute(start_date='', end_date=''):
                     'average': mean
                 }
             i += 1
+        print(new_rows)
+        os.exit()
         if not new_rows.empty:
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
 
