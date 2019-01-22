@@ -10,7 +10,7 @@ from app.saver.tables import fields_map
 sample_len = 122
 
 def execute(start_date='', end_date=''):
-    end_date = '20190111'
+    end_date = '20190118'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
 
@@ -24,7 +24,8 @@ def execute(start_date='', end_date=''):
     new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     draw = False
     draw = True
-    codes = [9]
+    codes = [2553]
+    # codes = [3548]
     # codes = [1174, 2553]
     # codes = [2082, 2496]
     # 此股形态特别备注：像edit一样，50个点的涨幅
@@ -150,19 +151,18 @@ def get_holdings(sample_pca, sample_prices, plan_number):
     start_loc = len(Y) - 5
     holdings = [0] * start_loc
     bottom_dis = 20
-    peak_dis = 40
 
     for i in range(start_loc, len(Y)):
 
         # 正相关
-        if plan_number & 4 and (Y[i] - Y[i-2:i].min()) > 2*std and (mean - 1.5*std) < Y[i-2:i].min() < mean and Y[i] > mean + std:
+        if Y[i-10: i-2].max() > (mean + std) and (Y[i] - Y[i-2:i].min()) > 2*std and (mean - 1.5*std) < Y[i-2:i].min() and Y[i] > mean + std:
             # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
             holding = 2
             print('疯牛的多个板的底部的冲锋i=', i)
             # 实测备注：此讯号可靠性高，此讯号包含3连板的形态，如果前几天出现1的信号，则加大此信号的可靠性，一般会有大于3个板的涨幅。
             # 实测备注：发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态
 
-        elif plan_number & 8 and mean > 0.05 and Y[i] > mean + 1.5 * std and Y[i] > Y[i - 1] > mean + std and Y[i - 2] > Y[
+        elif mean > 0.05 and Y[i] > mean + 1.5 * std and Y[i] > Y[i - 1] > mean + std and Y[i - 2] > Y[
             i - 1]:
             # elif plan_number & 8 and Y[i] > 2 * std and Y[i] > Y[i - 1] > 1.5 * std and Y[i - 2] > Y[
             #     i - 1]:
@@ -173,23 +173,27 @@ def get_holdings(sample_pca, sample_prices, plan_number):
             holding = 3
             print('疯牛的4-6个板的顶部形态i=', i)
 
-        elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and (Y[i] - Y[i-4:i].min()) > 1.5*std \
-                and mean < Y[i-5:i-2].max():
-            # elif plan_number & 16 and Y[i - peak_dis:i - 2].max() > mean + 1.5 * std and Y[i] > mean + std and Y[
-            #     i - 1] < mean < Y[i - 3:i - 1].max():
-            # 中间3个板的反弹，最少还有2个板。
-            # 优化备注：要求当前的涨幅>5个点，才有2天5个点以上的收益。当天涨幅10%，才有可能连续3个板
-            # 实测备注：此讯号不可靠，10次9错
-            print('中间3个板的反弹i=', i)
-            holding = 4
+        elif (Y[i-5:i].sort_values()[-2:] > (mean+1.5*std)).all(axis=None) and Y[i] < mean + 1.5*std < Y[i-1]:
+            # 大顶部
+            # 实测备注：如果是连续大涨幅，则第二天还会有反弹，第二天收盘价卖
+            holding = -2
+            print('双顶')
 
-        elif plan_number & 1 and Y[i - 1] > mean + 1.5 * std > Y[i]:
+        elif Y[i - 1] > mean + 1.5 * std > Y[i]:
             # 大顶部
             # 实测备注：如果是连续大涨幅，则第二天还会有反弹，第二天收盘价卖
             holding = -1
             print('大顶部')
 
-        elif plan_number & 2 and Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
+        elif mean > 0.05 and (Y[i - 10:i - 2].sort_values()[-2:] > (mean+1.5*std)).all(axis=None) \
+                and (Y[i] - Y[i-4:i].min()) > 1.328*std \
+                and mean < Y[i-5:i-2].max():
+            # 3个板的反弹。
+            # 优化备注：当天涨幅10%，才有可能连续3个板。此讯号预测连续大涨过后，下跌几日过后继续强势涨幅
+            print('双顶后的强势反抽3个板i=', i)
+            holding = 4
+
+        elif Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
                 and Y[i - bottom_dis:i - 2].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
             print(Y[i - 2], mean, std, mean - 1.5 * std)
             # 大双底部
@@ -210,10 +214,10 @@ def get_buy_sell_points(holdings):
     buy, sell = [np.nan], [np.nan]
     for i in range(1, len(holdings)):
         if holdings[i] != holdings[i - 1]:
-            if holdings[i] != -1 and holdings[i] != 0:
+            if holdings[i] > 0:
                 buy.append(1)
                 sell.append(np.nan)
-            elif holdings[i] == -1:
+            elif holdings[i] < 0:
                 sell.append(1)
                 buy.append(np.nan)
             else:
