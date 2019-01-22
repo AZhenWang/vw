@@ -39,17 +39,17 @@ def execute(start_date='', end_date=''):
                 if correlation < 0:
                     Y = (-1) * Y
 
-                # mean = np.mean(Y)
-                # mean = mean * sample_len / (sample_len - 1)
-                # mean = round(mean, 3)
-                std = np.std(Y)
+                mean = np.mean(Y)
+                mean = mean * sample_len / (sample_len - 1)
+                mean = round(mean, 3)
+                # std = np.std(Y)
 
                 new_rows.loc[i] = {
                     'date_id': date_id,
                     'code_id': code_id,
                     'recommend_type': 'pca',
                     'star_idx': holdings[-1],
-                    'average': std
+                    'average': mean
                 }
             i += 1
         if not new_rows.empty:
