@@ -7,6 +7,7 @@ from app.saver.tables import fields_map
 
 # 取半年样本区间
 sample_len = 122
+n_components = 2
 
 
 def execute(start_date='', end_date=''):
@@ -26,20 +27,28 @@ def execute(start_date='', end_date=''):
         code_ids = codes['code_id']
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         for code_id in code_ids:
-            sample_pca, sample_prices = pca.run(code_id, sample_len)
+            sample_pca, sample_prices = pca.run(code_id, sample_len, n_components=n_components)
             holdings = get_holdings(sample_pca, sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty:
                 continue
             if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 9.9):
                 Y = sample_pca.col_0
+                Y1 = sample_pca.col_1
                 correlation = Y.corr(sample_prices.reset_index(drop=True))
+                correlation1 = Y1.corr(sample_prices.reset_index(drop=True))
                 if correlation < 0:
+                    # 负相关的先反过来
                     Y = (-1) * Y
+                if correlation1 < 0:
+                    # 负相关的先反过来
+                    Y1 = (-1) * Y1
 
-                mean = np.mean(Y)
-                mean = mean * sample_len / (sample_len - 1)
-                mean = round(mean, 3)
+                # 预测幅度
+                average = round((Y1.iloc[-2] - Y1.iloc[-1]), 2)
+                # mean = np.mean(Y)
+                # mean = mean * sample_len / (sample_len - 1)
+                # mean = round(mean, 3)
                 # std = np.std(Y)
 
                 new_rows.loc[i] = {
@@ -47,7 +56,7 @@ def execute(start_date='', end_date=''):
                     'code_id': code_id,
                     'recommend_type': 'pca',
                     'star_idx': holdings[-1],
-                    'average': mean
+                    'average': average
                 }
             i += 1
         if not new_rows.empty:
