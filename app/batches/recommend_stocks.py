@@ -46,6 +46,7 @@ def execute(start_date='', end_date=''):
                             'recommend_type': 'classified_v',
                             'star_idx': star_idx,
                             'average': average,
+                            'amplitude': None
                             }
             data.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
             j += 1

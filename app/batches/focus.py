@@ -45,10 +45,11 @@ def execute(start_date='', end_date=''):
                     Y1 = (-1) * Y1
 
                 # 预测幅度
-                average = round((Y1.iloc[-2] - Y1.iloc[-1]), 2)
-                # mean = np.mean(Y)
-                # mean = mean * sample_len / (sample_len - 1)
-                # mean = round(mean, 3)
+                Y1_Y1 = round((Y1.iloc[-2] - Y1.iloc[-1]), 2)
+
+                mean = np.mean(Y)
+                mean = mean * sample_len / (sample_len - 1)
+                mean = round(mean, 3)
                 # std = np.std(Y)
 
                 new_rows.loc[i] = {
@@ -56,7 +57,8 @@ def execute(start_date='', end_date=''):
                     'code_id': code_id,
                     'recommend_type': 'pca',
                     'star_idx': holdings[-1],
-                    'average': average
+                    'average': mean,
+                    'amplitude': Y1_Y1
                 }
             i += 1
         if not new_rows.empty:
