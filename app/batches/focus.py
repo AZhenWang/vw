@@ -86,7 +86,7 @@ def get_holdings(sample_pca, sample_prices):
 
     for i in range(start_loc, len(Y)):
         # 正相关
-        if Y[i - 10: i - 2].max() > (mean + std) and (Y[i] - Y[i - 2:i].min()) > 2 * std and (mean - 1.5 * std) < Y[
+        if Y[i - 10: i - 2].max() > (mean + std) and (Y[i] - Y[i - 2:i].min()) > 1.5 * std and (mean - 1.5 * std) < Y[
                                                                                                                   i - 2:i].min() and \
                 Y[i] > mean + std:
             # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
