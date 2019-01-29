@@ -19,8 +19,8 @@ def execute(start_date='', end_date=''):
     logs = logs[logs['star_idx'] > 1]
     msgs = []
     pca = Pca(cal_date=cal_date)
-    recommend_stocks = pd.DataFrame(columns=['cal_date', 'code_id', 'ts_code', 'star_idx', 'average', 'amplitude',
-                                             'last_recommend_date', 'last_recommend_star', 'knn_v'])
+    recommend_stocks = pd.DataFrame(columns=['cal_date', 'star_idx', 'last_recommend_date', 'last_recommend_star',
+                                             'ts_code', 'average', 'amplitude', 'knn_v'])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
@@ -37,13 +37,12 @@ def execute(start_date='', end_date=''):
                 last_recommend_star = lastestrecommend_logs.iloc[-1]['star_idx']
             content = {
                 'cal_date': logs.iloc[i]['cal_date'],
-                'code_id': logs.iloc[i]['code_id'],
-                'ts_code': logs.iloc[i]['ts_code'],
                 'star_idx': logs.iloc[i]['star_idx'],
-                'average': logs.iloc[i]['average'],
-                'amplitude': logs.iloc[i]['amplitude'],
                 'last_recommend_date': last_recommend_date,
                 'last_recommend_star': last_recommend_star,
+                'ts_code': logs.iloc[i]['ts_code'],
+                'average': logs.iloc[i]['average'],
+                'amplitude': logs.iloc[i]['amplitude'],
                 'knn_v': '',
             }
 
@@ -56,7 +55,7 @@ def execute(start_date='', end_date=''):
             for predict_idx in sample_Y.index[-3:]:
                 y_hat = knn_predict(sample_pca, sample_Y, k=1, sample_interval=122,
                                     pre_predict_interval=pre_predict_interval, predict_idx=predict_idx)
-                knn_v = knn_v + str(round(y_hat, 2)) + ','
+                knn_v = knn_v + str(round(y_hat, 2)) + '  '
                 content['knn_v'] = knn_v
 
             recommend_stocks.loc[i] = content
