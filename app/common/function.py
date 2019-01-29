@@ -173,7 +173,7 @@ def send_email(subject='趋势预测', msgs=[]):
         print("Error: 无法发送邮件")
 
 
-def knn_predict(X, Y, sample_interval, pre_predict_interval, predict_idx):
+def knn_predict(X, Y, k, sample_interval, pre_predict_interval, predict_idx):
     """predict one date by knn algorithm
 
     Args:
@@ -203,7 +203,7 @@ def knn_predict(X, Y, sample_interval, pre_predict_interval, predict_idx):
     training_X = X.iloc[sample_start_iloc:sample_end_iloc]
     training_Y = Y.iloc[sample_start_iloc:sample_end_iloc]
     testing_x = X.iloc[predict_iloc]
-    knn = KNeighborsRegressor(n_neighbors=1)
+    knn = KNeighborsRegressor(n_neighbors=k)
     knn.fit(training_X, training_Y)
     predicted_Y = knn.predict([testing_x])
     y_hat = predicted_Y[0]

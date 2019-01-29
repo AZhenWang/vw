@@ -197,7 +197,7 @@ class DB(object):
                     ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed'
                     ' order by tc.cal_date desc '),
                 cls.engine,
-                params={'code_id': code_id, 'sd': start_date, 'ed': end_date}
+                params={'code_id': str(code_id), 'sd': start_date, 'ed': end_date}
             )
         else:
             code_info = pd.read_sql(
@@ -210,7 +210,7 @@ class DB(object):
                     ' order by tc.cal_date desc '
                     ' limit :period'),
                 cls.engine,
-                params={'code_id': code_id, 'sd': start_date, 'ed': end_date, 'period': period}
+                params={'code_id': str(code_id), 'sd': start_date, 'ed': end_date, 'period': period}
             )
 
         code_info.sort_values(by='date_id', inplace=True)
@@ -274,7 +274,7 @@ class DB(object):
         existed_codes = pd.read_sql(
             sa.text(' select t.code_id, t.date_id, t.SMS_month, t.SMS_year, t.simple_threshold_v from thresholds t'
                     ' where t.date_id >= :sdi and t.date_id <= :edi and t.code_id = :code_id'), cls.engine,
-            params={'code_id': code_id, 'sdi': str(start_date_id), 'edi': str(end_date_id)})
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id)})
 
         existed_codes.sort_values(by='date_id', inplace=True)
         existed_codes.set_index('date_id', inplace=True, drop=False)
@@ -325,10 +325,11 @@ class DB(object):
     @classmethod
     def get_recommended_stocks(cls, cal_date='', recommend_type=''):
         stocks = pd.read_sql(
-            sa.text(' select rs.* from recommend_stocks rs '
+            sa.text(' select tc.cal_date, sb.ts_code, rs.* from recommend_stocks rs '
                     ' left join trade_cal tc on tc.id = rs.date_id'
+                    ' left join stock_basic sb on sb.id = rs.code_id'
                     ' where tc.cal_date=:cd and rs.recommend_type = :rt'
-                    ' order by rs.star_idx asc'),
+                    ' order by rs.star_idx desc, rs.amplitude desc'),
             cls.engine,
             params={'cd': cal_date, 'rt': recommend_type}
         )
@@ -337,12 +338,13 @@ class DB(object):
     @classmethod
     def get_latestrecommend_logs(cls, code_id, date_id, recommend_type='', number=10):
         logs = pd.read_sql(
-            sa.text(' select rs.* from recommend_stocks rs '
-                    ' where rs.code_id = :code_id and rs.date_id <= :date_id and rs.recommend_type = :recommend_type'
-                    ' order by rs.date_id desc'
-                    ' limit :limit'),
+            sa.text(' select tc.cal_date, rs.* from recommend_stocks rs '
+                    ' left join trade_cal tc on tc.id = rs.date_id'
+                    ' where rs.code_id = :code_id and rs.date_id < :date_id and rs.recommend_type = :recommend_type'
+                    ' order by tc.cal_date desc'
+                    ' limit :l'),
             cls.engine,
-            params={'code_id': code_id, 'date_id': date_id, 'recommend_type': recommend_type, 'limit': number}
+            params={'code_id': str(code_id), 'date_id': str(date_id), 'recommend_type': recommend_type, 'l': number}
         )
         return logs
 

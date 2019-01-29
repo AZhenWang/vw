@@ -8,6 +8,7 @@ from app.common.function import knn_predict
 # 取半年样本区间
 sample_len = 122
 n_components = 2
+pre_predict_interval = 2
 
 
 def execute(start_date='', end_date=''):
@@ -25,29 +26,22 @@ def execute(start_date='', end_date=''):
         pca = Pca(cal_date=cal_date)
         i = 0
         code_ids = codes['code_id']
-        # code_ids = [2750, 3067, 3217, 2832, 996]
+        # code_ids = [2280,1192,1241,2302,2095,2446,1924,2830,543,2267,3368,850,210,1713,3374,1671,3270,1714,476]
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         for code_id in code_ids:
             sample_pca, sample_prices, sample_Y = pca.run(code_id=code_id, sample_len=0,
-                                                          n_components=n_components, pre_predict_interval=1,
+                                                          n_components=n_components, pre_predict_interval=pre_predict_interval,
                                                           return_y=True)
             holdings = get_holdings(sample_pca[-sample_len:].reset_index(drop=True), sample_prices.iloc[-sample_len:])
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty:
                 continue
-            if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 9.7):
+            if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 9.9):
                 Y = sample_pca[-sample_len:].col_0
-                # Y1 = sample_pca.col_1
                 correlation = Y.corr(sample_prices[-sample_len:].reset_index(drop=True))
-                # correlation1 = Y1.corr(sample_prices.reset_index(drop=True))
                 if correlation < 0:
                     # 负相关的先反过来
                     Y = (-1) * Y
-                # if correlation1 < 0:
-                #     # 负相关的先反过来
-                #     Y1 = (-1) * Y1
-                #
-                # Y1_Y1 = round((Y1.iloc[-2] - Y1.iloc[-1]), 2)
 
                 mean = np.mean(Y)
                 mean = mean * sample_len / (sample_len - 1)
@@ -55,8 +49,8 @@ def execute(start_date='', end_date=''):
 
                 # std = np.std(Y)
 
-                y_hat = knn_predict(sample_pca, sample_Y, sample_interval=sample_len,
-                                    pre_predict_interval=1, predict_idx=sample_Y.index[-1])
+                y_hat = knn_predict(sample_pca, sample_Y, k=1, sample_interval=sample_len,
+                                    pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
 
                 new_rows.loc[i] = {
                     'date_id': date_id,
@@ -64,7 +58,7 @@ def execute(start_date='', end_date=''):
                     'recommend_type': 'pca',
                     'star_idx': holdings[-1],
                     'average': mean,
-                    'amplitude': y_hat
+                    'amplitude': y_hat,
                 }
             i += 1
         if not new_rows.empty:
@@ -136,8 +130,8 @@ def get_holdings(sample_pca, sample_prices):
             print('双顶后的强势反抽3个板i=', i)
             holding = 4
 
-        elif Y[i - bottom_dis:i - 2].min() < Y[i - 2] < Y[i - 1] < Y[i] \
-                and Y[i - bottom_dis:i - 2].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
+        elif Y[i - bottom_dis:i - 5].min() < Y[i - 5:i].min() and Y[i - 2] < Y[i - 1] < Y[i] \
+                and Y[i - bottom_dis:i - 5].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
             print(Y[i - 2], mean, std, mean - 1.5 * std)
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
