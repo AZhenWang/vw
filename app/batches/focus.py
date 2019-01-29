@@ -57,8 +57,8 @@ def execute(start_date='', end_date=''):
                     'code_id': code_id,
                     'recommend_type': 'pca',
                     'star_idx': holdings[-1],
-                    'average': mean,
-                    'amplitude': y_hat,
+                    'average': round(mean, 2),
+                    'amplitude': round(y_hat, 2),
                 }
             i += 1
         if not new_rows.empty:
