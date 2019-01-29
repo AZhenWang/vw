@@ -38,8 +38,8 @@ def execute(start_date='', end_date=''):
             content = {
                 'cal_date': logs.iloc[i]['cal_date'],
                 'star_idx': logs.iloc[i]['star_idx'],
-                'last_recommend_date': last_recommend_date,
-                'last_recommend_star': last_recommend_star,
+                'last_date': last_recommend_date,
+                'last_idx': last_recommend_star,
                 'ts_code': logs.iloc[i]['ts_code'],
                 'average': logs.iloc[i]['average'],
                 'amplitude': logs.iloc[i]['amplitude'],
