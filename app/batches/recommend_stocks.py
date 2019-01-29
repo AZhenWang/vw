@@ -51,10 +51,10 @@ def execute(start_date='', end_date=''):
                                                           return_y=True)
             pca = Pca(cal_date=cal_date)
             knn_v = ''
-            for predict_idx in sample_Y.index[-3:]:
+            for predict_idx in sample_Y.index[-5:]:
                 y_hat = knn_predict(sample_pca, sample_Y, k=1, sample_interval=122,
                                     pre_predict_interval=pre_predict_interval, predict_idx=predict_idx)
-                knn_v = knn_v + str(round(y_hat, 2)) + '  '
+                knn_v = knn_v + str(round(y_hat, 1)) + '  '
                 content['knn_v'] = knn_v
 
             recommend_stocks.loc[i] = content
