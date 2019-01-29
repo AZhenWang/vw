@@ -323,21 +323,29 @@ class DB(object):
         return stocks
 
     @classmethod
-    def get_recommended_stocks(cls, cal_date=''):
+    def get_recommended_stocks(cls, cal_date='', recommend_type=''):
         stocks = pd.read_sql(
             sa.text(' select rs.* from recommend_stocks rs '
                     ' left join trade_cal tc on tc.id = rs.date_id'
-                    ' where tc.cal_date=:cd'
-                    ' order by tc.id desc'),
+                    ' where tc.cal_date=:cd and rs.recommend_type = :rt'
+                    ' order by rs.star_idx asc'),
             cls.engine,
-            params={'cd': cal_date}
+            params={'cd': cal_date, 'rt': recommend_type}
         )
         return stocks
 
     @classmethod
-    def insert_pca_recommend_stocks(cls, code_id, date_id):
-        pd.io.sql.execute('insert into recommend_stocks (code_id, date_id, recommend_type) values (%s, %s)', cls.engine,
-                          params=[str(code_id), str(date_id)])
+    def get_latestrecommend_logs(cls, code_id, date_id, recommend_type='', number=10):
+        logs = pd.read_sql(
+            sa.text(' select rs.* from recommend_stocks rs '
+                    ' where rs.code_id = :code_id and rs.date_id <= :date_id and rs.recommend_type = :recommend_type'
+                    ' order by rs.date_id desc'
+                    ' limit :limit'),
+            cls.engine,
+            params={'code_id': code_id, 'date_id': date_id, 'recommend_type': recommend_type, 'limit': number}
+        )
+        return logs
+
     @classmethod
     def insert_focus_stocks(cls, code_id):
         pd.io.sql.execute('insert into focus_stocks (code_id) values (%s)', cls.engine,
@@ -415,6 +423,20 @@ class DB(object):
             cls.engine,
             params={'start_date_id': str(start_date_id), 'end_date_id': str(end_date_id)})
         return data
+
+    @classmethod
+    def get_all_recommend_logs(cls, current_date_id, next_date_id, recommend_type=''):
+        logs = pd.read_sql(
+            sa.text(' select rs.date_id, rs.code_id, rs.star_idx, rs.average, rs.amplitude, '
+                    ' d.pct_chg from recommend_stocks rs '
+                    ' left join daily d on d.code_id = rs.code_id and d.date_id = :ndi'
+                    ' where rs.date_id = :cdi and rs.recommend_type = :recommend_type'
+                    ' order by rs.code_id asc'),
+            cls.engine,
+            params={'cdi': str(current_date_id), 'ndi': str(next_date_id), 'recommend_type': recommend_type}
+        )
+        return logs
+
 
     # @staticmethod
     # def validate_field(columns, fields):

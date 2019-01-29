@@ -172,3 +172,39 @@ def send_email(subject='趋势预测', msgs=[]):
     except smtplib.SMTPException:
         print("Error: 无法发送邮件")
 
+
+def knn_predict(X, Y, sample_interval, pre_predict_interval, predict_idx):
+    """predict one date by knn algorithm
+
+    Args:
+        X: normalized features with DataFrame type
+        Y: datetime.date object, or a string with 'year-month-day' format
+        sample_interval: 预测间隔
+        pre_predict_interval: 向前计算多少天的涨跌幅
+        predict_idx: the index to predict
+
+    Returns:
+        y_hat: the value predicted by knn algorithm
+
+    """
+    import numpy as np
+    from sklearn.neighbors import KNeighborsRegressor
+
+    try:
+        predict_iloc = Y.index.get_loc(predict_idx)
+    except:
+        return np.nan
+    if predict_iloc < sample_interval:
+        sample_start_iloc = 0
+    else:
+        sample_start_iloc = predict_iloc - sample_interval
+
+    sample_end_iloc = predict_iloc - pre_predict_interval + 1
+    training_X = X.iloc[sample_start_iloc:sample_end_iloc]
+    training_Y = Y.iloc[sample_start_iloc:sample_end_iloc]
+    testing_x = X.iloc[predict_iloc]
+    knn = KNeighborsRegressor(n_neighbors=1)
+    knn.fit(training_X, training_Y)
+    predicted_Y = knn.predict([testing_x])
+    y_hat = predicted_Y[0]
+    return y_hat

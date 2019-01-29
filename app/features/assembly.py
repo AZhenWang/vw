@@ -167,7 +167,7 @@ class Assembly(object):
         refer_target = target_min[compare_v <= threshold].add(target_max[compare_v > threshold], fill_value=0)
         diff = refer_target - self.adj_close
         fm = adj_close[diff >= 0].add(refer_target[diff < 0], fill_value=0)
-        targets = diff / fm
+        targets = (diff / fm * 100).fillna(value=0)
 
         targets = targets[self.date_idxs]
 

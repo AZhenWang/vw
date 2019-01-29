@@ -3,7 +3,7 @@ from app.saver.logic import DB
 import numpy as np
 import pandas as pd
 from app.saver.tables import fields_map
-
+from app.common.function import knn_predict
 
 # 取半年样本区间
 sample_len = 122
@@ -25,32 +25,38 @@ def execute(start_date='', end_date=''):
         pca = Pca(cal_date=cal_date)
         i = 0
         code_ids = codes['code_id']
+        # code_ids = [2750, 3067, 3217, 2832, 996]
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         for code_id in code_ids:
-            sample_pca, sample_prices = pca.run(code_id, sample_len, n_components=n_components)
-            holdings = get_holdings(sample_pca, sample_prices)
+            sample_pca, sample_prices, sample_Y = pca.run(code_id=code_id, sample_len=0,
+                                                          n_components=n_components, pre_predict_interval=1,
+                                                          return_y=True)
+            holdings = get_holdings(sample_pca[-sample_len:].reset_index(drop=True), sample_prices.iloc[-sample_len:])
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty:
                 continue
-            if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 9.9):
-                Y = sample_pca.col_0
-                Y1 = sample_pca.col_1
-                correlation = Y.corr(sample_prices.reset_index(drop=True))
-                correlation1 = Y1.corr(sample_prices.reset_index(drop=True))
+            if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 9.7):
+                Y = sample_pca[-sample_len:].col_0
+                # Y1 = sample_pca.col_1
+                correlation = Y.corr(sample_prices[-sample_len:].reset_index(drop=True))
+                # correlation1 = Y1.corr(sample_prices.reset_index(drop=True))
                 if correlation < 0:
                     # 负相关的先反过来
                     Y = (-1) * Y
-                if correlation1 < 0:
-                    # 负相关的先反过来
-                    Y1 = (-1) * Y1
-
-                # 预测幅度
-                Y1_Y1 = round((Y1.iloc[-2] - Y1.iloc[-1]), 2)
+                # if correlation1 < 0:
+                #     # 负相关的先反过来
+                #     Y1 = (-1) * Y1
+                #
+                # Y1_Y1 = round((Y1.iloc[-2] - Y1.iloc[-1]), 2)
 
                 mean = np.mean(Y)
                 mean = mean * sample_len / (sample_len - 1)
                 mean = round(mean, 3)
+
                 # std = np.std(Y)
+
+                y_hat = knn_predict(sample_pca, sample_Y, sample_interval=sample_len,
+                                    pre_predict_interval=1, predict_idx=sample_Y.index[-1])
 
                 new_rows.loc[i] = {
                     'date_id': date_id,
@@ -58,7 +64,7 @@ def execute(start_date='', end_date=''):
                     'recommend_type': 'pca',
                     'star_idx': holdings[-1],
                     'average': mean,
-                    'amplitude': Y1_Y1
+                    'amplitude': y_hat
                 }
             i += 1
         if not new_rows.empty:
@@ -97,7 +103,7 @@ def get_holdings(sample_pca, sample_prices):
             #   一、发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态。
             #   二、5、10、20均线均已向上发展
             #   三、前一天的涨幅<2个点，负的更好，如果前一天已经涨的多了，这个信号就失效了
-            # 20190122: -0.1 < mean < 0.1, 此时2的信号更可靠
+            # 20190122: -0.01 < mean < 0.01, 此时2的信号更可靠
 
         elif ((mean > 0.05 and Y[i] > mean + 1.5 * std) or Y[i] > mean + 2 * std) \
                 and Y[i] > Y[i - 1] > mean + std and Y[i - 2] > Y[i - 1]:

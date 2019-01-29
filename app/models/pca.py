@@ -14,23 +14,33 @@ class Pca(object):
         self.cal_date = cal_date
         self.explained_variance_ratio_ = []
 
-    def run(self, code_id, sample_len=240, n_components=1):
-        feature_assembly = Assembly(end_date=self.cal_date)
+    def run(self, code_id, sample_len=240, n_components=1, pre_predict_interval=5, return_y=False):
+        feature_assembly = Assembly(end_date=self.cal_date, pre_predict_interval=pre_predict_interval)
         X = feature_assembly.pack_features(code_id)
         X = X[['RSI5', 'RSI10', 'Adj_SMA10_ratio', 'Adj_SMA5_ratio', 'Boll_ratio', 'Volume_SMA', 'Amplitude']]
-        prices = feature_assembly.adj_close
+        sample_prices = feature_assembly.adj_close
 
         X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(X), columns=X.columns, index=X.index)
-        samples = X.iloc[-sample_len:]
-        sample_prices = prices[-sample_len:]
 
         pca = PCA(n_components=n_components)
         pca.fit(X)
         self.explained_variance_ratio_ = pca.explained_variance_ratio_
         # pca_X = pca.fit_transform(X)
         # samples_pca = pca_X.iloc[-length:]
-        sample_pca = pd.DataFrame(pca.transform(samples),
+        sample_pca = pd.DataFrame(pca.transform(X),
                                    columns=['col_'+str(i) for i in range(n_components)])
-        return sample_pca, sample_prices
+
+        if sample_len != 0:
+            sample_prices = sample_prices[-sample_len:]
+            sample_pca = sample_pca[-sample_len:].reset_index(drop=True)
+
+        if return_y:
+            sample_Y = feature_assembly.pack_targets()
+            if sample_len != 0:
+                sample_Y = sample_Y.iloc[-sample_len:]
+
+            return sample_pca, sample_prices, sample_Y
+        else:
+            return sample_pca, sample_prices
 
 
