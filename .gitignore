@@ -6,3 +6,4 @@ threshold_picture.png
 .ipynb_checkpoints
 *ipynb
 app/batches/run_pca_model.py
+data_science

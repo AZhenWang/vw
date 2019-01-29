@@ -6,8 +6,6 @@ def execute(start_date, end_date):
     codes = DB.get_code_list()
     code_ids = codes['code_id']
     for code_id in code_ids:
-        if code_id < 2720:
-            continue
         daily = DB.test_select(code_id=code_id)
         daily_prev = daily.shift()
         pct_chgs = (daily.close - daily_prev.close)/daily_prev.close * 100
