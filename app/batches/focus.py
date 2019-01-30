@@ -66,7 +66,7 @@ def execute(start_date='', end_date=''):
                     'star_idx': holdings[-1],
                     'average': round(mean, 2),
                     'amplitude': round(y_hat, 2),
-                    'moods': round(y1_y1, 3)
+                    'moods': round(y1_y1, 2)
                 }
             i += 1
         if not new_rows.empty:
