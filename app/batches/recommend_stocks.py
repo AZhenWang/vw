@@ -59,11 +59,9 @@ def execute(start_date='', end_date=''):
                 content['knn_v'] = knn_v
 
             recommend_stocks.loc[i] = content
+    if not recommend_stocks.empty:
+        recommend_text = recommend_stocks.to_string(index=False)
 
-
-
-    recommend_text = recommend_stocks.to_string(index=False)
-
-    msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
-    send_email(subject=end_date + '预测', msgs=msgs)
+        msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
+        send_email(subject=end_date + '预测', msgs=msgs)
 
