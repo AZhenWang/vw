@@ -20,7 +20,7 @@ def execute(start_date='', end_date=''):
     msgs = []
     pca = Pca(cal_date=cal_date)
     recommend_stocks = pd.DataFrame(columns=['ts_code', 'star_idx', 'last_date', 'last_idx',
-                                             'average', 'amplitude', 'knn_v'])
+                                             'average', 'moods', 'amplitude', 'knn_v'])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
@@ -41,6 +41,7 @@ def execute(start_date='', end_date=''):
                 'last_date': last_recommend_date,
                 'last_idx': last_recommend_star,
                 'average': logs.iloc[i]['average'],
+                'moods': logs.iloc[i]['moods'],
                 'amplitude': logs.iloc[i]['amplitude'],
                 'knn_v': '',
             }

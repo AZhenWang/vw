@@ -5,6 +5,7 @@ create table recommend_stocks(
    recommend_type varchar(16) null comment'被哪个模型推荐, 为空就表示自主添加',
    star_idx int null comment'推荐星数',
    average float null comment'推荐平均值',
+   moods float null comment'人气',
    amplitude float null comment'推荐幅度',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),

@@ -43,11 +43,18 @@ def execute(start_date='', end_date=''):
                     # 负相关的先反过来
                     Y = (-1) * Y
 
+                Y1 = sample_pca[-sample_len:].col_1
+                correlation1 = Y1.corr(sample_prices[-sample_len:].reset_index(drop=True))
+                if correlation1 < 0:
+                    # 负相关的先反过来
+                    Y1 = (-1) * Y1
+
                 mean = np.mean(Y)
                 mean = mean * sample_len / (sample_len - 1)
                 mean = round(mean, 3)
 
                 # std = np.std(Y)
+                y1_y1 = (Y1.iloc[-1] - Y1.iloc[-2])*100
 
                 y_hat = knn_predict(sample_pca, sample_Y, k=1, sample_interval=sample_len,
                                     pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
@@ -59,6 +66,7 @@ def execute(start_date='', end_date=''):
                     'star_idx': holdings[-1],
                     'average': round(mean, 2),
                     'amplitude': round(y_hat, 2),
+                    'moods': round(y1_y1, 1)
                 }
             i += 1
         if not new_rows.empty:
