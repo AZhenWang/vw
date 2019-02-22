@@ -111,12 +111,11 @@ def execute(start_date='', end_date=''):
 
 def get_holdings(Y_hat):
     holdings = [0] * 2
-    holding = 0
     for i in range(2, len(Y_hat)):
-        if Y_hat[i] <= 8 <= Y_hat[i - 1]:
-            holding = 0
-        elif (Y_hat[i] > Y_hat[i - 1]) and (Y_hat[i - 1] > 8):
+        if (Y_hat[i] > Y_hat[i - 1]) and (Y_hat[i - 1] > 8):
             holding = 1
+        else:
+            holding = 0
 
         holdings.append(holding)
 
