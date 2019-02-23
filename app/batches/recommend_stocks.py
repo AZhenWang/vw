@@ -24,9 +24,9 @@ def execute(start_date='', end_date=''):
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
-        if logs.iloc[i]['star_idx'] == 2:
-            if logs.iloc[i]['amplitude'] < 4:
-                recommended = False
+        if logs.iloc[i]['amplitude'] < 4 or abs(logs.iloc[i]['moods']) < 0.2:
+            recommended = False
+
         if recommended:
             # 获取上一次的推荐记录
             lastestrecommend_logs = DB.get_latestrecommend_logs(code_id=code_id, date_id=current_date_id, recommend_type='pca', number=1)
