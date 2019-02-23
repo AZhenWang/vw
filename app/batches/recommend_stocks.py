@@ -42,7 +42,6 @@ def execute(start_date='', end_date=''):
                                                           return_y=True)
             pct_std = np.std(sample_Y)
             pct_mean = np.mean(sample_Y)
-
             content = {
                 'ts_code': logs.iloc[i]['ts_code'],
                 'star_idx': logs.iloc[i]['star_idx'],
@@ -65,7 +64,7 @@ def execute(start_date='', end_date=''):
 
             recommend_stocks.loc[i] = content
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['start_idx', 'moods'], ascending=[False, False])
+        recommend_stocks.sort_values(by=['star_idx', 'moods'], ascending=[False, False])
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
