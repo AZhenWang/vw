@@ -119,7 +119,7 @@ def get_holdings(sample_pca, sample_prices):
             holding = -1
             print('大顶部')
 
-        elif (Y[i - 10:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
+        elif (Y[i - 10:i - 2].sort_values()[-2:] > (mean + std)).all(axis=None) \
                 and (Y[i] - Y[i - 4:i].min()) > 1.328 * std \
                 and mean < Y[i - 5:i - 2].max():
             # 3个板的反弹。
