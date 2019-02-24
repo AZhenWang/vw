@@ -54,7 +54,7 @@ def execute(start_date='', end_date=''):
                 mean = round(mean, 3)
 
                 # std = np.std(Y)
-                y1_y1 = Y1.iloc[-2] - Y1.iloc[-1]
+                y1_y1 = Y1[-3:-2].max() - Y1.iloc[-1]
 
                 y_hat_1 = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
                                     pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
