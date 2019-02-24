@@ -54,7 +54,7 @@ def execute(start_date='', end_date=''):
                 mean = round(mean, 3)
 
                 # std = np.std(Y)
-                y1_y1 = Y1.iloc[-1] - Y1.iloc[-2]
+                y1_y1 = Y1.iloc[-2] - Y1.iloc[-1]
 
                 y_hat = knn_predict(sample_pca, sample_Y, k=3, sample_interval=244*2,
                                     pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
@@ -65,8 +65,8 @@ def execute(start_date='', end_date=''):
                     'recommend_type': 'pca',
                     'star_idx': holdings[-1],
                     'average': round(mean, 2),
-                    'amplitude': round(y_hat, 2),
-                    'moods': round(y1_y1, 2)
+                    'amplitude': round(y_hat, 1),
+                    'moods': round(y1_y1, 1)
                 }
             i += 1
         if not new_rows.empty:
