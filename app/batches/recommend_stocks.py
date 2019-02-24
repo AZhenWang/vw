@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
-        if logs.iloc[i]['amplitude'] < 4 or abs(logs.iloc[i]['moods']) < 0.2:
+        if abs(logs.iloc[i]['moods']) < 0.2:
             recommended = False
 
         if recommended:
@@ -56,7 +56,7 @@ def execute(start_date='', end_date=''):
 
             knn_v = ''
             for predict_idx in sample_Y.index[-5:]:
-                y_hat = knn_predict(sample_pca, sample_Y, k=1, sample_interval=122,
+                y_hat = knn_predict(sample_pca, sample_Y, k=3, sample_interval=244*2,
                                     pre_predict_interval=pre_predict_interval, predict_idx=predict_idx)
                 knn_v = knn_v + ' | ' + str(np.floor(y_hat))
                 content['knn_v'] = knn_v

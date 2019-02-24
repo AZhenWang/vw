@@ -56,7 +56,7 @@ def execute(start_date='', end_date=''):
                 # std = np.std(Y)
                 y1_y1 = Y1.iloc[-1] - Y1.iloc[-2]
 
-                y_hat = knn_predict(sample_pca, sample_Y, k=1, sample_interval=sample_len,
+                y_hat = knn_predict(sample_pca, sample_Y, k=3, sample_interval=244*2,
                                     pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
 
                 new_rows.loc[i] = {
@@ -106,6 +106,14 @@ def get_holdings(sample_pca, sample_prices):
             #   二、5、10、20均线均已向上发展
             #   三、前一天的涨幅<2个点，负的更好，如果前一天已经涨的多了，这个信号就失效了
             # 20190122: -0.01 < mean < 0.01, 此时2的信号更可靠
+
+        elif (Y[i - 30:i - 2].sort_values()[-2:] > (mean + 1.5*std)).all(axis=None) \
+                and Y[i - 5:i - 2].min() < (mean - 1.5*std) \
+                and (Y[i] - Y[i - 4:i].min()) > 1.328 * std \
+                and Y[i] > Y[i-1] > Y[i-2] and Y[i] > mean:
+                # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
+            print('强势之后的深度震荡后的强烈反弹i=', i)
+            holding = 3
 
         elif (Y[i - 5:i].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) and Y[i] < mean + 1.5 * std < Y[i - 1]:
             # 大顶部
