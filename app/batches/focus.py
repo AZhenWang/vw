@@ -56,9 +56,11 @@ def execute(start_date='', end_date=''):
                 # std = np.std(Y)
                 y1_y1 = Y1.iloc[-2] - Y1.iloc[-1]
 
-                y_hat = knn_predict(sample_pca, sample_Y, k=3, sample_interval=244*2,
+                y_hat_1 = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
                                     pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
-
+                y_hat_2 = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
+                                    pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-2])
+                y_hat = y_hat_1 - y_hat_2
                 new_rows.loc[i] = {
                     'date_id': date_id,
                     'code_id': code_id,

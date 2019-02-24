@@ -56,7 +56,7 @@ def execute(start_date='', end_date=''):
 
             knn_v = ''
             for predict_idx in sample_Y.index[-5:]:
-                y_hat = knn_predict(sample_pca, sample_Y, k=3, sample_interval=244*2,
+                y_hat = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
                                     pre_predict_interval=pre_predict_interval, predict_idx=predict_idx)
                 knn_v = knn_v + ' | ' + str(np.floor(y_hat))
                 content['knn_v'] = knn_v
