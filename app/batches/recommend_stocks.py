@@ -23,7 +23,9 @@ def execute(start_date='', end_date=''):
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
-        if abs(logs.iloc[i]['moods']) < 0.2:
+        if abs(logs.iloc[i]['moods']) < 0.2 and logs.iloc[i]['pct_mean'] < 0.3:
+            recommended = False
+        if logs.iloc[i]['star_idx'] == 4 and logs.iloc[i]['average'] < 0:
             recommended = False
 
         if recommended:
@@ -63,7 +65,7 @@ def execute(start_date='', end_date=''):
 
             recommend_stocks.loc[i] = content
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['star_idx', 'moods'], ascending=[False, False], inplace=True)
+        recommend_stocks.sort_values(by=['star_idx', 'moods', 'pct_mean'], ascending=[False, False, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
