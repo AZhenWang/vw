@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
-        if abs(logs.iloc[i]['moods']) < 0.2:
+        if abs(logs.iloc[i]['moods']) < 0.3:
             recommended = False
         if logs.iloc[i]['star_idx'] == 4 and logs.iloc[i]['average'] < 0:
             recommended = False
@@ -41,10 +41,8 @@ def execute(start_date='', end_date=''):
                                                           n_components=n_components,
                                                           pre_predict_interval=pre_predict_interval,
                                                           return_y=True)
-            pct_std = np.std(sample_Y)
-            pct_mean = np.mean(sample_Y)
-            if pct_mean < 0.3:
-                continue
+            pct_std = np.std(sample_Y[-488:])
+            pct_mean = np.mean(sample_Y[-488:])
 
             content = {
                 'ts_code': logs.iloc[i]['ts_code'],
