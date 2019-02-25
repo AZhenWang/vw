@@ -30,7 +30,7 @@ def execute(start_date='', end_date=''):
 
         thresholds = DB.get_thresholds(code_id=code_id, start_date_id=current_date_id,
                                            end_date_id=current_date_id)
-        if thresholds.iloc[0]['simple_threshold_v'] < -0.03:
+        if thresholds.iloc[0]['simple_threshold_v'] > -0.05:
             recommended = False
 
         if recommended:
