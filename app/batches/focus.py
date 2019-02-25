@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty:
                 continue
-            if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 9.9):
+            if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 5):
                 Y = sample_pca[-sample_len:].col_0
                 correlation = Y.corr(sample_prices[-sample_len:].reset_index(drop=True))
                 if correlation < 0:
@@ -110,9 +110,9 @@ def get_holdings(sample_pca, sample_prices):
             # 20190122: -0.01 < mean < 0.01, 此时2的信号更可靠
 
         elif (Y[i - 30:i - 2].sort_values()[-2:] > (mean + 1.5*std)).all(axis=None) \
-                and Y[i - 5:i - 2].min() < (mean - 1.5*std) \
-                and (Y[i] - Y[i - 4:i].min()) > 1.328 * std \
-                and Y[i] > Y[i-1] > Y[i-2] and Y[i] > mean:
+                and Y[i - 5:i].min() < (mean - 1.5*std) \
+                and (Y[i] - Y[i - 5:i].min()) > 1.5 * std \
+                and Y[i] > Y[i-1] > Y[i-2]:
                 # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
             print('强势之后的深度震荡后的强烈反弹i=', i)
             holding = 3

@@ -25,7 +25,7 @@ def execute(start_date='', end_date=''):
         recommended = True
         if abs(logs.iloc[i]['moods']) < 0.3:
             recommended = False
-        if logs.iloc[i]['star_idx'] == 4 and logs.iloc[i]['average'] < 0:
+        if logs.iloc[i]['star_idx'] == 4 and (logs.iloc[i]['average'] < 0 or logs.iloc[i]['average'] > 0.1):
             recommended = False
 
         if recommended:
@@ -41,8 +41,8 @@ def execute(start_date='', end_date=''):
                                                           n_components=n_components,
                                                           pre_predict_interval=pre_predict_interval,
                                                           return_y=True)
-            pct_std = np.std(sample_Y[-488:])
-            pct_mean = np.mean(sample_Y[-488:])
+            pct_std = np.std(sample_Y)
+            pct_mean = np.mean(sample_Y)
 
             content = {
                 'ts_code': logs.iloc[i]['ts_code'],
@@ -66,7 +66,7 @@ def execute(start_date='', end_date=''):
 
             recommend_stocks.loc[i] = content
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['star_idx', 'moods', 'pct_mean'], ascending=[False, False, False], inplace=True)
+        recommend_stocks.sort_values(by=['star_idx', 'pct_mean', 'moods', 'pct_mean'], ascending=[False, False, False, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
