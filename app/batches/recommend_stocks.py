@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
-        if abs(logs.iloc[i]['moods']) < 0.2:
+        if abs(logs.iloc[i]['moods']) < 0.2 or logs.iloc[i]['amplitude'] < 0:
             recommended = False
         if logs.iloc[i]['star_idx'] == 4 and (logs.iloc[i]['average'] < 0 or logs.iloc[i]['average'] > 0.1):
             recommended = False
@@ -43,6 +43,8 @@ def execute(start_date='', end_date=''):
                                                           return_y=True)
             pct_std = np.std(sample_Y)
             pct_mean = np.mean(sample_Y)
+            if pct_mean < 0.3:
+                continue
 
             content = {
                 'code_id': logs.iloc[i]['code_id'],
