@@ -19,11 +19,11 @@ def execute(start_date='', end_date=''):
     logs = logs[logs['star_idx'] >= 1]
     msgs = []
     pca = Pca(cal_date=cal_date)
-    recommend_stocks = pd.DataFrame(columns=['ts_code', 'star_idx', 'average', 'moods', 'amplitude', 'pct_mean', 'pct_std', 'knn_v', 'last_date', 'last_idx'])
+    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'star_idx', 'average', 'moods', 'amplitude', 'pct_mean', 'pct_std', 'knn_v', 'last_date', 'last_idx'])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
-        if abs(logs.iloc[i]['moods']) < 0.3:
+        if abs(logs.iloc[i]['moods']) < 0.2:
             recommended = False
         if logs.iloc[i]['star_idx'] == 4 and (logs.iloc[i]['average'] < 0 or logs.iloc[i]['average'] > 0.1):
             recommended = False
@@ -45,10 +45,11 @@ def execute(start_date='', end_date=''):
             pct_mean = np.mean(sample_Y)
 
             content = {
+                'code_id': logs.iloc[i]['code_id'],
                 'ts_code': logs.iloc[i]['ts_code'],
                 'star_idx': logs.iloc[i]['star_idx'],
                 'average': logs.iloc[i]['average'],
-                'moods': logs.iloc[i]['moods'],
+                'moods': abs(logs.iloc[i]['moods']),
                 'amplitude': logs.iloc[i]['amplitude'],
                 'pct_mean': round(pct_mean, 2),
                 'pct_std': round(pct_std, 2),
