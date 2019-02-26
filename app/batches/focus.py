@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty:
                 continue
-            if holdings[-1] != 0 and (holdings[-1] <= 1 or daily.at[0, 'pct_chg'] > 3):
+            if holdings[-1] != 0 and (holdings[-1] <= 1 or holdings[-1] == 3 or daily.at[0, 'pct_chg'] > 9):
                 Y = sample_pca[-sample_len:].col_0
                 correlation = Y.corr(sample_prices[-sample_len:].reset_index(drop=True))
                 if correlation < 0:
