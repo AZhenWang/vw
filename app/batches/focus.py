@@ -36,40 +36,56 @@ def execute(start_date='', end_date=''):
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty:
                 continue
-            if holdings[-1] != 0 and (holdings[-1] <= 1 or holdings[-1] == 3 or daily.at[0, 'pct_chg'] > 9):
-                Y = sample_pca[-sample_len:].col_0
-                correlation = Y.corr(sample_prices[-sample_len:].reset_index(drop=True))
-                if correlation < 0:
-                    # 负相关的先反过来
-                    Y = (-1) * Y
 
-                Y1 = sample_pca[-sample_len:].col_1
-                correlation1 = Y1.corr(sample_prices[-sample_len:].reset_index(drop=True))
-                if correlation1 < 0:
-                    # 负相关的先反过来
-                    Y1 = (-1) * Y1
+            Y = sample_pca[-sample_len:].col_0
+            correlation = Y.corr(sample_prices[-sample_len:].reset_index(drop=True))
+            if correlation < 0:
+                # 负相关的先反过来
+                Y = (-1) * Y
 
-                mean = np.mean(Y)
-                mean = mean * sample_len / (sample_len - 1)
-                mean = round(mean, 3)
+            Y1 = sample_pca[-sample_len:].col_1
+            correlation1 = Y1.corr(sample_prices[-sample_len:].reset_index(drop=True))
+            if correlation1 < 0:
+                # 负相关的先反过来
+                Y1 = (-1) * Y1
 
-                # std = np.std(Y)
-                y1_y1 = Y1[-3:-2].max() - Y1.iloc[-1]
+            mean = np.mean(Y)
+            mean = mean * sample_len / (sample_len - 1)
+            mean = round(mean, 3)
 
-                y_hat_1 = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
-                                    pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
-                y_hat_2 = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
-                                    pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-2])
-                y_hat = y_hat_1 - y_hat_2
-                new_rows.loc[i] = {
-                    'date_id': date_id,
-                    'code_id': code_id,
-                    'recommend_type': 'pca',
-                    'star_idx': holdings[-1],
-                    'average': round(mean, 2),
-                    'amplitude': round(y_hat, 1),
-                    'moods': round(y1_y1, 2)
-                }
+            # std = np.std(Y)
+            y1_y1 = Y1[-3:-2].max() - Y1.iloc[-1]
+
+            y_hat_1 = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
+                                pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
+            y_hat_2 = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
+                                pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-2])
+            y_hat = y_hat_1 - y_hat_2
+
+            flag = 0
+            if Y.iloc[-1] > Y.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
+                flag += 1
+                if Y.iloc[-2] > Y.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
+                    flag += 1
+                    if Y.iloc[-3] > Y.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
+                        flag += 1
+            elif Y.iloc[-1] < Y.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
+                flag -= 1
+                if Y.iloc[-2] < Y.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
+                    flag -= 1
+                    if Y.iloc[-3] < Y.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
+                        flag -= 1
+
+            new_rows.loc[i] = {
+                'date_id': date_id,
+                'code_id': code_id,
+                'recommend_type': 'pca',
+                'star_idx': holdings[-1],
+                'average': round(mean, 2),
+                'amplitude': round(y_hat, 1),
+                'moods': round(y1_y1, 2),
+                'flag': flag
+            }
             i += 1
         if not new_rows.empty:
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)

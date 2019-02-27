@@ -23,15 +23,14 @@ def execute(start_date='', end_date=''):
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended = True
-        if abs(logs.iloc[i]['moods']) < 0.2 or logs.iloc[i]['amplitude'] < 0:
-            recommended = False
-        if logs.iloc[i]['star_idx'] == 4 and (logs.iloc[i]['average'] < 0 or logs.iloc[i]['average'] > 0.1):
-            recommended = False
+        # if abs(logs.iloc[i]['moods']) < 0.2:
+        #     recommended = False
+        # if logs.iloc[i]['star_idx'] == 4 and (logs.iloc[i]['average'] < 0 or logs.iloc[i]['average'] > 0.1):
+        #     recommended = False
 
-        thresholds = DB.get_thresholds(code_id=code_id, start_date_id=current_date_id,
-                                           end_date_id=current_date_id)
-        if thresholds.iloc[0]['simple_threshold_v'] > -0.05:
-            recommended = False
+        # thresholds = DB.get_thresholds(code_id=code_id, start_date_id=current_date_id, end_date_id=current_date_id)
+        # if thresholds.iloc[0]['simple_threshold_v'] > -0.05:
+        #     recommended = False
 
         if recommended:
             # 获取上一次的推荐记录
