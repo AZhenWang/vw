@@ -99,15 +99,15 @@ def execute(start_date='', end_date=''):
 def get_holdings(sample_pca, sample_prices):
     Y = sample_pca.col_0.reset_index(drop=True)
     correlation = Y.corr(sample_prices.reset_index(drop=True))
-    if correlation < 0:
-        Y = (-1) * Y
-        correlation = (-1) * correlation
+    # if correlation < 0:
+    #     Y = (-1) * Y
+    #     correlation = (-1) * correlation
 
     mean = np.mean(Y)
     mean = mean * sample_len / (sample_len - 1)
     std = np.std(Y)
 
-    if correlation < 0.01:
+    if abs(correlation) < 0.1:
         holdings = [0] * len(Y)
         return holdings
 
