@@ -23,19 +23,14 @@ def execute(start_date='', end_date=''):
         DB.delete_recommend_stock_logs(date_id=date_id, recommend_type='pca')
         codes = DB.get_latestopendays_code_list(
             latest_open_days=sample_len*2+25, date_id=date_id)
+        code_ids = codes['code_id']
         pca = Pca(cal_date=cal_date)
         i = 0
-        code_ids = codes['code_id']
-        # code_ids = [2280,1192,1241,2302,2095,2446,1924,2830,543,2267,3368,850,210,1713,3374,1671,3270,1714,476]
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         for code_id in code_ids:
             sample_pca, sample_prices, sample_Y = pca.run(code_id=code_id, sample_len=0,
                                                           n_components=n_components, pre_predict_interval=pre_predict_interval,
                                                           return_y=True)
-            holdings = get_holdings(sample_pca[-sample_len:].reset_index(drop=True), sample_prices.iloc[-sample_len:])
-            daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
-            if daily.empty:
-                continue
 
             Y = sample_pca[-sample_len:].col_0
             correlation = Y.corr(sample_prices[-sample_len:].reset_index(drop=True))
@@ -49,6 +44,26 @@ def execute(start_date='', end_date=''):
                 # 负相关的先反过来
                 Y1 = (-1) * Y1
 
+            flag = 0
+            if Y.iloc[-1] > Y.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
+                flag += 1
+            if Y.iloc[-2] > Y.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
+                flag += 1
+            if Y.iloc[-3] > Y.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
+                flag += 1
+            if Y.iloc[-1] < Y.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
+                flag -= 1
+            if Y.iloc[-2] < Y.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
+                flag -= 1
+            if Y.iloc[-3] < Y.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
+                flag -= 1
+
+            holdings = get_holdings(sample_pca[-sample_len:].reset_index(drop=True),
+                                    sample_prices.iloc[-sample_len:])
+            daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
+            if daily.empty or (holdings[-1] == 0 and flag == 0):
+                continue
+
             mean = np.mean(Y)
             mean = mean * sample_len / (sample_len - 1)
             mean = round(mean, 3)
@@ -61,20 +76,6 @@ def execute(start_date='', end_date=''):
             y_hat_2 = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
                                 pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-2])
             y_hat = y_hat_1 - y_hat_2
-
-            flag = 0
-            if Y.iloc[-1] > Y.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
-                flag += 1
-                if Y.iloc[-2] > Y.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
-                    flag += 1
-                    if Y.iloc[-3] > Y.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
-                        flag += 1
-            elif Y.iloc[-1] < Y.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
-                flag -= 1
-                if Y.iloc[-2] < Y.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
-                    flag -= 1
-                    if Y.iloc[-3] < Y.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
-                        flag -= 1
 
             new_rows.loc[i] = {
                 'date_id': date_id,
