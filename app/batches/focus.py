@@ -104,10 +104,8 @@ def get_holdings(sample_pca, sample_prices):
     std = np.std(Y)
 
     if abs(correlation) < 0.1:
-        print('你晓得')
         holdings = [0] * len(Y)
         return holdings
-    print('不小的')
     start_loc = len(Y) - 1
     holdings = [0] * start_loc
     bottom_dis = 20
