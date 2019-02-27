@@ -67,8 +67,7 @@ def execute(start_date='', end_date=''):
             if Y0.iloc[-3] < Y0.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
                 flag -= 1
 
-            holdings = get_holdings(sample_pca[-sample_len:].reset_index(drop=True),
-                                    sample_prices.iloc[-sample_len:])
+            holdings = get_holdings(sample_pca,sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
 
             if daily.empty or (holdings[-1] == 0 and flag == 0):
@@ -85,7 +84,7 @@ def execute(start_date='', end_date=''):
                 'star_idx': holdings[-1],
                 'average': round(mean, 2),
                 'amplitude': round(y_hat, 1),
-                'moods': np.floor(y1_y1, 2),
+                'moods': round(y1_y1, 1),
                 'flag': flag
             }
             i += 1
@@ -105,9 +104,10 @@ def get_holdings(sample_pca, sample_prices):
     std = np.std(Y)
 
     if abs(correlation) < 0.1:
+        print('你晓得')
         holdings = [0] * len(Y)
         return holdings
-
+    print('不小的')
     start_loc = len(Y) - 1
     holdings = [0] * start_loc
     bottom_dis = 20
