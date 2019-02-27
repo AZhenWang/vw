@@ -5,7 +5,7 @@ create table features(
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(`name`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'特征定义';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'特征定义';
 
 create table features_groups(
    id INT NOT NULL AUTO_INCREMENT,
@@ -15,7 +15,7 @@ create table features_groups(
    PRIMARY KEY(id),
    index(`group_number`),
    index(`feature_id`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'特征组合表';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'特征组合表';
 
 create table thresholds(
    id INT NOT NULL AUTO_INCREMENT,
@@ -28,7 +28,7 @@ create table thresholds(
    PRIMARY KEY(id),
    index(`code_id`),
    CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'特征组合表';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'特征组合表';
 
 
 create table classifiers(
@@ -37,7 +37,7 @@ create table classifiers(
    params text null comment '参数值，json格式',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'聚类模型';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'聚类模型';
 
 
 create table classified_v(
@@ -56,7 +56,7 @@ create table classified_v(
    KEY (classifier_id),
    KEY (feature_group_number),
    unique KEY `unique_code_date`(`date_id`, `code_id`, `classifier_id`, `feature_group_number`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'聚类模型预测值';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'聚类模型预测值';
 
 
 # batch插入数据

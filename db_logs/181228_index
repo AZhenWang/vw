@@ -12,7 +12,7 @@ create table index_basic(
    `exp_date` VARCHAR(8)  NULL comment'终止日期',
    PRIMARY KEY(id),
    UNIQUE `ts_code_idx`  (`ts_code`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'指数列表';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'指数列表';
 
 
 create table index_daily(
@@ -32,7 +32,7 @@ create table index_daily(
    PRIMARY KEY(id),
    index(`index_id`),
    CONSTRAINT symbol UNIQUE KEY `unique_index_date`(`date_id`, `index_id`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'指数日线行情';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'指数日线行情';
 
 create table index_dailybasic(
    `id` INT NOT NULL AUTO_INCREMENT,
@@ -52,5 +52,5 @@ create table index_dailybasic(
    PRIMARY KEY(id),
    index(`index_id`),
    CONSTRAINT symbol UNIQUE KEY `unique_index_date`(`date_id`, `index_id`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'大盘指数每日指标';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'大盘指数每日指标';
 

@@ -67,7 +67,7 @@ create table stock_basic(
    is_hs	CHAR(1) NOT NULL	comment'是否沪深港通标的，N否 H沪股通 S深股通',
    PRIMARY KEY(id),
    UNIQUE `ts_code_idx`  (`ts_code`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'股票列表';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'股票列表';
 
 create table trade_cal(
    id INT NOT NULL AUTO_INCREMENT,
@@ -76,5 +76,5 @@ create table trade_cal(
    pretrade_date	VARCHAR(8)  NULL	comment'上一个交易日',
    PRIMARY KEY(id),
    UNIQUE `cal_date_idx`  (`cal_date`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'交易日历';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'交易日历';
 

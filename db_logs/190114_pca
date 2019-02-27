@@ -4,7 +4,7 @@ create table focus_stocks(
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(`code_id`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'关注的股票';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'关注的股票';
 
 create table rate_yearly(
    id INT NOT NULL AUTO_INCREMENT,
@@ -20,4 +20,4 @@ create table rate_yearly(
    index(`code_id`),
    index(`plan_number`),
    index `code_date_idx`(`date_id`, `code_id`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8 comment'股票年收益率';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'股票年收益率';
