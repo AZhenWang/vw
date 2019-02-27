@@ -24,7 +24,7 @@ def execute(start_date='', end_date=''):
         codes = DB.get_latestopendays_code_list(
             latest_open_days=sample_len*2+25, date_id=date_id)
         code_ids = codes['code_id']
-        # code_ids = [821]
+        # code_ids = [2852]
         pca = Pca(cal_date=cal_date)
         i = 0
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
@@ -81,7 +81,6 @@ def execute(start_date='', end_date=''):
             y_hat_2 = knn_predict(pca_features, Y, k=2, sample_interval=244*2,
                                 pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-2])
             y_hat = y_hat_1 - y_hat_2
-
             new_rows.loc[i] = {
                 'date_id': date_id,
                 'code_id': code_id,
@@ -89,7 +88,7 @@ def execute(start_date='', end_date=''):
                 'star_idx': holdings[-1],
                 'average': round(mean, 2),
                 'amplitude': round(y_hat, 1),
-                'moods': round(y1_y1, 2),
+                'moods': np.floor(y1_y1, 2),
                 'flag': flag
             }
             i += 1
