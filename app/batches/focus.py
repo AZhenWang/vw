@@ -82,7 +82,7 @@ def execute(start_date='', end_date=''):
                 'code_id': code_id,
                 'recommend_type': 'pca',
                 'star_idx': holdings[-1],
-                'average': round(mean, 2),
+                'average': round(np.mean(Y[-10:]), 2),
                 'amplitude': round(y_hat, 1),
                 'moods': round(y1_y1, 1),
                 'flag': flag
