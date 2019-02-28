@@ -6,9 +6,9 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 # 取半年样本区间
-sample_len = 30
+sample_len = 60
 n_components = 2
-pre_predict_interval = 20
+pre_predict_interval = 5
 
 
 def execute(start_date='', end_date=''):
@@ -85,7 +85,7 @@ def execute(start_date='', end_date=''):
                 'code_id': code_id,
                 'recommend_type': 'pca',
                 'star_idx': holdings[-1],
-                'average': round(np.mean(Y[-30:]), 2),
+                'average': round(np.mean(Y[-20:]), 2),
                 'amplitude': round(y_hat, 1),
                 'moods': round(y1_y1, 1),
                 'flag': flag
@@ -112,6 +112,10 @@ def get_holdings(sample_pca, sample_prices):
     start_loc = len(Y) - 1
     holdings = [0] * start_loc
     bottom_dis = 20
+
+    point_args = np.diff(np.where(np.diff(Y[-bottom_dis:]) > 0, 0, 1))
+    peaks = Y[-bottom_dis + 1:-1][point_args == 1]
+    bottoms = Y[-bottom_dis + 1:-1][point_args == -1]
 
     for i in range(start_loc, len(Y)):
         # 正相关
@@ -157,9 +161,7 @@ def get_holdings(sample_pca, sample_prices):
             print('双顶后的强势反抽3个板i=', i)
             holding = 4
 
-        elif Y[i - bottom_dis:i - 5].min() < Y[i - 5:i].min() and Y[i - 2] < Y[i - 1] < Y[i] \
-                and Y[i - bottom_dis:i - 5].min() < mean - 1.5 * std and Y[i - 2] < mean - 1 * std:
-            print(Y[i - 2], mean, std, mean - 1.5 * std)
+        elif Y[i - 2] < Y[i - 1] < Y[i] and Y.iloc[i] > peaks.iloc[-1] and bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 1
