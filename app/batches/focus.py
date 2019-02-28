@@ -6,9 +6,9 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 # 取半年样本区间
-sample_len = 60
+sample_len = 30
 n_components = 2
-pre_predict_interval = 5
+pre_predict_interval = 20
 
 
 def execute(start_date='', end_date=''):
@@ -24,7 +24,6 @@ def execute(start_date='', end_date=''):
         codes = DB.get_latestopendays_code_list(
             latest_open_days=sample_len*2+25, date_id=date_id)
         code_ids = codes['code_id']
-        # code_ids = [2852]
         pca = Pca(cal_date=cal_date)
         i = 0
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
@@ -42,13 +41,13 @@ def execute(start_date='', end_date=''):
             Y0 = sample_pca.col_0
             Y1 = sample_pca.col_1
             correlation0 = Y0.corr(sample_prices)
-            # correlation1 = Y1.corr(sample_prices)
+            correlation1 = Y1.corr(sample_prices)
             if correlation0 < 0:
                 # 负相关的先反过来
                 Y0 = (-1) * Y0
-            # if correlation1 < 0 and abs(correlation1) >= 0.1:
-            #     # 负相关的先反过来
-            #     Y1 = (-1) * Y1
+            if correlation1 < 0:
+                # 负相关的先反过来
+                Y1 = (-1) * Y1
 
             mean = np.mean(Y0)
             mean = mean * sample_len / (sample_len - 1)
