@@ -41,14 +41,14 @@ def execute(start_date='', end_date=''):
 
             Y0 = sample_pca.col_0
             Y1 = sample_pca.col_1
-            correlation0 = Y0.corr(sample_prices)
-            correlation1 = Y1.corr(sample_prices)
-            if correlation0 < 0 and abs(correlation0) >= 0.1:
-                # 负相关的先反过来
-                Y0 = (-1) * Y0
-            if correlation1 < 0 and abs(correlation1) >= 0.1:
-                # 负相关的先反过来
-                Y1 = (-1) * Y1
+            # correlation0 = Y0.corr(sample_prices)
+            # correlation1 = Y1.corr(sample_prices)
+            # if correlation0 < 0 and abs(correlation0) >= 0.1:
+            #     # 负相关的先反过来
+            #     Y0 = (-1) * Y0
+            # if correlation1 < 0 and abs(correlation1) >= 0.1:
+            #     # 负相关的先反过来
+            #     Y1 = (-1) * Y1
 
             mean = np.mean(Y0)
             mean = mean * sample_len / (sample_len - 1)
@@ -103,9 +103,9 @@ def get_holdings(sample_pca, sample_prices):
     mean = mean * sample_len / (sample_len - 1)
     std = np.std(Y)
 
-    if abs(correlation) < 0.1:
-        holdings = [0] * len(Y)
-        return holdings
+    # if abs(correlation) < 0.1:
+    #     holdings = [0] * len(Y)
+    #     return holdings
     start_loc = len(Y) - 1
     holdings = [0] * start_loc
     bottom_dis = 20
