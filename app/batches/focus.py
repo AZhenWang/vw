@@ -52,20 +52,24 @@ def execute(start_date='', end_date=''):
 
             mean = np.mean(Y0)
             mean = mean * sample_len / (sample_len - 1)
+            std = np.std(Y0)
 
             flag = 0
-            if Y0.iloc[-1] > Y0.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
-                flag += 1
-            if Y0.iloc[-2] > Y0.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
-                flag += 1
-            if Y0.iloc[-3] > Y0.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
-                flag += 1
-            if Y0.iloc[-1] < Y0.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
-                flag -= 1
-            if Y0.iloc[-2] < Y0.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
-                flag -= 1
-            if Y0.iloc[-3] < Y0.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
-                flag -= 1
+            if Y0.iloc[-2] < mean - 1.5 * std and Y0.iloc[-1] > Y0.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
+                if Y0.iloc[-2] > Y0.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
+                    flag += 1
+                if Y0.iloc[-3] > Y0.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
+                    flag += 1
+                if Y0.iloc[-4] > Y0.iloc[-5] and sample_prices.iloc[-4] < sample_prices.iloc[-5]:
+                    flag += 1
+
+            if Y0.iloc[-2] > mean + 1.5 * std and Y0.iloc[-1] < Y0.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
+                if Y0.iloc[-2] < Y0.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
+                    flag -= 1
+                if Y0.iloc[-3] < Y0.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
+                    flag -= 1
+                if Y0.iloc[-4] < Y0.iloc[-5] and sample_prices.iloc[-4] > sample_prices.iloc[-5]:
+                    flag -= 1
 
             holdings = get_holdings(sample_pca,sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
@@ -82,7 +86,7 @@ def execute(start_date='', end_date=''):
                 'code_id': code_id,
                 'recommend_type': 'pca',
                 'star_idx': holdings[-1],
-                'average': round(np.mean(Y[-10:]), 2),
+                'average': round(np.mean(Y[-30:]), 2),
                 'amplitude': round(y_hat, 1),
                 'moods': round(y1_y1, 1),
                 'flag': flag
