@@ -6,9 +6,9 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 # 取半年样本区间
-sample_len = 122
+sample_len = 60
 n_components = 2
-pre_predict_interval = 2
+pre_predict_interval = 5
 
 
 def execute(start_date='', end_date=''):
@@ -29,7 +29,7 @@ def execute(start_date='', end_date=''):
         i = 0
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         for code_id in code_ids:
-            pca_features, prices, Y = pca.run(code_id=code_id, n_components=n_components, return_y=True)
+            pca_features, prices, Y = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval, n_components=n_components, return_y=True)
             if sample_len != 0:
                 sample_pca = pca_features[-sample_len:].reset_index(drop=True)
                 sample_prices = prices[-sample_len:].reset_index(drop=True)
@@ -41,11 +41,11 @@ def execute(start_date='', end_date=''):
 
             Y0 = sample_pca.col_0
             Y1 = sample_pca.col_1
-            # correlation0 = Y0.corr(sample_prices)
+            correlation0 = Y0.corr(sample_prices)
             # correlation1 = Y1.corr(sample_prices)
-            # if correlation0 < 0 and abs(correlation0) >= 0.1:
-            #     # 负相关的先反过来
-            #     Y0 = (-1) * Y0
+            if correlation0 < 0:
+                # 负相关的先反过来
+                Y0 = (-1) * Y0
             # if correlation1 < 0 and abs(correlation1) >= 0.1:
             #     # 负相关的先反过来
             #     Y1 = (-1) * Y1
@@ -95,9 +95,9 @@ def execute(start_date='', end_date=''):
 def get_holdings(sample_pca, sample_prices):
     Y = sample_pca.col_0.reset_index(drop=True)
     correlation = Y.corr(sample_prices.reset_index(drop=True))
-    # if correlation < 0:
-    #     Y = (-1) * Y
-    #     correlation = (-1) * correlation
+    if correlation < 0:
+        Y = (-1) * Y
+        correlation = (-1) * correlation
 
     mean = np.mean(Y)
     mean = mean * sample_len / (sample_len - 1)
