@@ -9,15 +9,9 @@ class Assembly(object):
     up_threshold = -0.05
     down_threshold = -0.03
 
-    def __init__(self, end_date='', sample_interval='', pre_predict_interval=5):
+    def __init__(self, end_date='', pre_predict_interval=5):
         self.end_date = end_date
-        if sample_interval == '':
-            self.period = ''
-        else:
-            self.period = sample_interval + pre_predict_interval + 20
-
         self.pre_predict_interval = pre_predict_interval
-        self.sample_interval = sample_interval
         self.features = DB.get_features()
         self.code_id = ''
         self.adj_close = []
@@ -104,7 +98,7 @@ class Assembly(object):
 
     def pack_features(self, code_id):
         self.code_id = code_id
-        data = DB.get_code_info(code_id=code_id, end_date=self.end_date, period=self.period)
+        data = DB.get_code_info(code_id=code_id, end_date=self.end_date)
         data = data[data['vol'] != 0]
         Adj_close = data['close'] * data['adj_factor']
         Adj_open = data['open'] * data['adj_factor']
@@ -141,13 +135,15 @@ class Assembly(object):
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         Amplitude.fillna(1, inplace=True)
 
+        Turnover_rate = data['turnover_rate_f']
+
         feature_dict = {}
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
         X = pd.DataFrame(feature_dict).dropna()
 
         self.date_idxs = X.index
-        self.adj_close = Adj_close
+        self.adj_close = Adj_close[self.date_idxs]
 
         return X
 
