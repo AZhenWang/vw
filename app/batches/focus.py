@@ -22,8 +22,9 @@ def execute(start_date='', end_date=''):
     for cal_date, date_id in trade_cal[['cal_date', 'date_id']].values:
         DB.delete_recommend_stock_logs(date_id=date_id, recommend_type='pca')
         codes = DB.get_latestopendays_code_list(
-            latest_open_days=sample_len*2+25, date_id=date_id)
+            latest_open_days=244*2+25, date_id=date_id)
         code_ids = codes['code_id']
+        # code_ids = [1442]
         pca = Pca(cal_date=cal_date)
         i = 0
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
@@ -51,6 +52,7 @@ def execute(start_date='', end_date=''):
 
             mean = np.mean(Y0)
             mean = mean * sample_len / (sample_len - 1)
+            mean = 0
             std = np.std(Y0)
 
             flag = 0
@@ -80,13 +82,32 @@ def execute(start_date='', end_date=''):
 
             y_hat = knn_predict(pca_features, Y, k=2, sample_interval=244*2,
                                 pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
+
+            bottom_dis = 20
+            point_args = np.diff(np.where(np.diff(Y0[-bottom_dis:]) > 0, 0, 1))
+            peaks = Y0[-bottom_dis + 1:-1][point_args == 1]
+            bottoms = np.floor((Y0[-bottom_dis + 1:-1][point_args == -1])*100)/100
+
+            print('Y0=', Y0)
+            print('bottoms=', bottoms)
+            print('peaks=', peaks)
+            print(Y0.iloc[-2], Y0.iloc[-1])
+
+            amplitude = 0
+            if Y0.iloc[-2] < Y0.iloc[-1] and (Y0.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] >= bottoms.iloc[-2]:
+                # 底上升
+                amplitude = 1
+            elif Y0.iloc[-2] > Y0.iloc[-1] and (Y0.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] <= bottoms.iloc[-2]) and peaks.iloc[-1] < peaks.iloc[-2]:
+                # 底上升
+                amplitude = -1
+
             new_rows.loc[i] = {
                 'date_id': date_id,
                 'code_id': code_id,
                 'recommend_type': 'pca',
                 'star_idx': holdings[-1],
                 'average': round(np.mean(Y[-20:]), 2),
-                'amplitude': round(y_hat, 1),
+                'amplitude': amplitude,
                 'moods': round(y1_y1, 1),
                 'flag': flag
             }
@@ -104,6 +125,7 @@ def get_holdings(sample_pca, sample_prices):
 
     mean = np.mean(Y)
     mean = mean * sample_len / (sample_len - 1)
+    mean = 0
     std = np.std(Y)
 
     # if abs(correlation) < 0.1:
@@ -133,7 +155,7 @@ def get_holdings(sample_pca, sample_prices):
             # 20190122: -0.01 < mean < 0.01, 此时2的信号更可靠
 
         elif (Y[i - 30:i - 2].sort_values()[-2:] > (mean + 1.5*std)).all(axis=None) \
-                and Y[i - 5:i].min() < (mean - 1.5*std) \
+                and Y[i - 5:i].min() < (mean - 1*std) \
                 and (Y[i] - Y[i - 5:i].min()) > 1.5 * std \
                 and Y[i-1] < mean \
                 and Y[i] > Y[i-1] > Y[i-2]:
@@ -161,7 +183,7 @@ def get_holdings(sample_pca, sample_prices):
             print('双顶后的强势反抽3个板i=', i)
             holding = 4
 
-        elif Y[i - 2] < Y[i - 1] < Y[i] and Y.iloc[i] > peaks.iloc[-1] and bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
+        elif Y[i] - Y[i-1] >= Y[i-1] - Y[i-2] > 0 and Y.iloc[i] > peaks.iloc[-1] and bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 1
