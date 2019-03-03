@@ -23,8 +23,6 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [1442]
-    print(trade_cal)
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
@@ -91,19 +89,14 @@ def execute(start_date='', end_date=''):
             peaks = Y0[-bottom_dis + 1:-1][point_args == 1]
             bottoms = np.floor((Y0[-bottom_dis + 1:-1][point_args == -1])*100)/100
 
-            print('Y0=', Y0)
-            print('bottoms=', bottoms)
-            print('peaks=', peaks)
-            print(Y0.iloc[-2], Y0.iloc[-1])
-
             amplitude = 0
-            if Y0.iloc[-2] < Y0.iloc[-1] and (Y0.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] >= bottoms.iloc[-2]:
-                # 底上升
-                amplitude = 1
-            elif Y0.iloc[-2] > Y0.iloc[-1] and (Y0.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] <= bottoms.iloc[-2]) and peaks.iloc[-1] < peaks.iloc[-2]:
-                # 底上升
-                amplitude = -1
-
+            if len(bottoms) >= 2 and len(peaks) >= 2:
+                if Y0.iloc[-2] < Y0.iloc[-1] and (Y0.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] >= bottoms.iloc[-2]:
+                    # 底上升
+                    amplitude = 1
+                elif Y0.iloc[-2] > Y0.iloc[-1] and (Y0.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] <= bottoms.iloc[-2]) and peaks.iloc[-1] < peaks.iloc[-2]:
+                    # 底上升
+                    amplitude = -1
             new_rows.loc[i] = {
                 'date_id': date_id,
                 'code_id': code_id,
@@ -114,7 +107,6 @@ def execute(start_date='', end_date=''):
                 'moods': round(y1_y1, 1),
                 'flag': flag
             }
-        print(new_rows)
         if not new_rows.empty:
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
 
