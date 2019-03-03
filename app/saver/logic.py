@@ -226,7 +226,7 @@ class DB(object):
     @classmethod
     def get_code_daily_later(cls, code_id='', date_id='', period=1):
         daily = pd.read_sql(
-            sa.text('select af.adj_factor, d.pct_chg from daily d'
+            sa.text('select af.adj_factor, d.* from daily d'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
                     ' where d.date_id > :date_id and d.code_id = :code_id '
@@ -458,6 +458,12 @@ class DB(object):
         pd.io.sql.execute('delete from recommend_stocks where date_id=%s and recommend_type=%s',
                           cls.engine,
                           params=[str(date_id), recommend_type])
+
+    @classmethod
+    def delete_recommend_log(cls, date_id, code_id, recommend_type=''):
+        pd.io.sql.execute('delete from recommend_stocks where date_id=%s and code_id = %s and recommend_type=%s',
+                          cls.engine,
+                          params=[str(date_id), str(code_id), recommend_type])
     @classmethod
     def delete_focus_stocks(cls):
         pd.io.sql.execute('delete from focus_stocks',
