@@ -39,20 +39,20 @@ def execute(start_date='', end_date=''):
 
         recommended_daily = DB.get_code_daily(code_id=code_id, date_id=recommended_date_id)
         focus_log = DB.get_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id)
-        if not focus_log.empty and focus_log.at[0, 'closed_date_id'] or focus_log.at[0, 'holding_date_id']:
+        if not focus_log.empty and (focus_log.at[0, 'closed_date_id'] or focus_log.at[0, 'holding_date_id']):
             continue
         predict_rose = 0  # 预测涨幅
-
         if logs.iloc[i]['star_idx'] == 1:
             if recommended_daily.at[0, 'pct_chg'] > 0:
                 next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
-                print('next_daily=', next_daily)
-                if next_daily.at[0, 'pct_chg'] > 0 or next_daily.at[1, 'pct_chg'] > 0 \
-                        and not (next_daily.at[1, 'pct_chg'] < 0 and next_daily.at[2, 'pct_chg'] < 0):
-                    if next_daily.at[0, 'pct_chg'] > 0:
-                        predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.at[0, 'pct_chg'])) * 10
+                if ((next_daily.iloc[0]['pct_chg'] > 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
+                        (next_daily.iloc[1]['pct_chg'] > 0 and next_daily.iloc[1]['close'] >= next_daily.iloc[1]['open'])) \
+                        and not (next_daily.iloc[1]['pct_chg'] < 0 and next_daily.iloc[2]['pct_chg'] < 0):
+                    if next_daily.iloc[0]['pct_chg'] > 0:
+                        predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.iloc[0]['pct_chg'])) * 10
                     else:
                         predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
+
         if focus_log.empty and predict_rose > 0:
             DB.insert_focus_stocks(code_id=code_id,
                                    star_idx=logs.iloc[i]['star_idx'],
@@ -64,14 +64,16 @@ def execute(start_date='', end_date=''):
         if predict_rose > 0:
             next_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
             for j in range(len(next_dailys)):
-                daily = next_dailys.iloc[j]
-                if daily['close'] <= recommended_daily.at[0, 'close'] * 0.99:
-                    closed_date_id = today_date_id
+                later_daily = next_dailys.iloc[j]
+                date_id = next_dailys.index[j]
+                if later_daily['close'] <= recommended_daily.at[0, 'open'] * 0.99:
+                    closed_date_id = date_id
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               closed_date_id=closed_date_id)
+                    break
 
-                elif daily['close'] >= np.max([recommended_daily.at[0, 'high'], next_dailys.iloc[0]['high']]):
-                    holding_date_id = today_date_id
+                elif later_daily['close'] >= (np.max([recommended_daily.at[0, 'close'], next_dailys.iloc[0]['close']])) * 1.02:
+                    holding_date_id = date_id
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               holding_date_id=holding_date_id)
 
@@ -83,12 +85,13 @@ def execute(start_date='', end_date=''):
                         'amplitude': logs.iloc[i]['amplitude'],
                         'average': logs.iloc[i]['average'],
                         'moods': abs(logs.iloc[i]['moods']),
-                        'pct_chg': daily.at[0, 'pct_chg'],
+                        'pct_chg': recommended_daily.at[0, 'pct_chg'],
                         'predict_rose': predict_rose,
                         'market': market,
                     }
 
                     recommend_stocks.loc[i] = content
+                    break
     if not recommend_stocks.empty:
         recommend_stocks.sort_values(by=['star_idx', 'predict_rose'], ascending=[True, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
