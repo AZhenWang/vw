@@ -54,12 +54,8 @@ fields_map = {
         'turnover_rate', 'turnover_rate_f', 'pe', 'pe_ttm', 'pb'
     ],
     'focus_stocks': [
-        'code_id',
+        'code_id', 'star_idx', 'predict_rose', 'recommend_type', 'recommended_date_id', 'closed_date_id', 'holding_date_id'
     ],
-    'rate_yearly': [
-        'plan_number', 'code_id', 'date_id', 'rate_yearly', 'min_rate', 'max_rate', 'mean_rate'
-    ]
-
 
 }
 

@@ -1,80 +1,96 @@
 from app.saver.logic import DB
 import pandas as pd
 import numpy as np
-from app.models.pca import Pca
 from app.common.function import send_email
-from app.common.function import knn_predict
 from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
 
 pre_predict_interval = 2
 sample_interval = 122
 n_components = 2
 
 def execute(start_date='', end_date=''):
-    trade_cal = DB.get_open_cal_date(end_date=end_date, period=2)
-    current_date_id = trade_cal.iloc[-1]['date_id']
-    cal_date = trade_cal.iloc[-1]['cal_date']
-    logs = DB.get_recommended_stocks(cal_date=cal_date, recommend_type='pca')
-    logs = logs[logs['star_idx'] >= 1]
+    trade_cal = DB.get_open_cal_date(end_date=end_date, period=20)
+    today_date_id = trade_cal.iloc[-1]['date_id']
+    end_date_id = trade_cal.iloc[-4]['date_id']
+    start_date_id = trade_cal.iloc[0]['date_id']
+    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
+    logs = logs[logs['star_idx'] == 1]
     msgs = []
-    pca = Pca(cal_date=cal_date)
-    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'star_idx', 'average', 'moods', 'amplitude', 'flag', 'pct_mean', 'pct_std', 'knn_v', 'last_date', 'last_idx'])
+    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'star_idx', 'average', 'moods',
+                                             'amplitude', 'flag', 'pct_chg', 'rose', 'market'])
+
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
-        recommended = True
-        # if abs(logs.iloc[i]['moods']) < 0.2:
-        #     recommended = False
-        # if logs.iloc[i]['star_idx'] == 4 and (logs.iloc[i]['average'] < 0 or logs.iloc[i]['average'] > 0.1):
-        #     recommended = False
+        recommended_date_id = logs.iloc[i]['date_id']
 
-        # thresholds = DB.get_thresholds(code_id=code_id, start_date_id=current_date_id, end_date_id=current_date_id)
-        # if thresholds.iloc[0]['simple_threshold_v'] > -0.05:
-        #     recommended = False
+        pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=3)
+        after_trade_cal = DB.get_open_cal_date_by_id(start_date_id=recommended_date_id, period=3)
+        grand_pre_date_id = pre_trade_cal.iloc[0]['date_id']
+        next_date_id = after_trade_cal.iloc[1]['date_id']
+        big_next_date = after_trade_cal.iloc[2]['cal_date']
+        data = DB.count_threshold_group_by_date_id(start_date_id=grand_pre_date_id, end_date_id=next_date_id)
+        data.eval('up_stock_ratio=up_stock_number/list_stock_number*100', inplace=True)
+        data['up_stock_ratio'] = data['up_stock_ratio'].apply(np.round, decimals=2)
+        if len(data) != 4:
+            continue
+        market = np.where(np.diff(data['up_stock_ratio']) < 0, 1, 0)
+        if market[-2] < 1:
+            continue
 
-        if recommended:
-            # 获取上一次的推荐记录
-            lastestrecommend_logs = DB.get_latestrecommend_logs(code_id=code_id, date_id=current_date_id, recommend_type='pca', number=1)
-            last_recommend_date = ''
-            last_recommend_star = ''
-            if not lastestrecommend_logs.empty:
-                last_recommend_date = lastestrecommend_logs.iloc[-1]['cal_date']
-                last_recommend_star = lastestrecommend_logs.iloc[-1]['star_idx']
+        recommended_daily = DB.get_code_daily(code_id=code_id, date_id=recommended_date_id)
+        focus_log = DB.get_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id)
+        if not focus_log.empty and focus_log.at[0, 'closed_date_id'] or focus_log.at[0, 'holding_date_id']:
+            continue
+        predict_rose = 0  # 预测涨幅
 
-            sample_pca, sample_prices, sample_Y = pca.run(code_id=code_id, sample_len=0,
-                                                          n_components=n_components,
-                                                          pre_predict_interval=pre_predict_interval,
-                                                          return_y=True)
-            pct_std = np.std(sample_Y)
-            pct_mean = np.mean(sample_Y)
-            if pct_mean < 0.3:
-                continue
+        if logs.iloc[i]['star_idx'] == 1:
+            if recommended_daily.at[0, 'pct_chg'] > 0:
+                next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
+                print('next_daily=', next_daily)
+                if next_daily.at[0, 'pct_chg'] > 0 or next_daily.at[1, 'pct_chg'] > 0 \
+                        and not (next_daily.at[1, 'pct_chg'] < 0 and next_daily.at[2, 'pct_chg'] < 0):
+                    if next_daily.at[0, 'pct_chg'] > 0:
+                        predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.at[0, 'pct_chg'])) * 10
+                    else:
+                        predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
+        if focus_log.empty and predict_rose > 0:
+            DB.insert_focus_stocks(code_id=code_id,
+                                   star_idx=logs.iloc[i]['star_idx'],
+                                   predict_rose=predict_rose,
+                                   recommend_type='pca',
+                                   recommended_date_id=recommended_date_id,
+                                   )
 
-            content = {
-                'code_id': logs.iloc[i]['code_id'],
-                'ts_code': logs.iloc[i]['ts_code'],
-                'star_idx': logs.iloc[i]['star_idx'],
-                'flag': logs.iloc[i]['flag'],
-                'average': logs.iloc[i]['average'],
-                'moods': abs(logs.iloc[i]['moods']),
-                'amplitude': logs.iloc[i]['amplitude'],
-                'pct_mean': round(pct_mean, 2),
-                'pct_std': round(pct_std, 2),
-                'knn_v': '',
-                'last_date': last_recommend_date,
-                'last_idx': last_recommend_star,
-            }
+        if predict_rose > 0:
+            next_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
+            for j in range(len(next_dailys)):
+                daily = next_dailys.iloc[j]
+                if daily['close'] <= recommended_daily.at[0, 'close'] * 0.99:
+                    closed_date_id = today_date_id
+                    DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
+                                              closed_date_id=closed_date_id)
 
-            knn_v = ''
-            for predict_idx in sample_Y.index[-5:]:
-                y_hat = knn_predict(sample_pca, sample_Y, k=2, sample_interval=244*2,
-                                    pre_predict_interval=pre_predict_interval, predict_idx=predict_idx)
-                knn_v = knn_v + ' | ' + str(np.floor(y_hat))
-                content['knn_v'] = knn_v
+                elif daily['close'] >= np.max([recommended_daily.at[0, 'high'], next_dailys.iloc[0]['high']]):
+                    holding_date_id = today_date_id
+                    DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
+                                              holding_date_id=holding_date_id)
 
-            recommend_stocks.loc[i] = content
+                    content = {
+                        'code_id': logs.iloc[i]['code_id'],
+                        'ts_code': logs.iloc[i]['ts_code'],
+                        'star_idx': logs.iloc[i]['star_idx'],
+                        'flag': logs.iloc[i]['flag'],
+                        'amplitude': logs.iloc[i]['amplitude'],
+                        'average': logs.iloc[i]['average'],
+                        'moods': abs(logs.iloc[i]['moods']),
+                        'pct_chg': daily.at[0, 'pct_chg'],
+                        'predict_rose': predict_rose,
+                        'market': market,
+                    }
+
+                    recommend_stocks.loc[i] = content
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['star_idx', 'pct_mean', 'moods', 'pct_mean'], ascending=[False, False, False, False], inplace=True)
+        recommend_stocks.sort_values(by=['star_idx', 'predict_rose'], ascending=[True, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))

@@ -1,23 +1,13 @@
 create table focus_stocks(
    id INT NOT NULL AUTO_INCREMENT,
    code_id INT NOT NULL,
+   star_idx INT NULL,
+   predict_rose INT NULL comment'预测涨幅',
+   recommend_type varchar(16) null comment'被哪个模型推荐, 为空就表示自主添加',
+   recommended_date_id INT NOT NULL comment'模型推荐日期',
+   closed_date_id INT NULL comment '关闭日期',
+   holding_date_id INT NULL comment'建议持有日期',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(`code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'关注的股票';
-
-create table rate_yearly(
-   id INT NOT NULL AUTO_INCREMENT,
-   code_id INT NOT NULL,
-   date_id INT NOT NULL,
-   plan_number int not null,
-   rate_yearly float not null,
-   min_rate float not null,
-   max_rate float not null,
-   mean_rate float not null,
-   created_at timestamp not null default CURRENT_TIMESTAMP,
-   PRIMARY KEY(id),
-   index(`code_id`),
-   index(`plan_number`),
-   index `code_date_idx`(`date_id`, `code_id`)
-)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'股票年收益率';

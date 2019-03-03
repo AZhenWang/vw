@@ -183,7 +183,7 @@ def get_holdings(sample_pca, sample_prices):
             print('双顶后的强势反抽3个板i=', i)
             holding = 4
 
-        elif Y[i] - Y[i-1] >= Y[i-1] - Y[i-2] > 0 and Y.iloc[i] > peaks.iloc[-1] and bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
+        elif Y[i] > Y[i-1] > Y[i-2] and Y.iloc[i] > peaks.iloc[-1] and mean > bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 1

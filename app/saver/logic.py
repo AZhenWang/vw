@@ -46,7 +46,9 @@ class DB(object):
         if period != '':
             trade_cal = pd.read_sql(
                 sa.text(
-                    'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date >= :sd and cal_date <= :ed order by cal_date desc limit :period'),
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where is_open = 1 and cal_date >= :sd and cal_date <= :ed '
+                    ' order by cal_date desc limit :period'),
                 cls.engine,
                 params={'sd': start_date, 'ed': end_date, 'period': period}
             )
@@ -54,9 +56,43 @@ class DB(object):
         else:
             trade_cal = pd.read_sql(
                 sa.text(
-                    'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date >= :sd and cal_date <= :ed'),
+                    'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date between :sd and :ed'
+                    ' order by cal_date desc'),
                 cls.engine,
                 params={'sd': start_date, 'ed': end_date}
+            )
+        trade_cal.sort_values(by='cal_date', inplace=True)
+        return trade_cal
+
+    @classmethod
+    def get_open_cal_date_by_id(cls, start_date_id='', end_date_id='', period=''):
+        if start_date_id == '':
+            trade_cal = pd.read_sql(
+                sa.text(
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where is_open = 1 and id <= :edi'
+                    ' order by cal_date desc limit :period'),
+                cls.engine,
+                params={'edi': str(end_date_id), 'period': period}
+            )
+
+        elif end_date_id == '':
+            trade_cal = pd.read_sql(
+                sa.text(
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where is_open = 1 and id >= :sdi'
+                    ' order by cal_date asc limit :period'),
+                cls.engine,
+                params={'sdi': str(start_date_id), 'period': period}
+            )
+        else:
+            trade_cal = pd.read_sql(
+                sa.text(
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where is_open = 1 and id between :sdi and :edi'
+                    ' order by cal_date desc limit :period'),
+                cls.engine,
+                params={'sdi': str(start_date_id), 'edi': str(end_date_id), 'period': period}
             )
         trade_cal.sort_values(by='cal_date', inplace=True)
         return trade_cal
@@ -119,7 +155,7 @@ class DB(object):
                         ' having count(d.code_id) >= :latest_open_days'
                         ),
                 cls.engine,
-                params={'ls': 'L', 'latest_open_days': latest_open_days}
+                params={'ls': 'L', 'latest_open_days': str(latest_open_days)}
             )
         else:
             code_list = pd.read_sql(
@@ -130,7 +166,7 @@ class DB(object):
                         ' having count(d.code_id) >= :latest_open_days'
                         ),
                 cls.engine,
-                params={'ls': 'L', 'di': date_id, 'latest_open_days': latest_open_days}
+                params={'ls': 'L', 'di': str(date_id), 'latest_open_days': str(latest_open_days)}
             )
 
         return code_list
@@ -181,8 +217,21 @@ class DB(object):
     @classmethod
     def get_code_daily(cls, code_id='', date_id=''):
         daily = pd.read_sql(
-            sa.text('select * from daily where date_id = :date_id and code_id = :code_id'), cls.engine,
+            sa.text('select d.*, af.adj_factor from daily d'
+                    ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
+                    ' where d.date_id = :date_id and d.code_id = :code_id'), cls.engine,
             params={'code_id': str(code_id), 'date_id': str(date_id)})
+        return daily
+
+    @classmethod
+    def get_code_daily_later(cls, code_id='', date_id='', period=1):
+        daily = pd.read_sql(
+            sa.text('select af.adj_factor, d.pct_chg from daily d'
+                    ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
+                    ' left join trade_cal tc on tc.id = d.date_id'
+                    ' where d.date_id > :date_id and d.code_id = :code_id '
+                    ' order by tc.cal_date asc limit :period'), cls.engine,
+            params={'code_id': str(code_id), 'date_id': str(date_id), 'period': period})
         return daily
 
     @classmethod
@@ -197,7 +246,7 @@ class DB(object):
                     ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed'
                     ' order by tc.cal_date desc '),
                 cls.engine,
-                params={'code_id': str(code_id), 'sd': start_date, 'ed': end_date}
+                params={'code_id': str(code_id), 'sd': str(start_date), 'ed': str(end_date)}
             )
         else:
             code_info = pd.read_sql(
@@ -210,7 +259,7 @@ class DB(object):
                     ' order by tc.cal_date desc '
                     ' limit :period'),
                 cls.engine,
-                params={'code_id': str(code_id), 'sd': start_date, 'ed': end_date, 'period': period}
+                params={'code_id': str(code_id), 'sd': str(start_date), 'ed': str(end_date), 'period': period}
             )
 
         code_info.sort_values(by='date_id', inplace=True)
@@ -265,7 +314,6 @@ class DB(object):
                     ' where date_id = :date_id and code_id = :code_id'), cls.engine,
             params={'date_id': str(date_id), 'code_id': str(code_id)})
         if existed.empty:
-            print('进来起')
             pd.io.sql.execute('insert into thresholds (code_id, date_id, SMS_month, SMS_year, simple_threshold_v) values (%s, %s, %s, %s, %s)',
                           cls.engine, params=[str(code_id), str(date_id), str(SMS_month), str(SMS_year), str(simple_threshold_v)])
 
@@ -323,15 +371,26 @@ class DB(object):
         return stocks
 
     @classmethod
-    def get_recommended_stocks(cls, cal_date='', recommend_type=''):
+    def get_recommended_stocks(cls, start_date_id='',  end_date_id='', recommend_type=''):
         stocks = pd.read_sql(
-            sa.text(' select tc.cal_date, sb.ts_code, rs.* from recommend_stocks rs '
-                    ' left join trade_cal tc on tc.id = rs.date_id'
+            sa.text(' select sb.ts_code, rs.* from recommend_stocks rs '
                     ' left join stock_basic sb on sb.id = rs.code_id'
-                    ' where tc.cal_date=:cd and rs.recommend_type = :rt'
-                    ' order by rs.star_idx desc, rs.amplitude desc'),
+                    ' where rs.date_id between :sdi and :edi and rs.recommend_type = :rt'
+                    ' order by rs.date_id asc, rs.star_idx desc, rs.amplitude desc'
+                    ),
             cls.engine,
-            params={'cd': cal_date, 'rt': recommend_type}
+            params={'sdi': str(start_date_id), 'edi': str(end_date_id), 'rt': recommend_type}
+        )
+        return stocks
+
+    @classmethod
+    def get_all_recommended_stocks(cls, recommend_type=''):
+        stocks = pd.read_sql(
+            sa.text(' select rs.* from recommend_stocks rs '
+                    ' where rs.recommend_type = :rt'
+                    ' order by rs.date_id asc, rs.star_idx desc, rs.moods desc'),
+            cls.engine,
+            params={'rt': recommend_type}
         )
         return stocks
 
@@ -349,20 +408,35 @@ class DB(object):
         return logs
 
     @classmethod
-    def insert_focus_stocks(cls, code_id):
-        pd.io.sql.execute('insert into focus_stocks (code_id) values (%s)', cls.engine,
-                          params=[str(code_id)])
+    def insert_focus_stocks(cls, code_id, star_idx, predict_rose, recommend_type, recommended_date_id):
+        pd.io.sql.execute('insert into focus_stocks (code_id, star_idx, predict_rose, '
+                          'recommend_type, recommended_date_id ) values (%s,%s,%s,%s,%s)', cls.engine,
+                          params=[str(code_id), str(star_idx), str(predict_rose), str(recommend_type), str(recommended_date_id)])
     @classmethod
-    def get_focus_stocks(cls, limit=''):
-        if limit != '':
-            stocks = pd.read_sql(
-                sa.text(' select rs.* from focus_stocks rs order by id asc limit :limit'),
-                cls.engine,
-                params={'limit': limit})
-        else:
-            stocks = pd.read_sql(
-                sa.text(' select rs.* from focus_stocks rs order by id asc'),
-                cls.engine)
+    def update_focus_stock_log(cls, code_id, recommended_date_id , holding_date_id='', closed_date_id=''):
+        if holding_date_id != '':
+            pd.io.sql.execute('update focus_stocks set holding_date_id = %s where code_id = %s and recommended_date_id = %s',
+                              cls.engine,
+                              params=[str(holding_date_id), str(code_id), str(recommended_date_id)])
+        if closed_date_id != '':
+            pd.io.sql.execute('update focus_stocks set closed_date_id = %s where code_id = %s and recommended_date_id = %s',
+                              cls.engine,
+                              params=[str(closed_date_id), str(code_id), str(recommended_date_id)])
+    @classmethod
+    def get_focus_stocks(cls):
+        stocks = pd.read_sql(
+            sa.text(' select fs.* from focus_stocks fs where fs.closed_date_id is null order by fs.recommended_date_id desc'),
+            cls.engine)
+        return stocks
+
+    @classmethod
+    def get_focus_stock_log(cls, code_id, recommended_date_id, recommend_type='pca'):
+        stocks = pd.read_sql(
+            sa.text(
+                ' select fs.* from focus_stocks fs '
+                ' where fs.recommended_date_id = :di and fs.code_id = :ci and fs.recommend_type=:rt'),
+            cls.engine,
+            params={'ci': str(code_id), 'di': str(recommended_date_id), 'rt': recommend_type})
         return stocks
 
     @classmethod
