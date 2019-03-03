@@ -19,26 +19,29 @@ def execute(start_date='', end_date=''):
     :return:
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
-    for cal_date, date_id in trade_cal[['cal_date', 'date_id']].values:
-        DB.delete_recommend_stock_logs(date_id=date_id, recommend_type='pca')
-        codes = DB.get_latestopendays_code_list(
-            latest_open_days=244*2+25, date_id=date_id)
-        code_ids = codes['code_id']
-        # code_ids = [1442]
-        pca = Pca(cal_date=cal_date)
-        i = 0
+    cal_length = len(trade_cal)
+    codes = DB.get_latestopendays_code_list(
+        latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
+    code_ids = codes['code_id']
+    # code_ids = [1442]
+    print(trade_cal)
+    pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
+    for code_id in code_ids:
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
-        for code_id in code_ids:
-            pca_features, prices, Y = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval, n_components=n_components, return_y=True)
+        pca_features, prices, Y = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
+                                          n_components=n_components, return_y=True)
+        pca_length = len(pca_features)
+        for i in range(pca_length-cal_length, pca_length):
+            date_id = Y.index[i]
+            DB.delete_recommend_log(code_id=code_id, date_id=date_id, recommend_type='pca')
             if sample_len != 0:
-                sample_pca = pca_features[-sample_len:].reset_index(drop=True)
-                sample_prices = prices[-sample_len:].reset_index(drop=True)
-                sample_Y = Y[-sample_len:]
+                sample_pca = pca_features[:i+1][-sample_len:].reset_index(drop=True)
+                sample_prices = prices[:i+1][-sample_len:].reset_index(drop=True)
+                sample_Y = Y[:i+1][-sample_len:]
             else:
                 sample_pca = pca_features
                 sample_prices = prices
                 sample_Y = Y
-
             Y0 = sample_pca.col_0
             Y1 = sample_pca.col_1
             correlation0 = Y0.corr(sample_prices)
@@ -50,8 +53,8 @@ def execute(start_date='', end_date=''):
                 # 负相关的先反过来
                 Y1 = (-1) * Y1
 
-            mean = np.mean(Y0)
-            mean = mean * sample_len / (sample_len - 1)
+            # mean = np.mean(Y0)
+            # mean = mean * sample_len / (sample_len - 1)
             mean = 0
             std = np.std(Y0)
 
@@ -80,8 +83,8 @@ def execute(start_date='', end_date=''):
 
             y1_y1 = Y1[-3:-2].max() - Y1.iloc[-1]
 
-            y_hat = knn_predict(pca_features, Y, k=2, sample_interval=244*2,
-                                pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
+            # y_hat = knn_predict(pca_features, Y, k=2, sample_interval=244*2,
+            #                     pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
 
             bottom_dis = 20
             point_args = np.diff(np.where(np.diff(Y0[-bottom_dis:]) > 0, 0, 1))
@@ -111,7 +114,7 @@ def execute(start_date='', end_date=''):
                 'moods': round(y1_y1, 1),
                 'flag': flag
             }
-            i += 1
+        print(new_rows)
         if not new_rows.empty:
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
 
@@ -123,8 +126,8 @@ def get_holdings(sample_pca, sample_prices):
         Y = (-1) * Y
         correlation = (-1) * correlation
 
-    mean = np.mean(Y)
-    mean = mean * sample_len / (sample_len - 1)
+    # mean = np.mean(Y)
+    # mean = mean * sample_len / (sample_len - 1)
     mean = 0
     std = np.std(Y)
 
