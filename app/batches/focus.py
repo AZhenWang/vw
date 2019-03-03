@@ -20,19 +20,18 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
-    # codes = DB.get_latestopendays_code_list(
-    #     latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
-    # code_ids = codes['code_id']
-    code_ids = [3419]
+    codes = DB.get_latestopendays_code_list(
+        latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
+    code_ids = codes['code_id']
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
+        print('code_id=', code_id)
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
         pca_features, prices, Y = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
                                           n_components=n_components, return_y=True)
         pca_length = len(pca_features)
         for i in range(pca_length-cal_length, pca_length):
             date_id = Y.index[i]
-            print('date_id=', date_id)
             DB.delete_recommend_log(code_id=code_id, date_id=date_id, recommend_type='pca')
             if sample_len != 0:
                 sample_pca = pca_features[:i+1][-sample_len:].reset_index(drop=True)
@@ -57,10 +56,8 @@ def execute(start_date='', end_date=''):
             # mean = mean * sample_len / (sample_len - 1)
             mean = 0
             std = np.std(Y0)
-            print('fdafd0')
             flag = 0
             if Y0.iloc[-2] < mean - 1.5 * std and Y0.iloc[-1] > Y0.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
-                print('fdafd1')
                 if Y0.iloc[-2] > Y0.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
                     flag += 1
                 if Y0.iloc[-3] > Y0.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
@@ -69,25 +66,18 @@ def execute(start_date='', end_date=''):
                     flag += 1
 
             if Y0.iloc[-2] > mean + 1.5 * std and Y0.iloc[-1] < Y0.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
-                print('fdafd2')
                 if Y0.iloc[-2] < Y0.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
                     flag -= 1
                 if Y0.iloc[-3] < Y0.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
                     flag -= 1
                 if Y0.iloc[-4] < Y0.iloc[-5] and sample_prices.iloc[-4] > sample_prices.iloc[-5]:
                     flag -= 1
-            print('fdafd3')
-            print('sample_pca=', sample_pca)
-            print('sample_prices=', sample_prices)
             holdings = get_holdings(sample_pca, sample_prices)
-            print('fdafd4')
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             print(holdings)
 
             if daily.empty or (holdings[-1] == 0 and flag == 0):
                 continue
-            print('你好')
-            print('Y1=', Y1)
             y1_y1 = Y1[-3:-2].max() - Y1.iloc[-1]
 
             # y_hat = knn_predict(pca_features, Y, k=2, sample_interval=244*2,
@@ -97,8 +87,6 @@ def execute(start_date='', end_date=''):
             point_args = np.diff(np.where(np.diff(Y0[-bottom_dis:]) > 0, 0, 1))
             peaks = Y0[-bottom_dis + 1:-1][point_args == 1]
             bottoms = np.floor((Y0[-bottom_dis + 1:-1][point_args == -1])*100)/100
-            print('peaks=', peaks)
-            print('bottoms=', bottoms)
             amplitude = 0
             if len(bottoms) >= 2 and len(peaks) >= 2:
                 if Y0.iloc[-2] < Y0.iloc[-1] and (Y0.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] >= bottoms.iloc[-2]:
@@ -117,7 +105,6 @@ def execute(start_date='', end_date=''):
                 'moods': round(y1_y1, 1),
                 'flag': flag
             }
-        print(new_rows)
         if not new_rows.empty:
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
 
