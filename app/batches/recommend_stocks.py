@@ -94,7 +94,7 @@ def execute(start_date='', end_date=''):
                         'predict_rose': int(predict_rose),
                         'pct_chg': int(np.floor(recommended_daily.at[0, 'pct_chg'])),
                         'market': market,
-                        'average': logs.iloc[i]['average'],
+                        'average': int(np.floor(logs.iloc[i]['average'])),
                         'moods': logs.iloc[i]['moods'],
                         'code_id': code_id,
                         'pre_stars': pre_stars,
