@@ -16,7 +16,7 @@ def execute(start_date='', end_date=''):
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] == 1]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'recommend_at', 'star', 'market',
+    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'recommend_at', 'holding_at', 'star', 'market',
                                              'predict_rose',  'average', 'moods', 'pre_stars',
                                              ])
     for i in range(len(logs)):
@@ -82,26 +82,26 @@ def execute(start_date='', end_date=''):
                     pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=10)
                     start_date_id = pre_trade_cal.iloc[0]['date_id']
                     pre_recommend_logs = DB.get_latestrecommend_logs(code_id=code_id, start_date_id=start_date_id, end_date_id=recommended_date_id, recommend_type='pca')
-                    if date_id == today_date_id:
-                        pre_stars = None
-                        if not pre_recommend_logs.empty:
-                            pre_stars = pre_recommend_logs['star_idx'].values
-                        content = {
-                            'code_id': logs.iloc[i]['code_id'],
-                            'ts_code': logs.iloc[i]['ts_code'],
-                            'recommend_at': logs.iloc[i]['cal_date'],
-                            'star': logs.iloc[i]['star_idx'],
-                            'predict_rose': predict_rose,
-                            'market': market,
-                            'average': logs.iloc[i]['average'],
-                            'moods': logs.iloc[i]['moods'],
-                            'pre_stars': pre_stars,
-                        }
+                    pre_stars = None
+                    if not pre_recommend_logs.empty:
+                        pre_stars = pre_recommend_logs['star_idx'].values
+                    content = {
+                        'code_id': logs.iloc[i]['code_id'],
+                        'ts_code': logs.iloc[i]['ts_code'],
+                        'recommend_at': logs.iloc[i]['cal_date'],
+                        'holding_at': later_daily['cal_date'],
+                        'star': logs.iloc[i]['star_idx'],
+                        'predict_rose': predict_rose,
+                        'market': market,
+                        'average': logs.iloc[i]['average'],
+                        'moods': logs.iloc[i]['moods'],
+                        'pre_stars': pre_stars,
+                    }
 
-                        recommend_stocks.loc[i] = content
+                    recommend_stocks.loc[i] = content
                     break
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['star', 'predict_rose'], ascending=[True, False], inplace=True)
+        recommend_stocks.sort_values(by=['star', 'holding_at', 'predict_rose'], ascending=[True, False, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
