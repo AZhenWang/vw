@@ -373,7 +373,7 @@ class DB(object):
     @classmethod
     def get_recommended_stocks(cls, start_date_id='',  end_date_id='', recommend_type=''):
         stocks = pd.read_sql(
-            sa.text(' select tc.cal_date, sb.ts_code, rs.* from recommend_stocks rs '
+            sa.text(' select tc.cal_date, sb.ts_code, sb.name, rs.* from recommend_stocks rs '
                     ' left join stock_basic sb on sb.id = rs.code_id'
                     ' left join trade_cal tc on tc.id = rs.date_id'
                     ' where rs.date_id between :sdi and :edi and rs.recommend_type = :rt'
