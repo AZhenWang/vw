@@ -17,7 +17,7 @@ def execute(start_date='', end_date=''):
     logs = logs[logs['star_idx'] == 1]
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'recommend_at', 'holding_at', 'star', 'market',
-                                             'predict_rose', 'pct_chg', 'average', 'moods', 'code_id',
+                                             'predict_rose', 'pct_chg', 'average', 'moods', 'code_id', 'pre_pct_chg_sum'
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
