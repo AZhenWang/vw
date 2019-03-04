@@ -22,6 +22,8 @@ def execute(start_date='', end_date=''):
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         print('code_id=', code_id)
+        if code_id in recommend_stocks.index:
+            continue
         recommended_date_id = logs.iloc[i]['date_id']
 
         pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=3)
@@ -43,7 +45,8 @@ def execute(start_date='', end_date=''):
         if not focus_log.empty and (focus_log.at[0, 'closed_date_id'] or focus_log.at[0, 'holding_date_id']):
             continue
         predict_rose = 0  # 预测涨幅
-        if focus_log.empty and (code_id not in recommend_stocks.index):
+        pre_pct_chg_sum = 0
+        if focus_log.empty:
             if logs.iloc[i]['star_idx'] == 1:
                 if recommended_daily.at[0, 'pct_chg'] > 0:
                     next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
@@ -57,14 +60,19 @@ def execute(start_date='', end_date=''):
                             predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
 
             if predict_rose > 0:
+                pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
                 DB.insert_focus_stocks(code_id=code_id,
                                        star_idx=logs.iloc[i]['star_idx'],
                                        predict_rose=predict_rose,
                                        recommend_type='pca',
                                        recommended_date_id=recommended_date_id,
+                                       pre_pct_chg_sum=round(pre_pct_chg_sum, 1),
                                        )
+        else:
+            predict_rose = focus_log.at[0, 'predict_rose']
+            pre_pct_chg_sum = focus_log.at[0, 'pre_pct_chg_sum']
 
-        if not focus_log.empty or predict_rose > 0:
+        if predict_rose > 0:
             next_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
             for j in range(len(next_dailys)):
                 later_daily = next_dailys.iloc[j]
@@ -79,7 +87,7 @@ def execute(start_date='', end_date=''):
                     holding_date_id = date_id
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               holding_date_id=holding_date_id)
-                    pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
+
                     content = {
                         'ts_code': logs.iloc[i]['ts_code'],
                         'code_name': logs.iloc[i]['name'],

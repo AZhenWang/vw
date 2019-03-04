@@ -421,10 +421,10 @@ class DB(object):
         return logs
 
     @classmethod
-    def insert_focus_stocks(cls, code_id, star_idx, predict_rose, recommend_type, recommended_date_id):
+    def insert_focus_stocks(cls, code_id, star_idx, predict_rose, recommend_type, recommended_date_id, pre_pct_chg_sum):
         pd.io.sql.execute('insert into focus_stocks (code_id, star_idx, predict_rose, '
-                          'recommend_type, recommended_date_id ) values (%s,%s,%s,%s,%s)', cls.engine,
-                          params=[str(code_id), str(star_idx), str(predict_rose), str(recommend_type), str(recommended_date_id)])
+                          'recommend_type, recommended_date_id,pre_pct_chg_sum) values (%s,%s,%s,%s,%s,%s)', cls.engine,
+                          params=[str(code_id), str(star_idx), str(predict_rose), str(recommend_type), str(recommended_date_id), str(pre_pct_chg_sum)])
     @classmethod
     def update_focus_stock_log(cls, code_id, recommended_date_id , holding_date_id='', closed_date_id=''):
         if holding_date_id != '':
