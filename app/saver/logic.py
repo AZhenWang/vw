@@ -398,9 +398,9 @@ class DB(object):
     @classmethod
     def sum_pct_chg(cls, code_id='', end_date_id='', period=4):
         result = pd.read_sql(
-            sa.text(' select sum(pct_chg) as sum_pct_chg from daily '
-                    'where code_id = :code_id and date_id < :edi '
-                    'order by date_id desc limit :period'
+            sa.text(' select sum(sub.pct_chg) as sum_pct_chg from '
+                    '(select pct_chg from daily where code_id = :code_id and date_id < :edi'
+                    ' order by date_id desc limit :period) as sub'
                     ),
             cls.engine,
             params={'code_id': str(code_id), 'edi': str(end_date_id), 'period': period}
