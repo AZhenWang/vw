@@ -23,7 +23,6 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [1442]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -53,8 +52,6 @@ def execute(start_date='', end_date=''):
                 # 负相关的先反过来
                 Y1 = (-1) * Y1
 
-            # mean = np.mean(Y0)
-            # mean = mean * sample_len / (sample_len - 1)
             mean = 0
             std = np.std(Y0)
             flag = 0
@@ -114,16 +111,10 @@ def get_holdings(sample_pca, sample_prices):
     correlation = Y.corr(sample_prices.reset_index(drop=True))
     if correlation < 0:
         Y = (-1) * Y
-        correlation = (-1) * correlation
 
-    # mean = np.mean(Y)
-    # mean = mean * sample_len / (sample_len - 1)
     mean = 0
     std = np.std(Y)
 
-    # if abs(correlation) < 0.1:
-    #     holdings = [0] * len(Y)
-    #     return holdings
     start_loc = len(Y) - 1
     holdings = [0] * start_loc
     bottom_dis = 20

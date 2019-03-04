@@ -20,7 +20,6 @@ def execute(start_date='', end_date=''):
                                              'predict_rose',  'average', 'moods', 'pre_stars',
                                              ])
 
-    print('log=', logs)
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended_date_id = logs.iloc[i]['date_id']
@@ -36,7 +35,6 @@ def execute(start_date='', end_date=''):
         if len(data) != 4:
             continue
         market = np.where(np.diff(data['up_stock_ratio']) < 0, 1, 0)
-        print('market=', market)
         if market[-2] < 1:
             continue
 
@@ -48,13 +46,9 @@ def execute(start_date='', end_date=''):
         if logs.iloc[i]['star_idx'] == 1:
             if recommended_daily.at[0, 'pct_chg'] > 0:
                 next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=2)
-                print('next_daily=', next_daily)
                 if ((next_daily.iloc[0]['pct_chg'] >= 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
                         (next_daily.iloc[1]['pct_chg'] >= 0 and next_daily.iloc[1]['close'] >= next_daily.iloc[1]['open'])):
-                    # if next_daily.iloc[0]['pct_chg'] > 0:
-                        # predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.iloc[0]['pct_chg'])) * 10
-                    # else:
-                        predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
+                    predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
 
         if focus_log.empty and predict_rose > 0:
             DB.insert_focus_stocks(code_id=code_id,
@@ -81,9 +75,7 @@ def execute(start_date='', end_date=''):
                                               holding_date_id=holding_date_id)
                     pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=10)
                     start_date_id = pre_trade_cal.iloc[0]['date_id']
-                    print('start_date_id=', start_date_id, ', end_date_id=', date_id)
                     pre_recommend_logs = DB.get_latestrecommend_logs(code_id=code_id, start_date_id=start_date_id, end_date_id=recommended_date_id, recommend_type='pca')
-                    print('pre_recommend_logs', pre_recommend_logs)
                     pre_stars = None
                     if not pre_recommend_logs.empty:
                         pre_stars = pre_recommend_logs['star_idx'].values
