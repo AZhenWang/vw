@@ -16,8 +16,8 @@ def execute(start_date='', end_date=''):
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] == 1]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'code_name', 'recommend_at', 'holding_at', 'star', 'market',
-                                             'predict_rose', 'pct_chg', 'average', 'moods', 'pre_stars',
+    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'recommend_at', 'holding_at', 'star', 'market',
+                                             'predict_rose', 'pct_chg', 'average', 'moods', 'code_id', 'pre_stars',
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
@@ -86,17 +86,17 @@ def execute(start_date='', end_date=''):
                     if not pre_recommend_logs.empty:
                         pre_stars = pre_recommend_logs['star_idx'].values
                     content = {
-                        'code_id': code_id,
                         'ts_code': logs.iloc[i]['ts_code'],
                         'code_name': logs.iloc[i]['name'],
                         'recommend_at': logs.iloc[i]['cal_date'],
                         'holding_at': later_daily['cal_date'],
                         'star': logs.iloc[i]['star_idx'],
-                        'predict_rose': predict_rose,
-                        'pct_chg': recommended_daily.at[0, 'pct_chg'],
+                        'predict_rose': int(predict_rose),
+                        'pct_chg': int(np.floor(recommended_daily.at[0, 'pct_chg'])),
                         'market': market,
                         'average': logs.iloc[i]['average'],
                         'moods': logs.iloc[i]['moods'],
+                        'code_id': code_id,
                         'pre_stars': pre_stars,
                     }
 
