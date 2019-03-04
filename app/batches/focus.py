@@ -6,7 +6,7 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 # 取半年样本区间
-sample_len = 60
+sample_len = 40
 n_components = 2
 pre_predict_interval = 5
 
@@ -23,6 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
+    # code_ids = [1442]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -74,9 +75,8 @@ def execute(start_date='', end_date=''):
                     flag -= 1
             holdings = get_holdings(sample_pca, sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
-            print(holdings)
 
-            if daily.empty or (holdings[-1] == 0 and flag == 0):
+            if daily.empty or holdings[-1] == 0:
                 continue
             y1_y1 = Y1[-3:-2].max() - Y1.iloc[-1]
 
@@ -135,7 +135,19 @@ def get_holdings(sample_pca, sample_prices):
 
     for i in range(start_loc, len(Y)):
         # 正相关
-        if Y[i - 10: i - 2].max() > (mean + std) and (Y[i] - Y[i - 2:i].min()) > 1.5 * std and (mean - 1.5 * std) < Y[
+        if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y.iloc[i] > peaks.iloc[-1] and mean > bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
+            # 大双底部
+            # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
+            holding = 1
+            print('大双底部')
+
+        elif bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y.iloc[i] > peaks.iloc[-1] and std > bottoms.iloc[-1] > mean > bottoms.iloc[-2]:
+            # 大双底部
+            # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
+            holding = 11
+            print('大双底部')
+
+        elif Y[i - 10: i - 2].max() > (mean + std) and (Y[i] - Y[i - 2:i].min()) > 1.5 * std and (mean - 1.5 * std) < Y[
                                                                                                                   i - 2:i].min() and \
                 Y[i] > mean + std:
             # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
@@ -176,12 +188,6 @@ def get_holdings(sample_pca, sample_prices):
             # 优化备注：当天涨幅10%，才有可能连续3个板。此讯号预测连续大涨过后，下跌几日过后继续强势涨幅
             print('双顶后的强势反抽3个板i=', i)
             holding = 4
-
-        elif bottoms_length >= 2 and Y[i] > Y[i-1] > Y[i-2] and Y.iloc[i] > peaks.iloc[-1] and mean > bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
-            # 大双底部
-            # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
-            holding = 1
-            print('大双底部')
 
         else:
             holding = 0

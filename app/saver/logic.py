@@ -373,8 +373,9 @@ class DB(object):
     @classmethod
     def get_recommended_stocks(cls, start_date_id='',  end_date_id='', recommend_type=''):
         stocks = pd.read_sql(
-            sa.text(' select sb.ts_code, rs.* from recommend_stocks rs '
+            sa.text(' select tc.cal_date, sb.ts_code, rs.* from recommend_stocks rs '
                     ' left join stock_basic sb on sb.id = rs.code_id'
+                    ' left join trade_cal tc on tc.id = rs.date_id'
                     ' where rs.date_id between :sdi and :edi and rs.recommend_type = :rt'
                     ' order by rs.date_id asc, rs.star_idx desc, rs.amplitude desc'
                     ),
@@ -395,15 +396,15 @@ class DB(object):
         return stocks
 
     @classmethod
-    def get_latestrecommend_logs(cls, code_id, date_id, recommend_type='', number=10):
+    def get_latestrecommend_logs(cls, code_id, end_date_id, start_date_id, recommend_type=''):
         logs = pd.read_sql(
             sa.text(' select tc.cal_date, rs.* from recommend_stocks rs '
                     ' left join trade_cal tc on tc.id = rs.date_id'
-                    ' where rs.code_id = :code_id and rs.date_id < :date_id and rs.recommend_type = :recommend_type'
-                    ' order by tc.cal_date desc'
-                    ' limit :l'),
+                    ' where rs.code_id = :code_id and rs.date_id >= :sdi and rs.date_id < :edi'
+                    ' and rs.recommend_type = :recommend_type'
+                    ' order by tc.cal_date asc'),
             cls.engine,
-            params={'code_id': str(code_id), 'date_id': str(date_id), 'recommend_type': recommend_type, 'l': number}
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id), 'recommend_type': recommend_type}
         )
         return logs
 

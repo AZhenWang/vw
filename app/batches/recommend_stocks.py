@@ -4,21 +4,23 @@ import numpy as np
 from app.common.function import send_email
 from email.mime.text import MIMEText
 
-pre_predict_interval = 2
-sample_interval = 122
+pre_predict_interval = 5
+sample_interval = 40
 n_components = 2
 
 def execute(start_date='', end_date=''):
-    trade_cal = DB.get_open_cal_date(end_date=end_date, period=20)
+    trade_cal = DB.get_open_cal_date(end_date=end_date, period=22)
     today_date_id = trade_cal.iloc[-1]['date_id']
-    end_date_id = trade_cal.iloc[-4]['date_id']
+    end_date_id = trade_cal.iloc[-3]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] == 1]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'star_idx', 'average', 'moods',
-                                             'amplitude', 'flag', 'pct_chg', 'rose', 'market'])
+    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'recommend_at', 'star', 'market',
+                                             'predict_rose',  'average', 'moods', 'pre_stars',
+                                             ])
 
+    print('log=', logs)
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         recommended_date_id = logs.iloc[i]['date_id']
@@ -34,6 +36,7 @@ def execute(start_date='', end_date=''):
         if len(data) != 4:
             continue
         market = np.where(np.diff(data['up_stock_ratio']) < 0, 1, 0)
+        print('market=', market)
         if market[-2] < 1:
             continue
 
@@ -44,13 +47,13 @@ def execute(start_date='', end_date=''):
         predict_rose = 0  # 预测涨幅
         if logs.iloc[i]['star_idx'] == 1:
             if recommended_daily.at[0, 'pct_chg'] > 0:
-                next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
-                if ((next_daily.iloc[0]['pct_chg'] > 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
-                        (next_daily.iloc[1]['pct_chg'] > 0 and next_daily.iloc[1]['close'] >= next_daily.iloc[1]['open'])) \
-                        and not (next_daily.iloc[1]['pct_chg'] < 0 and next_daily.iloc[2]['pct_chg'] < 0):
-                    if next_daily.iloc[0]['pct_chg'] > 0:
-                        predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.iloc[0]['pct_chg'])) * 10
-                    else:
+                next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=2)
+                print('next_daily=', next_daily)
+                if ((next_daily.iloc[0]['pct_chg'] >= 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
+                        (next_daily.iloc[1]['pct_chg'] >= 0 and next_daily.iloc[1]['close'] >= next_daily.iloc[1]['open'])):
+                    # if next_daily.iloc[0]['pct_chg'] > 0:
+                        # predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.iloc[0]['pct_chg'])) * 10
+                    # else:
                         predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
 
         if focus_log.empty and predict_rose > 0:
@@ -76,24 +79,30 @@ def execute(start_date='', end_date=''):
                     holding_date_id = date_id
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               holding_date_id=holding_date_id)
-
+                    pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=10)
+                    start_date_id = pre_trade_cal.iloc[0]['date_id']
+                    print('start_date_id=', start_date_id, ', end_date_id=', date_id)
+                    pre_recommend_logs = DB.get_latestrecommend_logs(code_id=code_id, start_date_id=start_date_id, end_date_id=recommended_date_id, recommend_type='pca')
+                    print('pre_recommend_logs', pre_recommend_logs)
+                    pre_stars = None
+                    if not pre_recommend_logs.empty:
+                        pre_stars = pre_recommend_logs['star_idx'].values
                     content = {
                         'code_id': logs.iloc[i]['code_id'],
                         'ts_code': logs.iloc[i]['ts_code'],
-                        'star_idx': logs.iloc[i]['star_idx'],
-                        'flag': logs.iloc[i]['flag'],
-                        'amplitude': logs.iloc[i]['amplitude'],
-                        'average': logs.iloc[i]['average'],
-                        'moods': abs(logs.iloc[i]['moods']),
-                        'pct_chg': recommended_daily.at[0, 'pct_chg'],
+                        'recommend_at': logs.iloc[i]['cal_date'],
+                        'star': logs.iloc[i]['star_idx'],
                         'predict_rose': predict_rose,
                         'market': market,
+                        'average': logs.iloc[i]['average'],
+                        'moods': logs.iloc[i]['moods'],
+                        'pre_stars': pre_stars,
                     }
 
                     recommend_stocks.loc[i] = content
                     break
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['star_idx', 'predict_rose'], ascending=[True, False], inplace=True)
+        recommend_stocks.sort_values(by=['star', 'predict_rose'], ascending=[True, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
