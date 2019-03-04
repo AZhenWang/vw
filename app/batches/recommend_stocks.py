@@ -66,7 +66,7 @@ def execute(start_date='', end_date=''):
                                        predict_rose=predict_rose,
                                        recommend_type='pca',
                                        recommended_date_id=recommended_date_id,
-                                       pre_pct_chg_sum=round(pre_pct_chg_sum, 1),
+                                       pre_pct_chg_sum=pre_pct_chg_sum,
                                        )
         else:
             predict_rose = focus_log.at[0, 'predict_rose']
@@ -100,7 +100,7 @@ def execute(start_date='', end_date=''):
                         'average': int(np.floor(logs.iloc[i]['average'])),
                         'moods': logs.iloc[i]['moods'],
                         'code_id': code_id,
-                        'pre_pct_chg_sum': pre_pct_chg_sum
+                        'pre_pct_chg_sum': round(pre_pct_chg_sum, 1)
                     }
 
                     recommend_stocks.loc[code_id] = content
