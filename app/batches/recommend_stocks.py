@@ -10,8 +10,8 @@ n_components = 2
 
 def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=22)
-    today_date_id = trade_cal.iloc[-1]['date_id']
-    end_date_id = trade_cal.iloc[-3]['date_id']
+    today_date = trade_cal.iloc[-1]['cal_date']
+    end_date_id = trade_cal.iloc[-4]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] == 1]
@@ -19,16 +19,16 @@ def execute(start_date='', end_date=''):
     recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'recommend_at', 'star', 'market',
                                              'predict_rose',  'average', 'moods', 'pre_stars',
                                              ])
-
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
+        print('code_id=', code_id)
         recommended_date_id = logs.iloc[i]['date_id']
 
         pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=3)
-        after_trade_cal = DB.get_open_cal_date_by_id(start_date_id=recommended_date_id, period=3)
+        after_trade_cal = DB.get_open_cal_date_by_id(start_date_id=recommended_date_id, period=4)
         grand_pre_date_id = pre_trade_cal.iloc[0]['date_id']
         next_date_id = after_trade_cal.iloc[1]['date_id']
-        big_next_date = after_trade_cal.iloc[2]['cal_date']
+        big_next_date = after_trade_cal.iloc[-1]['cal_date']
         data = DB.count_threshold_group_by_date_id(start_date_id=grand_pre_date_id, end_date_id=next_date_id)
         data.eval('up_stock_ratio=up_stock_number/list_stock_number*100', inplace=True)
         data['up_stock_ratio'] = data['up_stock_ratio'].apply(np.round, decimals=2)
@@ -43,22 +43,28 @@ def execute(start_date='', end_date=''):
         if not focus_log.empty and (focus_log.at[0, 'closed_date_id'] or focus_log.at[0, 'holding_date_id']):
             continue
         predict_rose = 0  # 预测涨幅
-        if logs.iloc[i]['star_idx'] == 1:
-            if recommended_daily.at[0, 'pct_chg'] > 0:
-                next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=2)
-                if ((next_daily.iloc[0]['pct_chg'] >= 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
-                        (next_daily.iloc[1]['pct_chg'] >= 0 and next_daily.iloc[1]['close'] >= next_daily.iloc[1]['open'])):
-                    predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
+        if focus_log.empty:
+            if logs.iloc[i]['star_idx'] == 1:
+                if recommended_daily.at[0, 'pct_chg'] > 0:
+                    next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
+                    if ((next_daily.iloc[0]['pct_chg'] >= 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
+                            (next_daily.iloc[1]['pct_chg'] >= 0 and next_daily.iloc[1]['close'] >= next_daily.iloc[1]['open'])) \
+                        and not (next_daily.iloc[1]['pct_chg'] < 0 and next_daily.iloc[2]['pct_chg'] < 0):
 
-        if focus_log.empty and predict_rose > 0:
-            DB.insert_focus_stocks(code_id=code_id,
-                                   star_idx=logs.iloc[i]['star_idx'],
-                                   predict_rose=predict_rose,
-                                   recommend_type='pca',
-                                   recommended_date_id=recommended_date_id,
-                                   )
+                        if next_daily.iloc[0]['pct_chg'] > 0:
+                            predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.iloc[0]['pct_chg'])) * 10
+                        else:
+                            predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
 
-        if predict_rose > 0:
+            if predict_rose > 0:
+                DB.insert_focus_stocks(code_id=code_id,
+                                       star_idx=logs.iloc[i]['star_idx'],
+                                       predict_rose=predict_rose,
+                                       recommend_type='pca',
+                                       recommended_date_id=recommended_date_id,
+                                       )
+
+        if not focus_log.empty or predict_rose > 0:
             next_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
             for j in range(len(next_dailys)):
                 later_daily = next_dailys.iloc[j]
