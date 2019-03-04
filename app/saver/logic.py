@@ -396,6 +396,18 @@ class DB(object):
         return stocks
 
     @classmethod
+    def sum_pct_chg(cls, code_id='', end_date_id='', period=4):
+        result = pd.read_sql(
+            sa.text(' select sum(pct_chg) as sum_pct_chg from daily '
+                    'where code_id = :code_id and date_id < :edi '
+                    'order by date_id desc limit :period'
+                    ),
+            cls.engine,
+            params={'code_id': str(code_id), 'edi': str(end_date_id), 'period': period}
+        )
+        return result.at[0, 'sum_pct_chg']
+
+    @classmethod
     def get_latestrecommend_logs(cls, code_id, end_date_id, start_date_id, recommend_type=''):
         logs = pd.read_sql(
             sa.text(' select tc.cal_date, rs.* from recommend_stocks rs '

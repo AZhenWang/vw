@@ -17,7 +17,7 @@ def execute(start_date='', end_date=''):
     logs = logs[logs['star_idx'] == 1]
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'recommend_at', 'holding_at', 'star', 'market',
-                                             'predict_rose', 'pct_chg', 'average', 'moods', 'code_id', 'pre_stars',
+                                             'predict_rose', 'pct_chg', 'average', 'moods', 'code_id',
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
@@ -79,12 +79,7 @@ def execute(start_date='', end_date=''):
                     holding_date_id = date_id
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               holding_date_id=holding_date_id)
-                    pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=10)
-                    start_date_id = pre_trade_cal.iloc[0]['date_id']
-                    pre_recommend_logs = DB.get_latestrecommend_logs(code_id=code_id, start_date_id=start_date_id, end_date_id=recommended_date_id, recommend_type='pca')
-                    pre_stars = None
-                    if not pre_recommend_logs.empty:
-                        pre_stars = pre_recommend_logs['star_idx'].values
+                    pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
                     content = {
                         'ts_code': logs.iloc[i]['ts_code'],
                         'code_name': logs.iloc[i]['name'],
@@ -97,7 +92,7 @@ def execute(start_date='', end_date=''):
                         'average': int(np.floor(logs.iloc[i]['average'])),
                         'moods': logs.iloc[i]['moods'],
                         'code_id': code_id,
-                        'pre_stars': pre_stars,
+                        'pre_pct_chg_sum': pre_pct_chg_sum
                     }
 
                     recommend_stocks.loc[code_id] = content
