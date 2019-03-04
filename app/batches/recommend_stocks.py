@@ -43,7 +43,7 @@ def execute(start_date='', end_date=''):
         if not focus_log.empty and (focus_log.at[0, 'closed_date_id'] or focus_log.at[0, 'holding_date_id']):
             continue
         predict_rose = 0  # 预测涨幅
-        if focus_log.empty:
+        if focus_log.empty and (code_id not in recommend_stocks.index):
             if logs.iloc[i]['star_idx'] == 1:
                 if recommended_daily.at[0, 'pct_chg'] > 0:
                     next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
@@ -86,7 +86,7 @@ def execute(start_date='', end_date=''):
                     if not pre_recommend_logs.empty:
                         pre_stars = pre_recommend_logs['star_idx'].values
                     content = {
-                        'code_id': logs.iloc[i]['code_id'],
+                        'code_id': code_id,
                         'ts_code': logs.iloc[i]['ts_code'],
                         'code_name': logs.iloc[i]['name'],
                         'recommend_at': logs.iloc[i]['cal_date'],
@@ -100,7 +100,7 @@ def execute(start_date='', end_date=''):
                         'pre_stars': pre_stars,
                     }
 
-                    recommend_stocks.loc[i] = content
+                    recommend_stocks.loc[code_id] = content
                     break
     if not recommend_stocks.empty:
         recommend_stocks.sort_values(by=['star', 'holding_at', 'pct_chg', 'predict_rose'], ascending=[True, False, False, False], inplace=True)
