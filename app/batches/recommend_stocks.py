@@ -21,8 +21,6 @@ def execute(start_date='', end_date=''):
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
-        if code_id != 819:
-            continue
         print('code_id=', code_id)
         if code_id in recommend_stocks.index:
             continue
