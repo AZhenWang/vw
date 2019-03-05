@@ -68,7 +68,9 @@ def execute(start_date='', end_date=''):
 
                 latestfocus_logs = DB.get_stock_focus_logs(code_id=code_id, start_date_id=pre_trade_cal.iloc[0]['date_id'],
                                         end_date_id=pre_trade_cal.iloc[-2]['date_id'], recommend_type='pca')
-                if not latestfocus_logs.holding_date_id.any():
+                if latestfocus_logs.holding_date_id.any():
+                    predict_rose = 0
+                else:
                     pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
                     DB.insert_focus_stocks(code_id=code_id,
                                            star_idx=logs.iloc[i]['star_idx'],
