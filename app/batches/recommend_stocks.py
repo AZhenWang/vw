@@ -77,11 +77,13 @@ def execute(start_date='', end_date=''):
             later_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
             second_daily = DB.get_code_daily(code_id=code_id, date_id=next_date_id)
             holding_at = None
+            send = True
             for j in range(len(later_dailys)):
                 later_daily = later_dailys.iloc[j]
                 date_id = later_dailys.index[j]
                 if later_daily['close'] < recommended_daily.at[0, 'open'] * 0.99:
                     closed_date_id = date_id
+                    send = False
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               closed_date_id=closed_date_id)
                     break
@@ -91,7 +93,9 @@ def execute(start_date='', end_date=''):
                     holding_at = later_daily['cal_date']
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               holding_date_id=holding_date_id)
+                    break
 
+            if send and len(later_dailys) > 0:
                 star_count = DB.count_recommend_star(code_id=code_id, start_date_id=recommended_date_id,
                                                      end_date_id=date_id, star_idx='1',
                                                      recommend_type='pca')
@@ -135,7 +139,6 @@ def execute(start_date='', end_date=''):
                     'holding_at': holding_at,
                 }
                 recommend_stocks.loc[code_id] = content
-                break
     if not recommend_stocks.empty:
         recommend_stocks.sort_values(by=['star', 'holding_at', 'star_count', 'pct_chg', 'predict_rose'], ascending=[True, False, False, False, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
