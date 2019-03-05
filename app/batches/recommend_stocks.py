@@ -21,6 +21,8 @@ def execute(start_date='', end_date=''):
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
+        if code_id != 615:
+            continue
         print('code_id=', code_id)
         if code_id in recommend_stocks.index:
             continue
@@ -73,17 +75,18 @@ def execute(start_date='', end_date=''):
             pre_pct_chg_sum = focus_log.at[0, 'pre_pct_chg_sum']
 
         if predict_rose > 0:
-            next_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
-            for j in range(len(next_dailys)):
-                later_daily = next_dailys.iloc[j]
-                date_id = next_dailys.index[j]
+            later_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
+            second_daily = DB.get_code_daily(code_id=code_id, date_id=next_date_id)
+            for j in range(len(later_dailys)):
+                later_daily = later_dailys.iloc[j]
+                date_id = later_dailys.index[j]
                 if later_daily['close'] <= recommended_daily.at[0, 'open'] * 0.99:
                     closed_date_id = date_id
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               closed_date_id=closed_date_id)
                     break
 
-                elif later_daily['close'] >= (np.max([recommended_daily.at[0, 'close'], next_dailys.iloc[0]['close']])) * 1.02:
+                elif later_daily['close'] >= (np.max([recommended_daily.at[0, 'close'], second_daily.at[0,'close']])) * 1.02:
                     holding_date_id = date_id
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               holding_date_id=holding_date_id)
@@ -100,7 +103,7 @@ def execute(start_date='', end_date=''):
                         'average': int(np.floor(logs.iloc[i]['average'])),
                         'moods': logs.iloc[i]['moods'],
                         'code_id': code_id,
-                        'pre_pct_chg_sum': round(pre_pct_chg_sum, 1)
+                        'pre4_sum': round(pre_pct_chg_sum, 1)
                     }
 
                     recommend_stocks.loc[code_id] = content
