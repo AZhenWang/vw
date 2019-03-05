@@ -16,8 +16,9 @@ def execute(start_date='', end_date=''):
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] == 1]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'recommend_at', 'holding_at', 'star', 'star_count', 'market',
-                                             'pct_chg', 'predict_rose', 'average', 'moods', 'code_id', 'pre4_sum',
+    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'recommend_at', 'holding_at', 'star', 'star_count',
+                                             'market', 'pct_chg', 'predict_rose', 'moods', 'average', 'pre4_sum',
+                                             'code_id',
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
