@@ -112,7 +112,7 @@ def execute(start_date='', end_date=''):
                     recommend_stocks.loc[code_id] = content
                     break
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['star', 'holding_at', 'pct_chg', 'predict_rose'], ascending=[True, False, False, False], inplace=True)
+        recommend_stocks.sort_values(by=['star', 'holding_at', 'star_count', 'pct_chg', 'predict_rose'], ascending=[True, False, False, False, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
