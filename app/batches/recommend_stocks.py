@@ -11,6 +11,7 @@ n_components = 2
 
 def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=22)
+    print(trade_cal)
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-4]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
@@ -62,14 +63,20 @@ def execute(start_date='', end_date=''):
                             predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
 
             if predict_rose > 0:
-                pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
-                DB.insert_focus_stocks(code_id=code_id,
-                                       star_idx=logs.iloc[i]['star_idx'],
-                                       predict_rose=predict_rose,
-                                       recommend_type='pca',
-                                       recommended_date_id=recommended_date_id,
-                                       pre_pct_chg_sum=pre_pct_chg_sum,
-                                       )
+                # 20天内已经有提示的，此时就不再提示
+                pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=20)
+
+                latestfocus_logs = DB.get_stock_focus_logs(code_id=code_id, start_date_id=pre_trade_cal.iloc[0]['date_id'],
+                                        end_date_id=pre_trade_cal.iloc[-2]['date_id'], recommend_type='pca')
+                if not latestfocus_logs.holding_date_id.any():
+                    pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
+                    DB.insert_focus_stocks(code_id=code_id,
+                                           star_idx=logs.iloc[i]['star_idx'],
+                                           predict_rose=predict_rose,
+                                           recommend_type='pca',
+                                           recommended_date_id=recommended_date_id,
+                                           pre_pct_chg_sum=pre_pct_chg_sum,
+                                           )
         else:
             predict_rose = focus_log.at[0, 'predict_rose']
             pre_pct_chg_sum = focus_log.at[0, 'pre_pct_chg_sum']

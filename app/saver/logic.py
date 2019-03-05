@@ -462,6 +462,21 @@ class DB(object):
         return stocks
 
     @classmethod
+    def get_stock_focus_logs(cls, code_id, start_date_id='', end_date_id='', recommend_type=''):
+        stocks = pd.read_sql(
+            sa.text(
+                ' select fs.* from focus_stocks fs '
+                ' where fs.code_id = :ci '
+                ' and fs.recommended_date_id >=:sdi and fs.recommended_date_id <=:edi '
+                ' and fs.recommend_type =:rt'
+                ' and fs.closed_date_id is null '
+                'order by fs.recommended_date_id desc'),
+            cls.engine,
+            params={'ci': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id), 'rt': recommend_type}
+        )
+        return stocks
+
+    @classmethod
     def get_focus_stock_log(cls, code_id, recommended_date_id, recommend_type='pca'):
         stocks = pd.read_sql(
             sa.text(
