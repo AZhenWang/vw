@@ -421,12 +421,26 @@ class DB(object):
         return logs
 
     @classmethod
+    def count_recommend_star(cls, code_id, start_date_id, end_date_id, star_idx='', recommend_type=''):
+        result = pd.read_sql(
+            sa.text(' select count(*) as count_star from '
+                    ' (select * from recommend_stocks rs '
+                    ' where rs.code_id = :code_id and rs.date_id >= :sdi and rs.date_id <= :edi and rs.star_idx = :si'
+                    ' and rs.recommend_type = :recommend_type) as sub'
+                    ),
+            cls.engine,
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id), 'si': star_idx,
+                    'recommend_type': recommend_type}
+        )
+        return result.at[0, 'count_star']
+
+    @classmethod
     def insert_focus_stocks(cls, code_id, star_idx, predict_rose, recommend_type, recommended_date_id, pre_pct_chg_sum):
         pd.io.sql.execute('insert into focus_stocks (code_id, star_idx, predict_rose, '
                           'recommend_type, recommended_date_id,pre_pct_chg_sum) values (%s,%s,%s,%s,%s,%s)', cls.engine,
                           params=[str(code_id), str(star_idx), str(predict_rose), str(recommend_type), str(recommended_date_id), str(pre_pct_chg_sum)])
     @classmethod
-    def update_focus_stock_log(cls, code_id, recommended_date_id , holding_date_id='', closed_date_id=''):
+    def update_focus_stock_log(cls, code_id, recommended_date_id , holding_date_id='', closed_date_id='', star_count=''):
         if holding_date_id != '':
             pd.io.sql.execute('update focus_stocks set holding_date_id = %s where code_id = %s and recommended_date_id = %s',
                               cls.engine,
@@ -435,6 +449,11 @@ class DB(object):
             pd.io.sql.execute('update focus_stocks set closed_date_id = %s where code_id = %s and recommended_date_id = %s',
                               cls.engine,
                               params=[str(closed_date_id), str(code_id), str(recommended_date_id)])
+
+        if star_count != '':
+            pd.io.sql.execute('update focus_stocks set star_count = %s where code_id = %s and recommended_date_id = %s',
+                              cls.engine,
+                              params=[str(star_count), str(code_id), str(recommended_date_id)])
     @classmethod
     def get_focus_stocks(cls):
         stocks = pd.read_sql(

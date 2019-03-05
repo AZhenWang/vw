@@ -8,6 +8,7 @@ create table focus_stocks(
    recommended_date_id INT NOT NULL comment'模型推荐日期',
    closed_date_id INT NULL comment '关闭日期',
    holding_date_id INT NULL comment'建议持有日期',
+   star_count INT NULL comment'在推荐日到建议持有日之间有多少相同的star_idx',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(`code_id`)

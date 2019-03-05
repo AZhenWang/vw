@@ -16,11 +16,13 @@ def execute(start_date='', end_date=''):
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] == 1]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'recommend_at', 'holding_at', 'star', 'market',
-                                             'predict_rose', 'pct_chg', 'average', 'moods', 'code_id', 'pre4_sum'
+    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'recommend_at', 'holding_at', 'star', 'star_count', 'market',
+                                             'pct_chg', 'predict_rose', 'average', 'moods', 'code_id', 'pre4_sum',
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
+        if code_id != 819:
+            continue
         print('code_id=', code_id)
         if code_id in recommend_stocks.index:
             continue
@@ -86,8 +88,12 @@ def execute(start_date='', end_date=''):
 
                 elif later_daily['close'] >= (np.max([recommended_daily.at[0, 'close'], second_daily.at[0,'close']])) * 1.02:
                     holding_date_id = date_id
+                    star_count = DB.count_recommend_star(code_id=code_id, start_date_id=recommended_date_id,
+                                                         end_date_id=holding_date_id, star_idx='1',
+                                                         recommend_type='pca')
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
-                                              holding_date_id=holding_date_id)
+                                              holding_date_id=holding_date_id, star_count=star_count)
+
 
                     content = {
                         'ts_code': logs.iloc[i]['ts_code'],
@@ -95,13 +101,14 @@ def execute(start_date='', end_date=''):
                         'recommend_at': logs.iloc[i]['cal_date'],
                         'holding_at': later_daily['cal_date'],
                         'star': logs.iloc[i]['star_idx'],
+                        'star_count': star_count,
                         'predict_rose': int(predict_rose),
                         'pct_chg': int(np.floor(recommended_daily.at[0, 'pct_chg'])),
                         'market': market,
                         'average': int(np.floor(logs.iloc[i]['average'])),
                         'moods': logs.iloc[i]['moods'],
                         'code_id': code_id,
-                        'pre4_sum': round(pre_pct_chg_sum, 1)
+                        'pre4_sum': round(pre_pct_chg_sum, 1),
                     }
 
                     recommend_stocks.loc[code_id] = content
