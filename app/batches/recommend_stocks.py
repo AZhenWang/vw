@@ -13,13 +13,13 @@ def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=22)
     print(trade_cal)
     today_date_id = trade_cal.iloc[-1]['date_id']
-    end_date_id = trade_cal.iloc[-4]['date_id']
+    end_date_id = trade_cal.iloc[-5]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] == 1]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'recommend_at', 'market', 'star', 'star_count', 'amplitude',
-                                             'pct_chg', 'predict_rose', 'moods', 'average', 'pre4_sum',
+    recommend_stocks = pd.DataFrame(columns=['star', 'ts_code', 'code_name', 'recommend_at', 'market', 'star_count',
+                                             'predict_rose', 'pct_chg', 'moods', 'amplitude', 'average', 'pre4_sum',
                                              'code_id', 'holding_at',
                                              ])
     for i in range(len(logs)):
@@ -30,7 +30,7 @@ def execute(start_date='', end_date=''):
         recommended_date_id = logs.iloc[i]['date_id']
 
         pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=3)
-        after_trade_cal = DB.get_open_cal_date_by_id(start_date_id=recommended_date_id, period=4)
+        after_trade_cal = DB.get_open_cal_date_by_id(start_date_id=recommended_date_id, period=5)
         grand_pre_date_id = pre_trade_cal.iloc[0]['date_id']
         next_date_id = after_trade_cal.iloc[1]['date_id']
         big_next_date = after_trade_cal.iloc[-1]['cal_date']
@@ -55,6 +55,7 @@ def execute(start_date='', end_date=''):
                     next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
                     if ((next_daily.iloc[0]['pct_chg'] >= 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
                             (next_daily.iloc[1]['pct_chg'] >= 0 and next_daily.iloc[1]['close'] >= next_daily.iloc[1]['open'])) \
+                        and np.min(next_daily['close']) >= recommended_daily.at[0, 'open'] \
                         and not (next_daily.iloc[1]['pct_chg'] < 0 and next_daily.iloc[2]['pct_chg'] < 0):
 
                         if next_daily.iloc[0]['pct_chg'] > 0:
@@ -97,7 +98,8 @@ def execute(start_date='', end_date=''):
                                               closed_date_id=closed_date_id)
                     break
 
-                elif later_daily['close'] > (np.max([recommended_daily.at[0, 'high'], second_daily.at[0, 'high']])):
+                elif later_daily['pct_chg'] > 1 and later_daily['close'] > later_daily['open'] \
+                        and later_daily['close'] > (np.max([recommended_daily.at[0, 'high'], second_daily.at[0, 'high']]))*1.01:
                     holding_date_id = date_id
                     holding_at = later_daily['cal_date']
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,

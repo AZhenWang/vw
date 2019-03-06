@@ -239,7 +239,7 @@ class DB(object):
         if period == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.date_id, d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM  daily d '
+                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor FROM  daily d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
@@ -251,7 +251,7 @@ class DB(object):
         else:
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.date_id, d.open, d.close, d.high, d.low, d.vol, db.turnover_rate_f, af.adj_factor FROM daily d '
+                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor FROM daily d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
