@@ -51,7 +51,7 @@ def execute(start_date='', end_date=''):
         pre_pct_chg_sum = 0
         if focus_log.empty:
             if logs.iloc[i]['star_idx'] == 1:
-                if recommended_daily.at[0, 'pct_chg'] > 0:
+                if recommended_daily.at[0, 'close'] > recommended_daily.at[0, 'open']:
                     next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
                     if ((next_daily.iloc[0]['pct_chg'] >= 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
                             (next_daily.iloc[1]['pct_chg'] >= 0 and next_daily.iloc[1]['close'] >= next_daily.iloc[1]['open'])) \
