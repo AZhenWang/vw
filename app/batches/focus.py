@@ -6,7 +6,7 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 # 取半年样本区间
-sample_len = 40
+sample_len = 22
 n_components = 2
 pre_predict_interval = 5
 
@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [1442]
+    # code_ids = [2772]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -91,7 +91,7 @@ def execute(start_date='', end_date=''):
                     # 底上升
                     amplitude = 1
                 elif Y0.iloc[-2] > Y0.iloc[-1] and (Y0.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] <= bottoms.iloc[-2]) and peaks.iloc[-1] < peaks.iloc[-2]:
-                    # 底上升
+                    # 底下降
                     amplitude = -1
             new_rows.loc[i] = {
                 'date_id': date_id,
@@ -103,6 +103,7 @@ def execute(start_date='', end_date=''):
                 'moods': round(y1_y1, 1),
                 'flag': flag
             }
+        print(new_rows)
         if not new_rows.empty:
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
 
@@ -152,11 +153,10 @@ def get_holdings(sample_pca, sample_prices):
             #   三、前一天的涨幅<2个点，负的更好，如果前一天已经涨的多了，这个信号就失效了
             # 20190122: -0.01 < mean < 0.01, 此时2的信号更可靠
 
-        elif (Y[i - 30:i - 2].sort_values()[-2:] > (mean + 1.5*std)).all(axis=None) \
-                and Y[i - 5:i].min() < (mean - 1*std) \
-                and (Y[i] - Y[i - 5:i].min()) > 1.5 * std \
-                and Y[i-1] < mean \
-                and Y[i] > Y[i-1] > Y[i-2]:
+        elif (Y[i - 20:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
+             and Y[i - 5:i].min() < mean + std \
+             and (Y[i] - Y[i - 5:i].min()) > 1.5 * std \
+             and Y[i] > Y[i - 1]:
                 # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
             print('强势之后的深度震荡后的强烈反弹i=', i)
             holding = 3
