@@ -135,7 +135,7 @@ def get_holdings(sample_pca, sample_prices):
             print('大双底部')
 
         elif (Y[i - 20:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
-             and Y[i - 5:i].min() < mean + std \
+             and bottoms.iloc[-1] < mean + std \
              and (Y[i] - Y[i - 5:i].min()) > 1.5 * std \
              and 2*std > Y[i] > Y[i - 1]:
                 # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
