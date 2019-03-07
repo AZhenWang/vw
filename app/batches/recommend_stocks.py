@@ -18,7 +18,7 @@ def execute(start_date='', end_date=''):
     logs = logs[logs['star_idx'] == 1]
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['star', 'ts_code', 'code_name', 'recommend_at', 'market', 'star_count',
-                                             'predict_rose', 'pct_chg', 'moods', 'amplitude', 'average', 'pre4_sum',
+                                             'predict_rose', 'pct_chg', 'moods', 'amplitude', 'pre4_sum', 'average',  'pre4_std',
                                              'code_id', 'holding_at',
                                              ])
     for i in range(len(logs)):
@@ -144,15 +144,16 @@ def execute(start_date='', end_date=''):
                     'predict_rose': int(predict_rose),
                     'pct_chg': int(np.floor(recommended_daily.at[0, 'pct_chg'])),
                     'market': market,
-                    'average': int(np.floor(logs.iloc[i]['average'])),
                     'moods': logs.iloc[i]['moods'],
-                    'code_id': code_id,
                     'pre4_sum': round(pre_pct_chg_sum, 1),
+                    'average': logs.iloc[i]['average'],
+                    'pre4_std': round(np.std(Y0[-5:]), 2),
+                    'code_id': code_id,
                     'holding_at': holding_at,
                 }
                 recommend_stocks.loc[code_id] = content
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['star', 'holding_at', 'predict_rose', 'star_count', 'pct_chg',], ascending=[True, False, False, False, False], inplace=True)
+        recommend_stocks.sort_values(by=['star_count', 'pre4_std'], ascending=[False, True], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
