@@ -20,10 +20,10 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
-    # codes = DB.get_latestopendays_code_list(
-    #     latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
-    # code_ids = codes['code_id']
-    code_ids = [2772]
+    codes = DB.get_latestopendays_code_list(
+        latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
+    code_ids = codes['code_id']
+    # code_ids = [2772]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
