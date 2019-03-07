@@ -20,10 +20,10 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
-    code_ids = codes['code_id']
-    # code_ids = [2772]
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
+    # code_ids = codes['code_id']
+    code_ids = [2772]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -134,6 +134,14 @@ def get_holdings(sample_pca, sample_prices):
             holding = 1
             print('大双底部')
 
+        elif (Y[i - 20:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
+             and Y[i - 5:i].min() < mean + std \
+             and (Y[i] - Y[i - 5:i].min()) > 1.5 * std \
+             and 2*std > Y[i] > Y[i - 1]:
+                # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
+            print('强势之后的深度震荡后的强烈反弹i=', i)
+            holding = 3
+
         elif bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y.iloc[i] > peaks.iloc[-1] and std > bottoms.iloc[-1] > mean > bottoms.iloc[-2]:
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
@@ -152,14 +160,6 @@ def get_holdings(sample_pca, sample_prices):
             #   二、5、10、20均线均已向上发展
             #   三、前一天的涨幅<2个点，负的更好，如果前一天已经涨的多了，这个信号就失效了
             # 20190122: -0.01 < mean < 0.01, 此时2的信号更可靠
-
-        elif (Y[i - 20:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
-             and Y[i - 5:i].min() < mean + std \
-             and (Y[i] - Y[i - 5:i].min()) > 1.5 * std \
-             and Y[i] > Y[i - 1]:
-                # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
-            print('强势之后的深度震荡后的强烈反弹i=', i)
-            holding = 3
 
         elif (Y[i - 5:i].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) and Y[i] < mean + 1.5 * std < Y[i - 1]:
             # 大顶部
