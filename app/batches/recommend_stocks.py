@@ -11,7 +11,6 @@ n_components = 2
 
 def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=22)
-    print(trade_cal)
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-5]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
@@ -83,14 +82,15 @@ def execute(start_date='', end_date=''):
         else:
             predict_rose = focus_log.at[0, 'predict_rose']
             pre_pct_chg_sum = focus_log.at[0, 'pre_pct_chg_sum']
+
         if predict_rose > 0:
-            later_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
-            second_daily = DB.get_code_daily(code_id=code_id, date_id=next_date_id)
+            big_later_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
+            second_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=2)
             holding_at = None
             send = True
-            for j in range(len(later_dailys)):
-                later_daily = later_dailys.iloc[j]
-                date_id = later_dailys.index[j]
+            for j in range(len(big_later_dailys)):
+                later_daily = big_later_dailys.iloc[j]
+                date_id = big_later_dailys.index[j]
                 if later_daily['close'] < recommended_daily.at[0, 'open'] * 0.99:
                     closed_date_id = date_id
                     send = False
@@ -107,7 +107,7 @@ def execute(start_date='', end_date=''):
                                               holding_date_id=holding_date_id)
                     break
 
-            if send and len(later_dailys) > 0:
+            if send and len(big_later_dailys) > 0:
                 star_count = DB.count_recommend_star(code_id=code_id, start_date_id=recommended_date_id,
                                                      end_date_id=date_id, star_idx='1',
                                                      recommend_type='pca')
@@ -152,7 +152,7 @@ def execute(start_date='', end_date=''):
                 }
                 recommend_stocks.loc[code_id] = content
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['star', 'holding_at', 'star_count', 'pct_chg', 'predict_rose'], ascending=[True, False, False, False, False], inplace=True)
+        recommend_stocks.sort_values(by=['star', 'holding_at', 'predict_rose', 'star_count', 'pct_chg',], ascending=[True, False, False, False, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
