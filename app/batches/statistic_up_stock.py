@@ -20,7 +20,7 @@ ratio_lable = {
 
 
 def execute(start_date='', end_date=''):
-    trade_cal = DB.get_open_cal_date(end_date=end_date, period=488)
+    trade_cal = DB.get_open_cal_date(end_date=end_date, period=60)
     start_date_id = trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
     data = DB.count_threshold_group_by_date_id(start_date_id=start_date_id, end_date_id=end_date_id)
