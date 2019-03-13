@@ -102,7 +102,7 @@ def execute(start_date='', end_date=''):
                                               closed_date_id=closed_date_id)
                     break
 
-                elif later_recommend_log.empty and ((later_daily['close'] - later_daily['open']) / later_daily['open']) > 0.01 \
+                elif (later_recommend_log.empty or later_recommend_log.at[0, 'star_idx'] != logs.iloc[i]['star_idx']) and ((later_daily['close'] - later_daily['open']) / later_daily['open']) > 0.01 \
                         and later_daily['pct_chg'] > 2 \
                         and later_daily['close'] > (np.max([recommended_daily.at[0, 'high'], second_daily.at[0, 'high'], second_daily.at[1, 'high'], second_daily.at[2, 'high']]))*1.01:
                     holding_date_id = date_id
