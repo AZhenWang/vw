@@ -429,7 +429,7 @@ class DB(object):
                     ' and rs.recommend_type = :recommend_type) as sub'
                     ),
             cls.engine,
-            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id), 'si': star_idx,
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id), 'si': str(star_idx),
                     'recommend_type': recommend_type}
         )
         return result.at[0, 'count_star']
