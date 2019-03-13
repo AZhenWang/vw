@@ -129,7 +129,7 @@ def get_holdings(sample_pca, sample_prices):
 
     for i in range(start_loc, len(Y)):
         # 正相关
-        if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1]\
+        if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y1[i] < Y1[i-1] and Y[i] > Y1[i]\
                 and Y.iloc[i] > peaks.iloc[-1] and peaks.iloc[-1] < mean + std \
                 and mean > bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
             # 大双底部
