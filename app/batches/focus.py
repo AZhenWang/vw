@@ -20,10 +20,10 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
-    code_ids = codes['code_id']
-    # code_ids = [819]
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
+    # code_ids = codes['code_id']
+    code_ids = [819]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -129,7 +129,7 @@ def get_holdings(sample_pca, sample_prices):
 
     for i in range(start_loc, len(Y)):
         # 正相关
-        if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y1[i] < Y1[i-1] and Y[i] > Y1[i]\
+        if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y[i] > Y1[i] and Y1[-3:-1].max() - Y1.iloc[-1] > 0 \
                 and Y.iloc[i] > peaks.iloc[-1] and peaks.iloc[-1] < mean + std \
                 and mean > bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
             # 大双底部
