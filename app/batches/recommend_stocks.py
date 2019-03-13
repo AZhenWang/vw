@@ -86,7 +86,7 @@ def execute(start_date='', end_date=''):
 
         if predict_rose > 0:
             big_later_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
-            second_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=2)
+            second_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
             holding_at = None
             holding_pct_chg = None
             send = True
@@ -102,7 +102,7 @@ def execute(start_date='', end_date=''):
 
                 elif ((later_daily['close'] - later_daily['open']) / later_daily['open']) > 0.01 \
                         and later_daily['pct_chg'] > 2 \
-                        and later_daily['close'] > (np.max([recommended_daily.at[0, 'high'], second_daily.at[0, 'high'], second_daily.at[1, 'high']]))*1.01:
+                        and later_daily['close'] > (np.max([recommended_daily.at[0, 'high'], second_daily.at[0, 'high'], second_daily.at[1, 'high'], second_daily.at[2, 'high']]))*1.01:
                     holding_date_id = date_id
                     holding_at = later_daily['cal_date']
                     holding_pct_chg = later_daily['pct_chg']
@@ -112,7 +112,7 @@ def execute(start_date='', end_date=''):
 
             if send and len(big_later_dailys) > 0:
                 star_count = DB.count_recommend_star(code_id=code_id, start_date_id=recommended_date_id,
-                                                     end_date_id=date_id, star_idx='1',
+                                                     end_date_id=date_id, star_idx=logs.iloc[i]['star_idx'],
                                                      recommend_type='pca')
                 DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                           star_count=star_count)
