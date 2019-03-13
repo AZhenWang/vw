@@ -473,7 +473,7 @@ class DB(object):
                 ' and fs.closed_date_id is null '
                 'order by fs.recommended_date_id desc'),
             cls.engine,
-            params={'ci': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id), 'star_idx': star_idx, 'rt': recommend_type}
+            params={'ci': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id), 'star_idx': str(star_idx), 'rt': recommend_type}
         )
         return stocks
 
