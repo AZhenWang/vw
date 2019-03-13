@@ -20,10 +20,10 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
-    # codes = DB.get_latestopendays_code_list(
-    #     latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
-    # code_ids = codes['code_id']
-    code_ids = [819]
+    codes = DB.get_latestopendays_code_list(
+        latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
+    code_ids = codes['code_id']
+    # code_ids = [588]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -56,17 +56,17 @@ def execute(start_date='', end_date=''):
             mean = 0
             std = np.std(Y0)
             flag = 0
+            if Y0.iloc[-1] > Y0.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
+                flag += 1
             if Y0.iloc[-2] > Y0.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
                 flag += 1
             if Y0.iloc[-3] > Y0.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
                 flag += 1
-            if Y0.iloc[-4] > Y0.iloc[-5] and sample_prices.iloc[-4] < sample_prices.iloc[-5]:
-                flag += 1
+            if Y0.iloc[-1] < Y0.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
+                flag -= 1
             if Y0.iloc[-2] < Y0.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
                 flag -= 1
             if Y0.iloc[-3] < Y0.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
-                flag -= 1
-            if Y0.iloc[-4] < Y0.iloc[-5] and sample_prices.iloc[-4] > sample_prices.iloc[-5]:
                 flag -= 1
 
             holdings = get_holdings(sample_pca, sample_prices)
