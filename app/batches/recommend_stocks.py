@@ -87,12 +87,14 @@ def execute(start_date='', end_date=''):
         if predict_rose > 0:
             big_later_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
             second_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
+
             holding_at = None
             holding_pct_chg = None
             send = True
             for j in range(len(big_later_dailys)):
                 later_daily = big_later_dailys.iloc[j]
                 date_id = big_later_dailys.index[j]
+                later_recommend_log = DB.get_recommend_log(code_id=code_id, date_id=date_id, recommend_type='pca')
                 if later_daily['close'] < recommended_daily.at[0, 'open'] * 0.99:
                     closed_date_id = date_id
                     send = False
@@ -100,7 +102,7 @@ def execute(start_date='', end_date=''):
                                               closed_date_id=closed_date_id)
                     break
 
-                elif ((later_daily['close'] - later_daily['open']) / later_daily['open']) > 0.01 \
+                elif later_recommend_log.empty and ((later_daily['close'] - later_daily['open']) / later_daily['open']) > 0.01 \
                         and later_daily['pct_chg'] > 2 \
                         and later_daily['close'] > (np.max([recommended_daily.at[0, 'high'], second_daily.at[0, 'high'], second_daily.at[1, 'high'], second_daily.at[2, 'high']]))*1.01:
                     holding_date_id = date_id
