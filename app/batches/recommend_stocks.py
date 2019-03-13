@@ -15,11 +15,11 @@ def execute(start_date='', end_date=''):
     end_date_id = trade_cal.iloc[-5]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
-    logs = logs[logs['star_idx'] == 1]
+    logs = logs[logs['star_idx'] >= 1]
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['star', 'ts_code', 'code_name', 'recommend_at', 'market', 'star_count',
                                              'predict_rose', 'pct_chg', 'moods', 'amplitude', 'pre4_sum', 'average',  'pre4_std',
-                                             'code_id', 'holding_at',
+                                             'code_id', 'holding_at', 'holding_pct_chg',
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
@@ -49,7 +49,7 @@ def execute(start_date='', end_date=''):
         predict_rose = 0  # 预测涨幅
         pre_pct_chg_sum = 0
         if focus_log.empty:
-            if logs.iloc[i]['star_idx'] == 1:
+            if logs.iloc[i]['star_idx'] == 1 or logs.iloc[i]['star_idx'] == 3:
                 if recommended_daily.at[0, 'close'] > recommended_daily.at[0, 'open']:
                     next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=3)
                     if ((next_daily.iloc[0]['pct_chg'] >= 0 and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open']) or \
@@ -67,7 +67,8 @@ def execute(start_date='', end_date=''):
                 pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=20)
 
                 latestfocus_logs = DB.get_stock_focus_logs(code_id=code_id, start_date_id=pre_trade_cal.iloc[0]['date_id'],
-                                        end_date_id=pre_trade_cal.iloc[-2]['date_id'], recommend_type='pca')
+                                                           end_date_id=pre_trade_cal.iloc[-2]['date_id'],
+                                                           star_idx=logs.iloc[i]['star_idx'], recommend_type='pca')
                 if latestfocus_logs.holding_date_id.any():
                     predict_rose = 0
                 else:
@@ -87,6 +88,7 @@ def execute(start_date='', end_date=''):
             big_later_dailys = DB.get_code_info(code_id=code_id, start_date=big_next_date, end_date=end_date)
             second_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=2)
             holding_at = None
+            holding_pct_chg = None
             send = True
             for j in range(len(big_later_dailys)):
                 later_daily = big_later_dailys.iloc[j]
@@ -103,6 +105,7 @@ def execute(start_date='', end_date=''):
                         and later_daily['close'] > (np.max([recommended_daily.at[0, 'high'], second_daily.at[0, 'high'], second_daily.at[1, 'high']]))*1.01:
                     holding_date_id = date_id
                     holding_at = later_daily['cal_date']
+                    holding_pct_chg = later_daily['pct_chg']
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               holding_date_id=holding_date_id)
                     break
@@ -150,10 +153,11 @@ def execute(start_date='', end_date=''):
                     'pre4_std': round(np.std(Y0[-5:]), 2),
                     'code_id': code_id,
                     'holding_at': holding_at,
+                    'holding_pct_chg': holding_pct_chg
                 }
                 recommend_stocks.loc[code_id] = content
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['holding_at', 'star_count', 'predict_rose', 'pre4_std'], ascending=[False, False, False, True], inplace=True)
+        recommend_stocks.sort_values(by=['holding_at', 'holding_pct_chg', 'star_count', 'predict_rose'], ascending=[False, False, False, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
