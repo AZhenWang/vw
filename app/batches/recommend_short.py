@@ -25,7 +25,10 @@ def execute(start_date='', end_date=''):
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
+        if code_id != 2302:
+            continue
         print('code_id=', code_id)
+        print('log=', logs.iloc[i])
         recommended_date_id = logs.iloc[i]['date_id']
 
         pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=3)
@@ -51,9 +54,17 @@ def execute(start_date='', end_date=''):
             second_recommend_log = DB.get_code_recommend_logs(code_id=code_id, start_date_id=next_date_id,
                                                              end_date_id=big_next_date_id,
                                                              star_idx='3', recommend_type='pca')
+
+            print(not second_recommend_log.empty)
+            print(recommended_daily.at[0, 'close'] >= recommended_daily.at[0, 'open'])
+            print(recommended_daily.at[0, 'pct_chg'] > 3)
+            print(recommended_daily.at[0, 'pct_chg'] > next_daily.iloc[0]['pct_chg'] > 0)
+            print(next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open'])
+            print(next_daily.iloc[0]['open'] < recommended_daily.at[0, 'close'])
+            print(next_daily.iloc[0]['close'] > recommended_daily.at[0, 'high'] * 1.01)
             if not second_recommend_log.empty \
                     and recommended_daily.at[0, 'close'] >= recommended_daily.at[0, 'open'] \
-                    and recommended_daily.at[0, 'pct_chg'] > 5 \
+                    and recommended_daily.at[0, 'pct_chg'] > 3 \
                     and recommended_daily.at[0, 'pct_chg'] > next_daily.iloc[0]['pct_chg'] > 0 \
                     and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open'] \
                     and next_daily.iloc[0]['open'] < recommended_daily.at[0, 'close'] \
