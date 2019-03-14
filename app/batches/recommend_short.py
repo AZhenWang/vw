@@ -59,7 +59,7 @@ def execute(start_date='', end_date=''):
                     and recommended_daily.at[0, 'pct_chg'] > 3 \
                     and next_daily.iloc[0]['pct_chg'] >= 0 \
                     and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open'] \
-                    and next_daily.iloc[0]['close'] > recommended_daily.at[0, 'close'] * 1.01:
+                    and next_daily.iloc[0]['close'] > recommended_daily.at[0, 'high'] * 1.01:
                 predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.iloc[0]['pct_chg'])) * 10
 
                 pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
