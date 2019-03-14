@@ -55,24 +55,19 @@ def execute(start_date='', end_date=''):
 
             mean = 0
             std = np.std(Y0)
+
+            # 大趋势买卖点
             flag = 0
-            if Y0.iloc[-1] > Y0.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
-                flag += 1
-            if Y0.iloc[-2] > Y0.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
-                flag += 1
-            if Y0.iloc[-3] > Y0.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
-                flag += 1
-            if Y0.iloc[-1] < Y0.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
-                flag -= 1
-            if Y0.iloc[-2] < Y0.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
-                flag -= 1
-            if Y0.iloc[-3] < Y0.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
-                flag -= 1
+            if max(abs(Y[i]), abs(Y1[i])) > std:
+                if Y[i] > Y[i - 1] and Y1[i] > Y1[i - 1] and sample_prices.iloc[i] < sample_prices.iloc[i - 1]:
+                    flag = 1
+                elif Y[i] < Y[i - 1] and Y1[i] < Y1[i - 1] and sample_prices.iloc[i] >= sample_prices.iloc[i - 1]:
+                    flag = -1
 
             holdings = get_holdings(sample_pca, sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
 
-            if daily.empty or holdings[-1] == 0:
+            if daily.empty or (holdings[-1] == 0 and flag == 0):
                 continue
             y1_y1 = Y1[-3:-1].max() - Y1.iloc[-1]
 
@@ -130,8 +125,7 @@ def get_holdings(sample_pca, sample_prices):
     for i in range(start_loc, len(Y)):
         # 正相关
         if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y[i] > Y1[i] and Y1[-3:-1].max() - Y1.iloc[-1] > 0 \
-                and Y.iloc[i] > peaks.iloc[-1] and peaks.iloc[-1] < mean + std \
-                and mean > bottoms.iloc[-1] > bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
+                and Y.iloc[i] > peaks.iloc[-1] and peaks.iloc[-1] < mean + std and mean > bottoms.iloc[-1] >= bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 1
