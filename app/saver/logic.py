@@ -438,7 +438,8 @@ class DB(object):
             sa.text(' select rs.* from recommend_stocks rs '
                     ' where rs.code_id = :code_id and rs.date_id >=:sdi and rs.date_id <=:edi'
                     ' and rs.star_idx =:star_idx'
-                    ' and rs.recommend_type = :recommend_type'),
+                    ' and rs.recommend_type = :recommend_type'
+                    ' order by rs.date_id asc'),
             cls.engine,
             params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi':str(end_date_id), 'star_idx':star_idx, 'recommend_type': recommend_type}
         )
