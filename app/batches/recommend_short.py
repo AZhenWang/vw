@@ -109,7 +109,8 @@ def execute(start_date='', end_date=''):
 
     if not recommend_stocks.empty:
         recommend_stocks.sort_values(by=['pct_chg', 'holding_pct_chg'],
-                                     ascending=[False, False], inplace=True).reset_index(drop=True, inplace=True)
+                                     ascending=[False, False], inplace=True)
+        recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=True)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
