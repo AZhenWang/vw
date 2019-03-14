@@ -54,9 +54,10 @@ def execute(start_date='', end_date=''):
                                                              star_idx='4', recommend_type='pca')
             if not second_recommend_log.empty \
                     and recommended_daily.at[0, 'close'] >= recommended_daily.at[0, 'open'] \
-                    and recommended_daily.at[0, 'pct_chg'] > 3 \
-                    and next_daily.iloc[0]['pct_chg'] >= 0 \
+                    and recommended_daily.at[0, 'pct_chg'] > 5 \
+                    and recommended_daily.at[0, 'pct_chg'] > next_daily.iloc[0]['pct_chg'] > 0 \
                     and next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open'] \
+                    and next_daily.iloc[0]['open'] < recommended_daily.at[0, 'close'] \
                     and next_daily.iloc[0]['close'] > recommended_daily.at[0, 'high'] * 1.01:
                 predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.iloc[0]['pct_chg'])) * 10
 
@@ -109,7 +110,7 @@ def execute(start_date='', end_date=''):
                 recommend_stocks.loc[code_id] = content
                 n += 1
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['holding_pct_chg', 'predict_rose'],
+        recommend_stocks.sort_values(by=['pct_chg', 'holding_pct_chg'],
                                      ascending=[False, False], inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
