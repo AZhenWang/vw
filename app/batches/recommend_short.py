@@ -29,7 +29,9 @@ def execute(start_date='', end_date=''):
         print('code_id=', code_id)
         recommended_date_id = logs.iloc[i]['date_id']
 
+        pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=3)
         after_trade_cal = DB.get_open_cal_date_by_id(start_date_id=recommended_date_id, period=3)
+        grand_pre_date_id = pre_trade_cal.iloc[0]['date_id']
         next_date_id = after_trade_cal.iloc[1]['date_id']
         big_next_date_id = after_trade_cal.iloc[-1]['date_id']
         data = DB.count_threshold_group_by_date_id(start_date_id=grand_pre_date_id, end_date_id=next_date_id)
@@ -38,6 +40,9 @@ def execute(start_date='', end_date=''):
         if len(data) != 4:
             continue
         market = np.where(np.diff(data['up_stock_ratio']) < 0, 1, 0)
+        # if market[-2] < 1:
+        #     continue
+        # print(market)
         recommended_daily = DB.get_code_daily(code_id=code_id, date_id=recommended_date_id)
         focus_log = DB.get_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id)
         if not focus_log.empty and (focus_log.at[0, 'closed_date_id'] or focus_log.at[0, 'holding_date_id']):
