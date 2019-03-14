@@ -25,8 +25,6 @@ def execute(start_date='', end_date=''):
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
-        if code_id != 2302:
-            continue
         print('code_id=', code_id)
         print('log=', logs.iloc[i])
         recommended_date_id = logs.iloc[i]['date_id']
