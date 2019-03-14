@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [588]
+    # code_ids = [2302]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -151,7 +151,7 @@ def get_holdings(sample_pca, sample_prices):
             holding = 11
             print('大双底部')
 
-        elif Y[i - 10: i - 2].max() > (mean + std) and (Y[i] - Y[i - 2:i].min()) > 1.5 * std and (mean - 1.5 * std) < Y[
+        elif Y[i-10: i-2].max() - Y[i-7:i].min() > (2*std) and (Y[i] - Y[i - 2:i].min()) > 1.5 * std and (mean - 1.5 * std) < Y[
                                                                                                                   i - 2:i].min() and \
                 Y[i] > mean + std:
             # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
