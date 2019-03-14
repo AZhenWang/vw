@@ -19,11 +19,10 @@ def execute(start_date='', end_date=''):
     logs = logs[logs['star_idx'] == 3]
     print('logs=', logs)
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['n', 'ts_code', 'code_name',  'market',
+    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name',  'market',
                                              'predict_rose', 'pct_chg', 'moods', 'amplitude',
                                              'code_id', 'recommend_at', 'holding_at', 'holding_pct_chg',
                                              ])
-    n = 1
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
         print('code_id=', code_id)
@@ -94,7 +93,6 @@ def execute(start_date='', end_date=''):
                         amplitude = -1
 
                 content = {
-                    'n': n,
                     'ts_code': logs.iloc[i]['ts_code'],
                     'code_name': logs.iloc[i]['name'],
                     'amplitude': amplitude,
@@ -108,11 +106,11 @@ def execute(start_date='', end_date=''):
                     'holding_pct_chg': focus_daily.at[0, 'pct_chg']
                 }
                 recommend_stocks.loc[code_id] = content
-                n += 1
+
     if not recommend_stocks.empty:
         recommend_stocks.sort_values(by=['pct_chg', 'holding_pct_chg'],
-                                     ascending=[False, False], inplace=True)
-        recommend_text = recommend_stocks.to_string(index=False)
+                                     ascending=[False, False], inplace=True).reset_index(drop=True, inplace=True)
+        recommend_text = recommend_stocks.to_string(index=True)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
         send_email(subject=end_date + '预测', msgs=msgs)
