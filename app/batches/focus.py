@@ -21,9 +21,9 @@ def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
     codes = DB.get_latestopendays_code_list(
-        latest_open_days=244 * 2 + 25, date_id=trade_cal.iloc[0]['date_id'])
+        latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [2302]
+    # code_ids = [975]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -58,10 +58,11 @@ def execute(start_date='', end_date=''):
 
             # 大趋势买卖点
             flag = 0
-            if max(abs(Y[i]), abs(Y1[i])) > std:
-                if Y[i] > Y[i - 1] and Y1[i] > Y1[i - 1] and sample_prices.iloc[i] < sample_prices.iloc[i - 1]:
+            print(Y0)
+            if max(abs(Y0.iloc[-1]), abs(Y1.iloc[-1])) > std:
+                if Y0.iloc[-1] > Y0.iloc[-2] and Y1.iloc[-1] > Y1.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
                     flag = 1
-                elif Y[i] < Y[i - 1] and Y1[i] < Y1[i - 1] and sample_prices.iloc[i] >= sample_prices.iloc[i - 1]:
+                elif Y0.iloc[-1] < Y0.iloc[-2] and Y1.iloc[-1] < Y1.iloc[-2] and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
                     flag = -1
 
             holdings = get_holdings(sample_pca, sample_prices)
