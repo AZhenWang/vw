@@ -217,8 +217,9 @@ class DB(object):
     @classmethod
     def get_code_daily(cls, code_id='', date_id=''):
         daily = pd.read_sql(
-            sa.text('select d.*, af.adj_factor from daily d'
+            sa.text('select tc.cal_date, d.*, af.adj_factor from daily d'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
+                    ' left join trade_cal tc on tc.id = d.date_id'
                     ' where d.date_id = :date_id and d.code_id = :code_id'), cls.engine,
             params={'code_id': str(code_id), 'date_id': str(date_id)})
         return daily
@@ -432,6 +433,18 @@ class DB(object):
         return logs
 
     @classmethod
+    def get_code_recommend_logs(cls, code_id, start_date_id, end_date_id, star_idx, recommend_type=''):
+        logs = pd.read_sql(
+            sa.text(' select rs.* from recommend_stocks rs '
+                    ' where rs.code_id = :code_id and rs.date_id >=:sdi and rs.date_id <=:edi'
+                    ' and rs.star_idx =:star_idx'
+                    ' and rs.recommend_type = :recommend_type'),
+            cls.engine,
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi':str(end_date_id), 'star_idx':star_idx, 'recommend_type': recommend_type}
+        )
+        return logs
+
+    @classmethod
     def count_recommend_star(cls, code_id, start_date_id, end_date_id, star_idx='', recommend_type=''):
         result = pd.read_sql(
             sa.text(' select count(*) as count_star from '
@@ -448,7 +461,7 @@ class DB(object):
     @classmethod
     def insert_focus_stocks(cls, code_id, star_idx, predict_rose, recommend_type, recommended_date_id, pre_pct_chg_sum):
         pd.io.sql.execute('insert into focus_stocks (code_id, star_idx, predict_rose, '
-                          'recommend_type, recommended_date_id,pre_pct_chg_sum) values (%s,%s,%s,%s,%s,%s)', cls.engine,
+                          'recommend_type, recommended_date_id, pre_pct_chg_sum) values (%s,%s,%s,%s,%s,%s)', cls.engine,
                           params=[str(code_id), str(star_idx), str(predict_rose), str(recommend_type), str(recommended_date_id), str(pre_pct_chg_sum)])
     @classmethod
     def update_focus_stock_log(cls, code_id, recommended_date_id , holding_date_id='', closed_date_id='', star_count=''):
