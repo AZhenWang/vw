@@ -26,6 +26,8 @@ def execute(start_date='', end_date=''):
     n = 1
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
+        if code_id != 2355:
+            continue
         print('code_id=', code_id)
         recommended_date_id = logs.iloc[i]['date_id']
 
@@ -47,18 +49,11 @@ def execute(start_date='', end_date=''):
         focus_log = DB.get_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id)
         if not focus_log.empty and (focus_log.at[0, 'closed_date_id'] or focus_log.at[0, 'holding_date_id']):
             continue
-        if focus_log.empty:
-            next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=1)
+        next_daily = DB.get_code_daily_later(code_id=code_id, date_id=recommended_date_id, period=1)
+        if focus_log.empty and not next_daily.empty:
             second_recommend_log = DB.get_code_recommend_logs(code_id=code_id, start_date_id=next_date_id,
                                                              end_date_id=big_next_date_id,
                                                              star_idx='4', recommend_type='pca')
-            print(not second_recommend_log.empty,
-                     recommended_daily.at[0, 'close'] >= recommended_daily.at[0, 'open'],
-                     recommended_daily.at[0, 'pct_chg'] > 3,
-                     next_daily.iloc[0]['pct_chg'] >= 0,
-                     next_daily.iloc[0]['close'] >= next_daily.iloc[0]['open'],
-                     next_daily.iloc[0]['close'] > recommended_daily.at[0, 'close'] * 1.01)
-
             if not second_recommend_log.empty \
                     and recommended_daily.at[0, 'close'] >= recommended_daily.at[0, 'open'] \
                     and recommended_daily.at[0, 'pct_chg'] > 3 \
