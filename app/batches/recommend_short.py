@@ -50,7 +50,7 @@ def execute(start_date='', end_date=''):
         if focus_log.empty and not next_daily.empty:
             second_recommend_log = DB.get_code_recommend_logs(code_id=code_id, start_date_id=next_date_id,
                                                              end_date_id=big_next_date_id,
-                                                             star_idx='4', recommend_type='pca')
+                                                             star_idx='3', recommend_type='pca')
             if not second_recommend_log.empty \
                     and recommended_daily.at[0, 'close'] >= recommended_daily.at[0, 'open'] \
                     and recommended_daily.at[0, 'pct_chg'] > 5 \
