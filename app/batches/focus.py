@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [975]
+    # code_ids = [2187]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -44,15 +44,17 @@ def execute(start_date='', end_date=''):
                 sample_Y = Y
             Y0 = sample_pca.col_0
             Y1 = sample_pca.col_1
-            correlation0 = Y0.corr(sample_prices)
-            correlation1 = Y1.corr(sample_prices)
-            # if correlation0 < 0:
-            #     # 负相关的先反过来
-            #     Y0 = (-1) * Y0
-            # if correlation1 < 0:
-            #     # 负相关的先反过来
-            #     Y1 = (-1) * Y1
-
+            diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
+            diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
+            diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
+            dot_price_Y0 = np.dot(diff_Y0, diff_price)
+            dot_price_Y1 = np.dot(diff_Y1, diff_price)
+            if dot_price_Y0 < 0:
+                print('转Y0')
+                Y0 = (-1) * Y0
+            if dot_price_Y1 < 0:
+                print('转Y1')
+                Y1 = (-1) * Y1
             mean = 0
             std = np.std(Y0)
 
@@ -65,7 +67,7 @@ def execute(start_date='', end_date=''):
                 elif Y0.iloc[-1] < Y0.iloc[-2] and Y1.iloc[-1] < Y1.iloc[-2] and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
                     flag = -1
 
-            holdings = get_holdings(sample_pca, sample_prices)
+            holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
 
             if daily.empty or (holdings[-1] == 0 and flag == 0):
@@ -104,13 +106,7 @@ def execute(start_date='', end_date=''):
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
 
 
-def get_holdings(sample_pca, sample_prices):
-    Y = sample_pca.col_0
-    Y1 = sample_pca.col_1
-    correlation = Y.corr(sample_prices.reset_index(drop=True))
-    # if correlation < 0:
-    #     Y = (-1) * Y
-
+def get_holdings(Y, Y1, sample_prices):
     mean = 0
     std = np.std(Y)
 
@@ -124,6 +120,20 @@ def get_holdings(sample_pca, sample_prices):
     bottoms_length = len(bottoms)
 
     for i in range(start_loc, len(Y)):
+        if max(abs(Y[i]), abs(Y1[i])) > std:
+            if Y[i] > Y[i-1] and Y1[i] > Y1[i-1] and sample_prices.iloc[i] < sample_prices.iloc[i-1]:
+                holding = 1
+            elif Y[i] < Y[i-1] and Y1[i] < Y1[i-1] and sample_prices.iloc[i] >= sample_prices.iloc[i-1]:
+                holding = -1
+            else:
+                holding = 0
+        else:
+            holding = 0
+
+        holdings.append(holding)
+
+        continue
+
         # 正相关
         if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y[i] > Y1[i] and Y1[-3:-1].max() - Y1.iloc[-1] > 0 \
                 and Y.iloc[i] > peaks.iloc[-1] and peaks.iloc[-1] < mean + std and mean > bottoms.iloc[-1] >= bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
