@@ -37,7 +37,7 @@ class Pca(object):
 
         if return_y:
             sample_Y = feature_assembly.pack_targets()
-            return sample_pca, sample_prices, sample_Y
+            return sample_pca, sample_prices, sample_Y, feature_assembly.data
         else:
             return sample_pca, sample_prices
 
