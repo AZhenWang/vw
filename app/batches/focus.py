@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [2187]
+    # code_ids = [2772]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -60,12 +60,10 @@ def execute(start_date='', end_date=''):
 
             # 大趋势买卖点
             flag = 0
-            print(Y0)
-            if max(abs(Y0.iloc[-1]), abs(Y1.iloc[-1])) > std:
-                if Y0.iloc[-1] > Y0.iloc[-2] and Y1.iloc[-1] > Y1.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
-                    flag = 1
-                elif Y0.iloc[-1] < Y0.iloc[-2] and Y1.iloc[-1] < Y1.iloc[-2] and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
-                    flag = -1
+            if Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] > 0 and sample_prices.iloc[-1] <= sample_prices.iloc[-2]:
+                flag = 1
+            elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] < 0 and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
+                flag = -1
 
             holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
@@ -98,7 +96,7 @@ def execute(start_date='', end_date=''):
                 'average': round(np.mean(Y0[-20:]), 2),
                 'pre50_down_days': pre50_down_days,
                 'amplitude': amplitude,
-                'moods': round(y1_y1, 1),
+                'moods': round(Y1.iloc[-1], 1),
                 'flag': flag
             }
         print(new_rows)
@@ -120,19 +118,6 @@ def get_holdings(Y, Y1, sample_prices):
     bottoms_length = len(bottoms)
 
     for i in range(start_loc, len(Y)):
-        if max(abs(Y[i]), abs(Y1[i])) > std:
-            if Y[i] > Y[i-1] and Y1[i] > Y1[i-1] and sample_prices.iloc[i] < sample_prices.iloc[i-1]:
-                holding = 1
-            elif Y[i] < Y[i-1] and Y1[i] < Y1[i-1] and sample_prices.iloc[i] >= sample_prices.iloc[i-1]:
-                holding = -1
-            else:
-                holding = 0
-        else:
-            holding = 0
-
-        holdings.append(holding)
-
-        continue
 
         # 正相关
         if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y[i] > Y1[i] and Y1[-3:-1].max() - Y1.iloc[-1] > 0 \
