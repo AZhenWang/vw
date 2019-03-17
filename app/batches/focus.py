@@ -23,12 +23,12 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [2633]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
         new_rows = pd.DataFrame(columns=fields_map['recommend_stocks'])
-        pca_features, prices, Y = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
+        pca_features, prices, Y, _ = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
                                           n_components=n_components, return_y=True)
         pca_length = len(pca_features)
         for i in range(pca_length-cal_length, pca_length):
@@ -64,7 +64,7 @@ def execute(start_date='', end_date=''):
                 flag = 1
             elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] < 0 and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
                 flag = -1
-
+            print('flag=', flag)
             holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
 
@@ -93,10 +93,10 @@ def execute(start_date='', end_date=''):
                 'code_id': code_id,
                 'recommend_type': 'pca',
                 'star_idx': holdings[-1],
-                'average': round(np.mean(Y0[-20:]), 2),
+                'average': round(Y0.iloc[-1], 2),
                 'pre50_down_days': pre50_down_days,
                 'amplitude': amplitude,
-                'moods': round(Y1.iloc[-1], 1),
+                'moods': round(Y1.iloc[-1], 2),
                 'flag': flag
             }
         print(new_rows)

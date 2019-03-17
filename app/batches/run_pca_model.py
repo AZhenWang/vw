@@ -4,19 +4,25 @@ import matplotlib.pylab as plt
 from app.common.function import get_cum_return_rate
 import numpy as np
 import pandas as pd
+from mpl_finance import candlestick_ohlc
+from matplotlib import dates as mdates
+from matplotlib import ticker as mticker
+from datetime import datetime as dt
+import matplotlib
+# 提供汉字支持
+matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei']
 from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 
-pre_predict_interval=5
-sample_len = 30
+pre_predict_interval = 5
+sample_len = 60
+
 
 def execute(start_date='', end_date=''):
-    end_date = '20190212'
+    end_date = '20190315'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
-
-
     pca = Pca(cal_date=end_date)
 
     # recommended_codes = DB.get_recommended_stocks(cal_date=end_date)
@@ -27,9 +33,10 @@ def execute(start_date='', end_date=''):
     # new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     # draw = False
     draw = True
-    codes = [2187]
-    # 687:鱼跃医疗，2187：东方金钰, 2876:秋林集团
-    # 1241:银宝山新，3368: 薄天环境， 1836：赢合科技， 1442：东方财富, 3179:汇嘉时代, 3476:柯利达
+    codes = [540]
+    # 2633:光大嘉宝
+    # 687:鱼跃医疗，2187：东方金钰, 2876:秋林集团, 42:深天马A, 2011:广和通， 782：乐通, 819:赫美集团， 975：达华智能
+    # 1241:银宝山新，3368: 薄天环境， 1836：赢合科技， 1442：东方财富, 3179:汇嘉时代, 3476:柯利达, 2412:恒力股份
     # 20190122预测：2179:4, 346:2，3067:2, 996:4-2, 2750:2
 
     # correlation： 涨：2179:0.46/0.16/0.07(f), 3067:0.48/0.21/-0.019(f), 2553:0.397/0.121/0.002(f);
@@ -62,122 +69,185 @@ def execute(start_date='', end_date=''):
     i = 0
     n_components = 2
     for code_id in codes:
-        pca_features, prices, Y = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval, n_components=n_components, return_y=True)
+        pca_features, prices, Y, dailys = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval, n_components=n_components, return_y=True)
         if sample_len != 0:
             sample_pca = pca_features[-sample_len:].reset_index(drop=True)
             sample_prices = prices[-sample_len:].reset_index(drop=True)
             sample_Y = Y[-sample_len:]
+            sample_dailys = dailys[-sample_len:].reset_index(drop=True)
         else:
             sample_pca = pca_features
             sample_prices = prices
-            sample_Y = Y
+            sample_dailys = dailys
 
         Y0 = sample_pca.col_0
         Y1 = sample_pca.col_1
-        correlation0 = Y0.corr(sample_prices)
-        correlation1 = Y1.corr(sample_prices)
-        if correlation0 < 0:
-            # 负相关的先反过来
+
+        diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
+        print('diff_Y0', diff_Y0)
+        diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
+        print('diff_Y1', diff_Y1)
+        diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
+        print('diff_price=', diff_price)
+        dot_price_Y0 = np.dot(diff_Y0, diff_price)
+        dot_price_Y1 = np.dot(diff_Y1, diff_price)
+        print('dot_price_Y0', dot_price_Y0)
+        print('dot_price_Y1', dot_price_Y1)
+        if dot_price_Y0 < 0:
+            print('转Y0')
             Y0 = (-1) * Y0
-        if correlation1 < 0:
-            # 负相关的先反过来
+            sample_pca.col_0 = Y0
+        if dot_price_Y1 < 0:
+            print('转Y1')
             Y1 = (-1) * Y1
+            sample_pca.col_1 = Y1
 
         mean = np.mean(Y0)
         # mean = mean * sample_len / (sample_len - 1)
         mean = 0
         std = np.std(Y0)
 
-        flag = 0
-        if Y0.iloc[-1] > Y0.iloc[-2] and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
-            flag += 1
-        if Y0.iloc[-2] > Y0.iloc[-3] and sample_prices.iloc[-2] < sample_prices.iloc[-3]:
-            flag += 1
-        if Y0.iloc[-3] > Y0.iloc[-4] and sample_prices.iloc[-3] < sample_prices.iloc[-4]:
-            flag += 1
-        if Y0.iloc[-1] < Y0.iloc[-2] and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
-            flag -= 1
-        if Y0.iloc[-2] < Y0.iloc[-3] and sample_prices.iloc[-2] > sample_prices.iloc[-3]:
-            flag -= 1
-        if Y0.iloc[-3] < Y0.iloc[-4] and sample_prices.iloc[-3] > sample_prices.iloc[-4]:
-            flag -= 1
+        # flags = []
+        # for i in range(sample_len):
+        #     flag = 0
+        #     if Y0[i] < -0.4 and Y0.iloc[i] > Y0.iloc[i - 1] and Y1.iloc[i] > Y1.iloc[i - 1] and sample_prices.iloc[i] <= \
+        #             sample_prices.iloc[i - 1]:
+        #         flag = 1
+        #     elif Y0[i] > 0.4 and Y0.iloc[i] < Y0.iloc[i - 1] and Y1.iloc[i] < Y1.iloc[i - 1] and sample_prices.iloc[
+        #         i] >= sample_prices.iloc[i - 1]:
+        #         flag = -1
+        #     flags.append(flag)
 
-        holdings = get_holdings(sample_pca, sample_prices)
-        print('holdings = ', holdings[-5:])
-        print('std=', std)
+        # 目前最好的买入点，但不是卖出点
+        # flags = []
+        # for i in range(sample_len):
+        #     flag = 0
+        #     if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] > 0 and sample_prices.iloc[i] <= \
+        #             sample_prices.iloc[i - 1]:
+        #         flag = 1
+        #     elif Y0[i] > 0.4 and Y0.iloc[i] < Y0.iloc[i - 1] and Y1.iloc[i] < Y1.iloc[i - 1] and sample_prices.iloc[
+        #         i] >= sample_prices.iloc[i - 1]:
+        #         flag = -1
+        #     flags.append(flag)
+
+        flags = []
+        for i in range(sample_len):
+            flag = 0
+            if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] > 0 and sample_prices.iloc[i] <= \
+                    sample_prices.iloc[i - 1]:
+                flag = 1
+            elif Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] < 0 and sample_prices.iloc[
+                i] >= sample_prices.iloc[i - 1]:
+                flag = -1
+            flags.append(flag)
+
+        # flags = [0, 0]
+        # for i in range(2, sample_len):
+        #     flag = 0
+        #     if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] > Y1.iloc[i - 1] and sample_prices.iloc[i] < \
+        #             sample_prices.iloc[i - 1]:
+        #         flag = 1
+        #     elif Y1.iloc[i] < Y1.iloc[i - 1] and sample_prices.iloc[i] >= \
+        #             sample_prices.iloc[i - 1]:
+        #         flag = -1
+        #     flags.append(flag)
+
+        holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
+
         cum_return_rate_set = get_cum_return_rate(sample_prices, holdings)
+        cum_return_rate_set_flag = get_cum_return_rate(sample_prices, flags)
+
         buy, sell = get_buy_sell_points(holdings)
+        flag_buy, flag_sell = get_buy_sell_points(flags)
         print('buy=', buy[-5:])
         print('sell=', sell[-5:])
         print('len(holding)=', len(holdings), ', len(buy)=', len(buy))
-        print('code_id=', code_id, ' rate_yearly=', cum_return_rate_set[-1],
-              ' diff=', (sample_prices.iloc[-1] - sample_prices.iloc[20])/sample_prices.iloc[20],
-              ' holding=', np.sum(holdings)
-              )
-        print('explained_variance_ratio_=', pca.explained_variance_ratio_)
         print(Y0[-10:])
-        print('correlation0= ', correlation0)
-        print('correlation1= ', correlation1)
-        print('correlation2= ', Y0.corr(Y1))
-        # Y0-Y0.shift()
-        print('Y1-Y1= ', Y1[-3:-2].max() - Y1.iloc[-1])
+        print('Y1-Y1= ', Y1[-3:-1].max() - Y1.iloc[-1])
         print('std=', std)
         print('mean=', mean)
-        print('flag=', flag)
 
-        knn_v = ''
-        for predict_idx in sample_Y.index[-5:]:
-            y_hat = knn_predict(pca_features, Y, k=2, sample_interval=244*2,
-                                pre_predict_interval=pre_predict_interval, predict_idx=predict_idx)
-            knn_v = knn_v + ' | ' + str(np.floor(y_hat))
-        print('knn=', knn_v)
-        #  存储比较不同的策略组合的收益率
-        # new_rows.loc[i] = {
-        #     'code_id': code_id,
-        #     'date_id': date_id,
-        #     'rate_yearly': cum_return_rate_set[-1],
-        #     'min_rate': np.min(cum_return_rate_set),
-        #     'max_rate': np.max(cum_return_rate_set),
-        #     'mean_rate': np.mean(cum_return_rate_set),
-        # }
-
+        print('std=', std)
+        s1 = pd.Series(flags)[np.not_equal(0, flags)]
+        # s2 = pd.Series(sample_Y.index)[np.not_equal(0, flags)]
+        s2 = pd.Series(sample_dailys['cal_date'])[np.not_equal(0, flags)]
+        s3 = sample_pca[np.not_equal(0, flags)]
+        s = pd.concat([s1, s2], axis=1)
+        ss = pd.concat([s, s3], axis=1)
+        s4 = sample_pca.shift()[np.not_equal(0, flags)]
+        p = pd.concat([ss, s4], axis=1)
+        print('p=', p)
+        sample_dailys['dateTime'] = mdates.date2num(
+            sample_dailys['cal_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
+        sample_dailys['close'] = sample_dailys['close'] * sample_dailys['adj_factor']
+        sample_dailys['open'] = sample_dailys['open'] * sample_dailys['adj_factor']
+        sample_dailys['high'] = sample_dailys['high'] * sample_dailys['adj_factor']
+        sample_dailys['low'] = sample_dailys['low'] * sample_dailys['adj_factor']
         i += 1
-
         if draw:
-            fig, ax = plt.subplots(2, 1, figsize=(16, 8))
-            x_axis = [i for i in range(sample_len)]
-            ax1 = ax[0]
+            fig = plt.figure(figsize=(20, 16))
+            x_axis = sample_dailys['dateTime']
+            ax0 = fig.add_subplot(211)
+            ax0.xaxis.set_major_locator(mticker.MaxNLocator(10))
+            ax0.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+            ax0.plot(x_axis, Y0, label='Y')
+            ax0.plot(x_axis, Y1, label='Y1')
+            ax0.set_ylabel('pca')
+            # ax0.axhline(mean - 3 * std, color='b')
+            # ax0.axhline(mean - 2 * std, color='c')
+            # ax0.axhline(mean - 1.5 * std, color='r')
+            ax0.axhline(mean - 1 * std, color='k')
+            ax0.axhline(mean, color='black')
+            ax0.axhline(mean + 1 * std, color='k')
+            # ax0.axhline(mean + 1.5 * std, color='r')
+            # ax0.axhline(mean + 2 * std, color='c')
+            # ax0.axhline(mean + 3 * std, color='b')
+            ax0.set_ylabel('pca')
 
-            ax1.plot(x_axis, Y0, label='Y')
-            ax1.plot(x_axis, Y1, label='Y1')
+            # plt.legend(loc=3)
+            ax0.set_title(str(code_id) + '-图形信号')
 
-            ax1.set_ylabel('pca')
-            ax1.axhline(mean - 3 * std, color='b')
-            ax1.axhline(mean - 2 * std, color='c')
-            ax1.axhline(mean - 1.5 * std, color='r')
-            ax1.axhline(mean - 1 * std, color='green')
-            ax1.axhline(mean, color='black')
-            ax1.axhline(mean + 1 * std, color='green')
-            ax1.axhline(mean + 1.5 * std, color='r')
-            ax1.axhline(mean + 2 * std, color='c')
-            ax1.axhline(mean + 3 * std, color='b')
+            ax1 = ax0.twinx()
+            ax1.plot(x_axis, sample_prices, 'b-', label='price')
+            ax1.plot(x_axis, np.multiply(sample_prices, buy), 'mo', label='buy')
+            ax1.plot(x_axis, np.multiply(sample_prices, sell), 'co', label='sell')
+            ax1.plot(x_axis, np.multiply(sample_prices, flag_buy), 'rv', label='flag_buy')
+            ax1.plot(x_axis, np.multiply(sample_prices, flag_sell), 'gv', label='flag_sell')
+            ax1.set_ylabel('price')
 
-            # x_axis = mdates.date2num(data['cal_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
-            ax1_1 = ax1.twinx()
-            ax1_1.plot(x_axis, sample_prices, 'bo-', label='price')
-            ax1_1.set_ylabel('price')
+            ax2 = fig.add_subplot(212, facecolor='#07000d')
+            ax2.xaxis.set_major_locator(mticker.MaxNLocator(10))
+            ax2.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+            # ax2.grid()
+            # 支撑压力画线
+            support_lines = sample_dailys[np.equal(1, flags)]
+            press_lines = sample_dailys[np.equal(-1, flags)]
+            for i in range(len(support_lines)):
+                y1 = support_lines.iloc[i]['close']
+                y2 = support_lines.iloc[i]['open']
+                ax2.axhline(y1, color='red', alpha=0.23)
+                ax2.axhline(y2, color='red', alpha=0.23)
+            for i in range(len(press_lines)):
+                y1 = press_lines.iloc[i]['close']
+                y2 = press_lines.iloc[i]['open']
+                ax2.axhline(y1, color='w', alpha=0.23)
+                ax2.axhline(y2, color='w', alpha=0.23)
+            data_mat = sample_dailys[['dateTime', 'open', 'high', 'low', 'close']]
+            candlestick_ohlc(ax2, data_mat.values, width=.7, colorup='y', colordown='c')
 
-            ax1_1.plot(x_axis, np.multiply(sample_prices, buy), 'r^', label='buy')
-            ax1_1.plot(x_axis, np.multiply(sample_prices, sell), 'g^', label='sell')
+            ax2.plot(x_axis, np.multiply(sample_dailys['high']*1.05, flag_buy), 'rv', label='flag_buy')
+            ax2.plot(x_axis, np.multiply(sample_dailys['high']*1.05, flag_sell), 'wv', label='flag_sell')
 
-            ax2 = ax[1]
-            ax2.plot(x_axis, cum_return_rate_set, label=str(code_id) + '=' + str(round(cum_return_rate_set[-1], 2))
-                                                        + ', min=' + str(min(cum_return_rate_set)))
-            ax2.grid(axis='y')
-            ax2.set_title('Cumulative rate of return')
-            ax2.legend()
-            plt.title(code_id)
-            plt.legend(loc=2)
+            ax2.set_title(str(code_id) + '-资金信号')
+            # ax2.plot(x_axis, cum_return_rate_set, label=str(code_id) + '=' + str(round(cum_return_rate_set[-1], 2))
+            #                                             + ', min=' + str(min(cum_return_rate_set)))
+            # ax2.plot(x_axis, cum_return_rate_set_flag, label='flag' + str(code_id) + '=' + str(round(cum_return_rate_set_flag[-1], 2))
+            #                                             + ', min=' + str(min(cum_return_rate_set_flag)))
+            # ax2.grid(axis='y')
+            # ax2.set_title('Cumulative rate of return')
+            # ax2.legend()
+
+            # plt.legend(loc=3)
 
             plt.show()
 
@@ -185,13 +255,7 @@ def execute(start_date='', end_date=''):
         # new_rows.to_sql('rate_yearly', DB.engine, index=False, if_exists='append', chunksize=1000)
 
 
-def get_holdings(sample_pca, sample_prices):
-    Y = sample_pca.col_0
-    correlation = Y.corr(sample_prices)
-    if correlation < 0:
-        Y = (-1) * Y
-        correlation = (-1) * correlation
-
+def get_holdings(Y, Y1, sample_prices):
     mean = np.mean(Y)
     mean = mean * sample_len / (sample_len - 1)
     mean = 0
@@ -211,13 +275,12 @@ def get_holdings(sample_pca, sample_prices):
     print('mean-1.94std', mean - 1.94 * std)
     print('mean-2std', mean - 2 * std)
     print('mean-3std', mean - 3 * std)
-    print('correlation=', correlation)
 
     # if correlation < 0.01:
     #     holdings = [0] * len(Y)
     #     return holdings
 
-    start_loc = len(Y) - 1
+    start_loc = len(Y) - len(Y) + 1
     holdings = [0] * start_loc
     bottom_dis = 20
     point_args = np.diff(np.where(np.diff(Y[-bottom_dis:]) > 0, 0, 1))
@@ -227,7 +290,6 @@ def get_holdings(sample_pca, sample_prices):
     print('Y=', Y)
     print('bottoms=', bottoms)
     print('peaks=', peaks)
-    print(Y.iloc[-2], Y.iloc[-1])
 
     amplitude = 0
     if Y.iloc[-2] < Y.iloc[-1] and (Y.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] > bottoms.iloc[-2]:
@@ -237,15 +299,25 @@ def get_holdings(sample_pca, sample_prices):
         # 底上升
         amplitude = -1
     print('amplitude=', amplitude)
-
+    print('Y1=', Y1[-5:])
+    print('sample_prices=', sample_prices)
 
     for i in range(start_loc, len(Y)):
-        # 正相关
-        if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y.iloc[i] > peaks.iloc[-1] and peaks.iloc[-1] < mean + std and mean > bottoms.iloc[-1] >= bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
+
+        if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y[i] > Y1[i] and Y1[-3:-1].max() - Y1.iloc[-1] > 0 \
+                and Y.iloc[i] > peaks.iloc[-1] and peaks.iloc[-1] < mean + std and mean > bottoms.iloc[-1] >= bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 1
             print('大双底部')
+
+        elif (Y[i - bottom_dis:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
+                and Y[i - 5:i].min() < mean + std \
+                and (Y[i] - Y[i - 5:i].min()) > 1.328 * std \
+                and 2 * std > Y[i] > std and Y[i] > Y[i - 1]:
+            # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
+            print('强势之后的深度震荡后的强烈反弹i=', i)
+            holding = 3
 
         elif bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y.iloc[i] > peaks.iloc[-1] and std > bottoms.iloc[-1] > mean > bottoms.iloc[-2]:
             # 大双底部
@@ -253,7 +325,7 @@ def get_holdings(sample_pca, sample_prices):
             holding = 11
             print('大双底部11')
 
-        elif Y[i-10: i-2].max() > (mean + std) and (Y[i] - Y[i-2:i].min()) > 1.5*std and (mean - 1.5*std) < Y[i-2:i].min() and Y[i] > mean + std:
+        elif Y[i-10: i-2].max() - Y[i-7:i].min() > (2*std) and (Y[i] - Y[i-2:i].min()) > 1.5*std and (mean - 1.5*std) > Y[i-5:i].min() and Y[i] > mean + std:
             # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
             holding = 2
             print('疯牛的多个板的底部的冲锋i=', i)
@@ -263,14 +335,6 @@ def get_holdings(sample_pca, sample_prices):
             #   二、5、10、20均线均已向上发展
             #   三、前一天的涨幅<2个点，负的更好，如果前一天已经涨的多了，这个信号就失效了
             # 实测备注: -0.02 < mean < 0.02, 此时2的信号更可靠， Y1-Y1越大越好
-        elif (Y[i - 30:i - 2].sort_values()[-2:] > (mean + 1.5*std)).all(axis=None) \
-                and Y[i - 5:i].min() < (mean - 1*std) \
-                and (Y[i] - Y[i - 5:i].min()) > 1.5 * std \
-                and Y[i - 1] < mean \
-                and Y[i] > Y[i-1] > Y[i-2]:
-                # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
-            print('强势之后的深度震荡后的强烈反弹i=', i)
-            holding = 3
 
         elif (Y[i-5:i].sort_values()[-2:] > (mean+1.5*std)).all(axis=None) and Y[i] < mean + 1.5*std < Y[i-1]:
             # 大顶部
@@ -308,18 +372,16 @@ def get_holdings(sample_pca, sample_prices):
 def get_buy_sell_points(holdings):
     buy, sell = [np.nan], [np.nan]
     for i in range(1, len(holdings)):
-        if holdings[i] != holdings[i - 1]:
-            if holdings[i] > 0:
-                buy.append(1)
-                sell.append(np.nan)
-            elif holdings[i] < 0:
-                sell.append(1)
-                buy.append(np.nan)
-            else:
-                buy.append(np.nan)
-                sell.append(np.nan)
+        if holdings[i] > 0:
+            buy.append(1)
+            sell.append(np.nan)
+        elif holdings[i] < 0:
+            sell.append(1)
+            buy.append(np.nan)
         else:
             buy.append(np.nan)
             sell.append(np.nan)
 
     return buy, sell
+
+
