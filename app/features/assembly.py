@@ -14,6 +14,7 @@ class Assembly(object):
         self.pre_predict_interval = pre_predict_interval
         self.features = DB.get_features()
         self.code_id = ''
+        self.data = []
         self.adj_close = []
         self.date_idxs = []
 
@@ -100,6 +101,7 @@ class Assembly(object):
         self.code_id = code_id
         data = DB.get_code_info(code_id=code_id, end_date=self.end_date)
         data = data[data['vol'] != 0]
+
         Adj_close = data['close'] * data['adj_factor']
         Adj_open = data['open'] * data['adj_factor']
 
@@ -144,6 +146,7 @@ class Assembly(object):
 
         self.date_idxs = X.index
         self.adj_close = Adj_close[self.date_idxs]
+        self.data = data.loc[self.date_idxs]
 
         return X
 
