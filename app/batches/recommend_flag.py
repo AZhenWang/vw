@@ -16,7 +16,7 @@ def execute(start_date='', end_date=''):
     end_date_id = trade_cal.iloc[-2]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
-    logs = logs[logs['star_idx']==1]
+    logs = logs[logs['flag']==1]
     print(logs)
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['flag', 'code_id', 'ts_code', 'code_name',
