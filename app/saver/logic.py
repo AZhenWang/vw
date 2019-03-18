@@ -446,6 +446,20 @@ class DB(object):
         return logs
 
     @classmethod
+    def get_flag_recommend_logs(cls, code_id, start_date_id, end_date_id, flag, recommend_type=''):
+        logs = pd.read_sql(
+            sa.text(' select rs.* from recommend_stocks rs '
+                    ' where rs.code_id = :code_id and rs.date_id >=:sdi and rs.date_id <=:edi'
+                    ' and rs.flag =:flag'
+                    ' and rs.recommend_type = :recommend_type'
+                    ' order by rs.date_id asc'),
+            cls.engine,
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id), 'flag': flag,
+                    'recommend_type': recommend_type}
+        )
+        return logs
+
+    @classmethod
     def count_recommend_star(cls, code_id, start_date_id, end_date_id, star_idx='', recommend_type=''):
         result = pd.read_sql(
             sa.text(' select count(*) as count_star from '
