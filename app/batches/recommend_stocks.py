@@ -6,7 +6,6 @@ from app.common.function import send_email
 from email.mime.text import MIMEText
 
 pre_predict_interval = 5
-sample_interval = 60
 n_components = 2
 
 def execute(start_date='', end_date=''):

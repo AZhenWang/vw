@@ -16,11 +16,11 @@ from app.common.function import knn_predict
 
 
 pre_predict_interval = 5
-sample_len = 60
+sample_len = 122
 
 
 def execute(start_date='', end_date=''):
-    end_date = '20190315'
+    end_date = '20190318'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
     pca = Pca(cal_date=end_date)
@@ -34,9 +34,9 @@ def execute(start_date='', end_date=''):
     # draw = False
     draw = True
     codes = [540]
-    # 2633:光大嘉宝
+    # 2633:光大嘉宝, 2867:妙可蓝多, 540:雪莱特,  2412:恒力股份
     # 687:鱼跃医疗，2187：东方金钰, 2876:秋林集团, 42:深天马A, 2011:广和通， 782：乐通, 819:赫美集团， 975：达华智能
-    # 1241:银宝山新，3368: 薄天环境， 1836：赢合科技， 1442：东方财富, 3179:汇嘉时代, 3476:柯利达, 2412:恒力股份
+    # 1241:银宝山新，3368: 薄天环境， 1836：赢合科技， 1442：东方财富, 3179:汇嘉时代, 3476:柯利达,
     # 20190122预测：2179:4, 346:2，3067:2, 996:4-2, 2750:2
 
     # correlation： 涨：2179:0.46/0.16/0.07(f), 3067:0.48/0.21/-0.019(f), 2553:0.397/0.121/0.002(f);
@@ -82,17 +82,13 @@ def execute(start_date='', end_date=''):
 
         Y0 = sample_pca.col_0
         Y1 = sample_pca.col_1
-
+        print(Y1[-5:])
         diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
-        print('diff_Y0', diff_Y0)
         diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
-        print('diff_Y1', diff_Y1)
         diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
-        print('diff_price=', diff_price)
         dot_price_Y0 = np.dot(diff_Y0, diff_price)
         dot_price_Y1 = np.dot(diff_Y1, diff_price)
-        print('dot_price_Y0', dot_price_Y0)
-        print('dot_price_Y1', dot_price_Y1)
+        print('dot_price_y1=', dot_price_Y1)
         if dot_price_Y0 < 0:
             print('转Y0')
             Y0 = (-1) * Y0
@@ -101,6 +97,10 @@ def execute(start_date='', end_date=''):
             print('转Y1')
             Y1 = (-1) * Y1
             sample_pca.col_1 = Y1
+        # os.exit()
+        # print(Y1[-5:])
+        # print(sample_prices[-5:])
+        # os.exit()
 
         mean = np.mean(Y0)
         # mean = mean * sample_len / (sample_len - 1)
@@ -136,10 +136,11 @@ def execute(start_date='', end_date=''):
             if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] > 0 and sample_prices.iloc[i] <= \
                     sample_prices.iloc[i - 1]:
                 flag = 1
-            elif Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] < 0 and sample_prices.iloc[
+            elif Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] < 0 and abs(Y0.iloc[i]) > 0.3 and sample_prices.iloc[
                 i] >= sample_prices.iloc[i - 1]:
                 flag = -1
             flags.append(flag)
+
 
         # flags = [0, 0]
         # for i in range(2, sample_len):
@@ -162,20 +163,22 @@ def execute(start_date='', end_date=''):
         print('buy=', buy[-5:])
         print('sell=', sell[-5:])
         print('len(holding)=', len(holdings), ', len(buy)=', len(buy))
-        print(Y0[-10:])
         print('Y1-Y1= ', Y1[-3:-1].max() - Y1.iloc[-1])
         print('std=', std)
         print('mean=', mean)
 
         print('std=', std)
-        s1 = pd.Series(flags)[np.not_equal(0, flags)]
+        do_idx = np.not_equal(0, flags)
+        s1 = pd.Series(flags)[do_idx]
         # s2 = pd.Series(sample_Y.index)[np.not_equal(0, flags)]
-        s2 = pd.Series(sample_dailys['cal_date'])[np.not_equal(0, flags)]
-        s3 = sample_pca[np.not_equal(0, flags)]
-        s = pd.concat([s1, s2], axis=1)
-        ss = pd.concat([s, s3], axis=1)
-        s4 = sample_pca.shift()[np.not_equal(0, flags)]
-        p = pd.concat([ss, s4], axis=1)
+        s2 = pd.Series(sample_dailys['cal_date'])[do_idx]
+        s3 = pd.concat([s1, s2], axis=1)
+        s4 = sample_pca[do_idx]
+        s5 = pd.concat([s3, s4], axis=1)
+        s6 = sample_pca.shift()[do_idx]
+        s7 = pd.concat([s5, s6], axis=1)
+        s8 = s6-s4
+        p = pd.concat([s7, s8], axis=1)
         print('p=', p)
         sample_dailys['dateTime'] = mdates.date2num(
             sample_dailys['cal_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
@@ -194,13 +197,13 @@ def execute(start_date='', end_date=''):
             ax0.plot(x_axis, Y1, label='Y1')
             ax0.set_ylabel('pca')
             # ax0.axhline(mean - 3 * std, color='b')
-            # ax0.axhline(mean - 2 * std, color='c')
-            # ax0.axhline(mean - 1.5 * std, color='r')
+            ax0.axhline(mean - 2 * std, color='c')
+            ax0.axhline(mean - 1.5 * std, color='r')
             ax0.axhline(mean - 1 * std, color='k')
             ax0.axhline(mean, color='black')
             ax0.axhline(mean + 1 * std, color='k')
-            # ax0.axhline(mean + 1.5 * std, color='r')
-            # ax0.axhline(mean + 2 * std, color='c')
+            ax0.axhline(mean + 1.5 * std, color='r')
+            ax0.axhline(mean + 2 * std, color='c')
             # ax0.axhline(mean + 3 * std, color='b')
             ax0.set_ylabel('pca')
 
@@ -287,7 +290,6 @@ def get_holdings(Y, Y1, sample_prices):
     peaks = np.ceil((Y[-bottom_dis + 1:-1][point_args == 1]) * 100) / 100
     bottoms = np.floor((Y[-bottom_dis + 1:-1][point_args == -1]) * 100) / 100
     bottoms_length = len(bottoms)
-    print('Y=', Y)
     print('bottoms=', bottoms)
     print('peaks=', peaks)
 
@@ -299,8 +301,6 @@ def get_holdings(Y, Y1, sample_prices):
         # 底上升
         amplitude = -1
     print('amplitude=', amplitude)
-    print('Y1=', Y1[-5:])
-    print('sample_prices=', sample_prices)
 
     for i in range(start_loc, len(Y)):
 
@@ -309,26 +309,26 @@ def get_holdings(Y, Y1, sample_prices):
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 1
-            print('大双底部')
+            # print('大双底部')
 
         elif (Y[i - bottom_dis:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
                 and Y[i - 5:i].min() < mean + std \
                 and (Y[i] - Y[i - 5:i].min()) > 1.328 * std \
-                and 2 * std > Y[i] > std and Y[i] > Y[i - 1]:
+                and 2 * std > Y[i] > mean and Y[i] > Y[i - 1]:
             # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
-            print('强势之后的深度震荡后的强烈反弹i=', i)
+            # print('强势之后的深度震荡后的强烈反弹i=', i)
             holding = 3
 
         elif bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y.iloc[i] > peaks.iloc[-1] and std > bottoms.iloc[-1] > mean > bottoms.iloc[-2]:
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 11
-            print('大双底部11')
+            # print('大双底部11')
 
         elif Y[i-10: i-2].max() - Y[i-7:i].min() > (2*std) and (Y[i] - Y[i-2:i].min()) > 1.5*std and (mean - 1.5*std) > Y[i-5:i].min() and Y[i] > mean + std:
             # 疯牛的多个板的底部的冲锋形态，至少还有2个板，可能连接着 多个板的顶部形态
             holding = 2
-            print('疯牛的多个板的底部的冲锋i=', i)
+            # print('疯牛的多个板的底部的冲锋i=', i)
             # 实测备注：此讯号可靠性高，此讯号包含3连板的形态，如果前几天出现1的信号，则加大此信号的可靠性，一般会有大于3个板的涨幅。
             # 实测备注：两种形态：
             #   一、发出此信号的当天的开盘价在5、10、20均线以下，一条红柱贯穿5、10、20三条均线时，为典型的牛头底部冲锋形态。
@@ -340,13 +340,13 @@ def get_holdings(Y, Y1, sample_prices):
             # 大顶部
             # 实测备注：如果是连续大涨幅，则第二天还会有反弹，第二天收盘价卖
             holding = -2
-            print('双顶')
+            # print('双顶')
 
         elif Y[i - 1] > mean + 1.5 * std > Y[i]:
             # 大顶部
             # 实测备注：如果是连续大涨幅，则第二天还会有反弹，第二天收盘价卖
             holding = -1
-            print('大顶部')
+            # print('大顶部')
 
         elif (Y[i - 10:i - 2].sort_values()[-2:] > (mean + std)).all(axis=None) \
                 and (Y[i] - Y[i-4:i].min()) > 1.328*std \
@@ -355,16 +355,14 @@ def get_holdings(Y, Y1, sample_prices):
             # 优化备注：当天涨幅10%，才有可能连续3个板。此讯号预测连续大涨过后，下跌几日过后继续强势涨幅
             # 优化备注：Y_mean与Y1-Y1的符号相同时更靠谱，Y_mean>0.05, 绝对值越大越好
 
-            print('双顶后的强势反抽3个板i=', i)
+            # print('双顶后的强势反抽3个板i=', i)
             holding = 4
 
         else:
             holding = 0
-            print('哟西')
+            # print('哟西')
 
         holdings.append(holding)
-        print(2*std > Y[i] > Y[i-1], Y.iloc[i] > peaks.iloc[-1], mean > bottoms.iloc[-1] >= bottoms.iloc[-2],  (bottoms.iloc[-2] < mean - 1 * std))
-        print(std > bottoms.iloc[-1] > mean > bottoms.iloc[-2])
 
     return holdings
 
