@@ -460,6 +460,19 @@ class DB(object):
         return logs
 
     @classmethod
+    def get_pre_flag_logs(cls, code_id, date_id, period='', recommend_type=''):
+        logs = pd.read_sql(
+            sa.text(' select rs.* from recommend_stocks rs '
+                    ' where rs.code_id = :code_id and rs.date_id <=:edi'
+                    ' and rs.recommend_type = :recommend_type and rs.flag != 0'
+                    ' order by rs.date_id desc'
+                    ' limit :period'),
+            cls.engine,
+            params={'code_id': str(code_id), 'edi': str(date_id), 'period': period, 'recommend_type': recommend_type}
+        )
+        return logs
+
+    @classmethod
     def count_recommend_star(cls, code_id, start_date_id, end_date_id, star_idx='', recommend_type=''):
         result = pd.read_sql(
             sa.text(' select count(*) as count_star from '
