@@ -26,27 +26,31 @@ def execute(start_date='', end_date=''):
         print('code_id=', code_id)
         log = logs.iloc[i]
         recommended_date_id = log.date_id
-        pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=2)
-        pre_date_id = pre_trade_cal.iloc[0]['date_id']
         focus_log = DB.get_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id)
-        pre_flag_log = DB.get_flag_recommend_logs(code_id=code_id, start_date_id=pre_date_id,
-                                                          end_date_id=pre_date_id,
-                                                          flag='1', recommend_type='pca')
+        pre_flag_log = DB.get_pre_flag_logs(code_id=code_id, date_id=recommended_date_id-1, period='1', recommend_type='pca')
         holding = 0
         if focus_log.empty and not pre_flag_log.empty:
-            print(log.moods, pre_flag_log.at[0, 'moods'])
+            if pre_flag_log.at[0, 'flag'] == 1:
+                if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods']:
+                    holding = 1
 
-            if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods'] and log.moods >= 0.2:
-                holding = 1
+                elif log.flag == -1 and pre_flag_log.at[0, 'average'] < log.average and 0.4 <= log.average:
+                    holding = -1
 
-            elif log.flag == -1 and 0.3 <= pre_flag_log.at[0, 'average'] < log.average:
-                holding = -1
+            elif pre_flag_log.at[0, 'flag'] == -1:
+                if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods'] and log.moods >= 0.2:
+                    holding = 1
+
+                elif log.flag == -1 and pre_flag_log.at[0, 'date_id'] < log.date_id - 1 and pre_flag_log.at[0, 'average'] > log.average and 0.5 <= pre_flag_log.at[0, 'average']:
+                    holding = -1
 
             if holding != 0:
                 pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
+                daily = DB.get_code_daily(code_id=code_id, date_id=recommended_date_id)
+                rose = int(np.floor((daily.at[0, 'close'] - daily.at[0, 'open']) * 100 / daily.at[0, 'open']))
                 DB.insert_focus_stocks(code_id=code_id,
                                        star_idx=logs.iloc[i]['star_idx'],
-                                       predict_rose=0,
+                                       predict_rose=rose,
                                        recommend_type='pca',
                                        recommended_date_id=recommended_date_id,
                                        pre_pct_chg_sum=round(pre_pct_chg_sum),
@@ -57,8 +61,7 @@ def execute(start_date='', end_date=''):
                 elif holding < 0:
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               closed_date_id=recommended_date_id)
-                daily = DB.get_code_daily(code_id=code_id, date_id=recommended_date_id)
-                rose = int(np.floor((daily.at[0, 'close'] - daily.at[0, 'open']) * 100 / daily.at[0, 'open']))
+
                 content = {
                     'flag': int(log.flag),
                     'code_id': code_id,
