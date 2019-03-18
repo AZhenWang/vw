@@ -27,7 +27,7 @@ def execute(start_date='', end_date=''):
         log = logs.iloc[i]
         recommended_date_id = log.date_id
         focus_log = DB.get_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id)
-        pre_flag_log = DB.get_pre_flag_logs(code_id=code_id, date_id=recommended_date_id-1, period='1', recommend_type='pca')
+        pre_flag_log = DB.get_pre_flag_logs(code_id=code_id, date_id=recommended_date_id-1, period=1, recommend_type='pca')
         holding = 0
         if focus_log.empty and not pre_flag_log.empty:
             if pre_flag_log.at[0, 'flag'] == 1:
