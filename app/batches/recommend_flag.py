@@ -34,7 +34,7 @@ def execute(start_date='', end_date=''):
                 if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods']:
                     holding = 1
 
-                elif log.flag == -1 and pre_flag_log.at[0, 'average'] < log.average and 0.4 <= log.average:
+                elif log.flag == -1 and pre_flag_log.at[0, 'average'] < log.average and 0.5 <= log.average:
                     holding = -1
 
             elif pre_flag_log.at[0, 'flag'] == -1:
