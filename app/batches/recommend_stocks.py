@@ -6,11 +6,11 @@ from app.common.function import send_email
 from email.mime.text import MIMEText
 
 pre_predict_interval = 5
-sample_interval = 40
+sample_interval = 60
 n_components = 2
 
 def execute(start_date='', end_date=''):
-    trade_cal = DB.get_open_cal_date(end_date=end_date, period=22)
+    trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-5]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
@@ -163,5 +163,5 @@ def execute(start_date='', end_date=''):
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
-        send_email(subject=end_date + '预测', msgs=msgs)
+        send_email(subject=end_date + '中长期预测', msgs=msgs)
 

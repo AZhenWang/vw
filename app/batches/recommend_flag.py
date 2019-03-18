@@ -11,7 +11,7 @@ n_components = 2
 
 
 def execute(start_date='', end_date=''):
-    trade_cal = DB.get_open_cal_date(end_date=end_date, period=0)
+    trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
