@@ -20,10 +20,10 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
-    code_ids = codes['code_id']
-    # code_ids = [2633]
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
+    # code_ids = codes['code_id']
+    code_ids = [3083]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -44,17 +44,23 @@ def execute(start_date='', end_date=''):
                 sample_Y = Y
             Y0 = sample_pca.col_0
             Y1 = sample_pca.col_1
+            print(Y1[-5:])
             diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
             diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
+            print('y1=', Y1)
+            print('diff_Y1=', diff_Y1)
             diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
             dot_price_Y0 = np.dot(diff_Y0, diff_price)
             dot_price_Y1 = np.dot(diff_Y1, diff_price)
+            print('dot_price_y1=', dot_price_Y1)
             if dot_price_Y0 < 0:
                 print('转Y0')
                 Y0 = (-1) * Y0
             if dot_price_Y1 < 0:
                 print('转Y1')
                 Y1 = (-1) * Y1
+            print(Y1[-5:])
+            os.exit()
             mean = 0
             std = np.std(Y0)
 
@@ -62,9 +68,8 @@ def execute(start_date='', end_date=''):
             flag = 0
             if Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] > 0 and sample_prices.iloc[-1] <= sample_prices.iloc[-2]:
                 flag = 1
-            elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] < 0 and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
+            elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] < 0 and abs(Y0.iloc[-1]) > 0.3 and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
                 flag = -1
-            print('flag=', flag)
             holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
 
@@ -99,7 +104,6 @@ def execute(start_date='', end_date=''):
                 'moods': round(Y1.iloc[-1], 2),
                 'flag': flag
             }
-        print(new_rows)
         if not new_rows.empty:
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
 
@@ -130,7 +134,7 @@ def get_holdings(Y, Y1, sample_prices):
         elif (Y[i - 20:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
              and bottoms.iloc[-1] < mean + std \
              and (Y[i] - Y[i - 5:i].min()) > 1.328 * std \
-             and 2*std > Y[i] > Y[i - 1]:
+             and 2*std > Y[i] > mean and Y[i] > Y[i - 1]:
                 # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
             print('强势之后的深度震荡后的强烈反弹i=', i)
             holding = 3
