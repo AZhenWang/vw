@@ -6,7 +6,7 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 # 取半年样本区间
-sample_len = 60
+sample_len = 122
 n_components = 2
 pre_predict_interval = 5
 
@@ -20,10 +20,10 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
-    # codes = DB.get_latestopendays_code_list(
-    #     latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
-    # code_ids = codes['code_id']
-    code_ids = [3083]
+    codes = DB.get_latestopendays_code_list(
+        latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
+    code_ids = codes['code_id']
+    # code_ids = [3083]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -44,10 +44,8 @@ def execute(start_date='', end_date=''):
                 sample_Y = Y
             Y0 = sample_pca.col_0
             Y1 = sample_pca.col_1
-            print(Y1[-5:])
             diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
             diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
-            print('y1=', Y1)
             print('diff_Y1=', diff_Y1)
             diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
             dot_price_Y0 = np.dot(diff_Y0, diff_price)
@@ -59,8 +57,6 @@ def execute(start_date='', end_date=''):
             if dot_price_Y1 < 0:
                 print('转Y1')
                 Y1 = (-1) * Y1
-            print(Y1[-5:])
-            os.exit()
             mean = 0
             std = np.std(Y0)
 
