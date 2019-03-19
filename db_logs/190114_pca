@@ -3,7 +3,6 @@ create table focus_stocks(
    code_id INT NOT NULL,
    star_idx INT NULL,
    predict_rose INT NULL comment'预测涨幅',
-   pre_pct_chg_sum FLOAT NULL comment'前4天的涨幅合',
    recommend_type varchar(16) null comment'被哪个模型推荐, 为空就表示自主添加',
    recommended_date_id INT NOT NULL default 0 NULL comment'模型推荐日期',
    closed_date_id INT NULL comment '关闭日期',

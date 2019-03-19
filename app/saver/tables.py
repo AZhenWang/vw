@@ -38,7 +38,7 @@ fields_map = {
 
     # 股票预测
     'recommend_stocks': [
-        'date_id', 'code_id', 'recommend_type', 'star_idx', 'average', 'amplitude', 'moods', 'flag', 'pre50_down_days'
+        'date_id', 'code_id', 'recommend_type', 'star_idx', 'average', 'qqb', 'moods', 'flag', 'pre4_sum'
     ],
 
     # 指数
@@ -54,7 +54,7 @@ fields_map = {
         'turnover_rate', 'turnover_rate_f', 'pe', 'pe_ttm', 'pb'
     ],
     'focus_stocks': [
-        'code_id', 'star_idx', 'predict_rose', 'pre_pct_chg_sum', 'recommend_type',
+        'code_id', 'star_idx', 'predict_rose', 'recommend_type',
         'recommended_date_id', 'closed_date_id', 'holding_date_id', 'star_count'
     ],
 

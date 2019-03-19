@@ -19,7 +19,7 @@ def execute(start_date='', end_date=''):
     print('logs=', logs)
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name',  'market',
-                                             'predict_rose', 'pct_chg', 'moods', 'amplitude',
+                                             'predict_rose', 'pct_chg', 'moods', 'qqb',
                                              'code_id', 'recommend_at', 'holding_at', 'holding_pct_chg',
                                              ])
     for i in range(len(logs)):
@@ -68,42 +68,20 @@ def execute(start_date='', end_date=''):
                     and next_daily.iloc[0]['close'] > recommended_daily.at[0, 'high'] * 1.01:
                 predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'] + next_daily.iloc[0]['pct_chg'])) * 10
 
-                pre_pct_chg_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=recommended_date_id, period=4)
                 DB.insert_focus_stocks(code_id=code_id,
                                        star_idx=logs.iloc[i]['star_idx'],
                                        predict_rose=predict_rose,
                                        recommend_type='pca',
                                        recommended_date_id=recommended_date_id,
-                                       pre_pct_chg_sum=pre_pct_chg_sum,
                                        )
                 DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                           holding_date_id=second_recommend_log.at[0, 'date_id'])
                 focus_daily = DB.get_code_daily(code_id=code_id, date_id=second_recommend_log.at[0, 'date_id'])
-                pca = Pca(cal_date=focus_daily.at[0, 'cal_date'])
-                pca_features, prices, Y = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
-                                                  n_components=n_components, return_y=True)
-                bottom_dis = 20
-                Y0 = pca_features.col_0[-bottom_dis:]
-                point_args = np.diff(np.where(np.diff(Y0) > 0, 0, 1))
-                peaks = Y0[1:-1][point_args == 1]
-                bottoms = np.floor((Y0[1:-1][point_args == -1]) * 100) / 100
-                amplitude = 0
-                if len(bottoms) >= 2 and len(peaks) >= 2:
-                    if Y0.iloc[-2] < Y0.iloc[-1] and (
-                            Y0.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] >= \
-                            bottoms.iloc[-2]:
-                        # 底上升
-                        amplitude = 1
-                    elif Y0.iloc[-2] > Y0.iloc[-1] and (
-                            Y0.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] <= bottoms.iloc[-2]) and peaks.iloc[-1] < \
-                            peaks.iloc[-2]:
-                        # 底下降
-                        amplitude = -1
 
                 content = {
                     'ts_code': logs.iloc[i]['ts_code'],
                     'code_name': logs.iloc[i]['name'],
-                    'amplitude': amplitude,
+                    'qqb': logs.iloc[i]['qqb'],
                     'predict_rose': int(predict_rose),
                     'pct_chg': int(np.floor(recommended_daily.at[0, 'pct_chg'])),
                     'market': market,

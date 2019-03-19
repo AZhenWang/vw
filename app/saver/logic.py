@@ -378,7 +378,7 @@ class DB(object):
                     ' left join stock_basic sb on sb.id = rs.code_id'
                     ' left join trade_cal tc on tc.id = rs.date_id'
                     ' where rs.date_id between :sdi and :edi and rs.recommend_type = :rt'
-                    ' order by rs.date_id asc, rs.star_idx desc, rs.amplitude desc'
+                    ' order by rs.date_id asc'
                     ),
             cls.engine,
             params={'sdi': str(start_date_id), 'edi': str(end_date_id), 'rt': recommend_type}
@@ -487,10 +487,10 @@ class DB(object):
         return result.at[0, 'count_star']
 
     @classmethod
-    def insert_focus_stocks(cls, code_id, star_idx, predict_rose, recommend_type, recommended_date_id, pre_pct_chg_sum):
+    def insert_focus_stocks(cls, code_id, star_idx, predict_rose, recommend_type, recommended_date_id):
         pd.io.sql.execute('insert into focus_stocks (code_id, star_idx, predict_rose, '
-                          'recommend_type, recommended_date_id, pre_pct_chg_sum) values (%s,%s,%s,%s,%s,%s)', cls.engine,
-                          params=[str(code_id), str(star_idx), str(predict_rose), str(recommend_type), str(recommended_date_id), str(pre_pct_chg_sum)])
+                          'recommend_type, recommended_date_id) values (%s,%s,%s,%s,%s)', cls.engine,
+                          params=[str(code_id), str(star_idx), str(predict_rose), str(recommend_type), str(recommended_date_id)])
     @classmethod
     def update_focus_stock_log(cls, code_id, recommended_date_id , holding_date_id='', closed_date_id='', star_count=''):
         if holding_date_id != '':
@@ -609,8 +609,7 @@ class DB(object):
     @classmethod
     def get_all_recommend_logs(cls, current_date_id, next_date_id, recommend_type=''):
         logs = pd.read_sql(
-            sa.text(' select rs.date_id, rs.code_id, rs.star_idx, rs.average, rs.amplitude, '
-                    ' d.pct_chg from recommend_stocks rs '
+            sa.text(' select rs.*, d.pct_chg from recommend_stocks rs '
                     ' left join daily d on d.code_id = rs.code_id and d.date_id = :ndi'
                     ' where rs.date_id = :cdi and rs.recommend_type = :recommend_type'
                     ' order by rs.code_id asc'),

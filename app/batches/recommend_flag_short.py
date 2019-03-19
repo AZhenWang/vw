@@ -26,22 +26,14 @@ def execute(start_date='', end_date=''):
         log = logs.iloc[i]
         recommended_date_id = log.date_id
         focus_log = DB.get_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id)
-        pre_flag_log = DB.get_pre_flag_logs(code_id=code_id, date_id=recommended_date_id-1, period=1, recommend_type='pca')
         holding = 0
-        if focus_log.empty and not pre_flag_log.empty:
-            if pre_flag_log.at[0, 'flag'] == 1:
-                if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods']:
-                    holding = 1
-
-                elif log.flag == -1 and pre_flag_log.at[0, 'average'] < log.average and 0.4 <= log.average:
-                    holding = -1
-
-            elif pre_flag_log.at[0, 'flag'] == -1:
-                if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods'] and log.moods >= 0.2:
-                    holding = 1
-
-                elif log.flag == -1 and pre_flag_log.at[0, 'date_id'] < log.date_id - 1 and pre_flag_log.at[0, 'average'] > log.average and 0.5 <= pre_flag_log.at[0, 'average']:
-                    holding = -1
+        if focus_log.empty:
+            if log.flag == 1 and log.qqb > 0:
+                holding = 1
+            if log.flag == 1 and log.qqb == 0 and log.pre4_sum > 5:
+                holding = 1
+            if log.flag == -1 and log.qqb < 0:
+                holding = -1
 
             if holding != 0:
                 daily = DB.get_code_daily(code_id=code_id, date_id=recommended_date_id)
@@ -60,14 +52,14 @@ def execute(start_date='', end_date=''):
                                               closed_date_id=recommended_date_id)
 
                 content = {
-                    'flag': int(log.flag),
                     'code_id': code_id,
                     'ts_code': log.ts_code,
                     'name': log.name,
                     'recommend_at': log.cal_date,
                     'average': log.average,
                     'moods': log.moods,
-                    'qqb': log.qqb,
+                    'flag': int(log.flag),
+                    'qqb': int(log.qqb),
                     'pre4_sum': log.pre4_sum,
                     'rose': rose
                 }

@@ -20,7 +20,7 @@ sample_len = 30
 
 
 def execute(start_date='', end_date=''):
-    end_date = '20190315'
+    end_date = '20190318'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
     pca = Pca(cal_date=end_date)
@@ -33,7 +33,7 @@ def execute(start_date='', end_date=''):
     # new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     # draw = False
     draw = True
-    codes = [540]
+    codes = [2187]
     # 2633:光大嘉宝, 2867:妙可蓝多, 540:雪莱特,  2412:恒力股份
     # 687:鱼跃医疗，2187：东方金钰, 2876:秋林集团, 42:深天马A, 2011:广和通， 782：乐通, 819:赫美集团， 975：达华智能
     # 1241:银宝山新，3368: 薄天环境， 1836：赢合科技， 1442：东方财富, 3179:汇嘉时代, 3476:柯利达,
@@ -80,23 +80,27 @@ def execute(start_date='', end_date=''):
             sample_prices = prices
             sample_dailys = dailys
 
-        Y0 = sample_pca.col_0
-        Y1 = sample_pca.col_1
-        print(Y1[-5:])
-        diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
-        diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
-        diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
+        diff_Y0 = np.where(np.diff(pca_features.col_0) > 0, 1, -1)
+        diff_Y1 = np.where(np.diff(pca_features.col_1) > 0, 1, -1)
+        diff_price = np.where(np.diff(prices) > 0, 1, -1)
         dot_price_Y0 = np.dot(diff_Y0, diff_price)
         dot_price_Y1 = np.dot(diff_Y1, diff_price)
         print('dot_price_y1=', dot_price_Y1)
+        # diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
+        # diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
+        # diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
+        # dot_price_Y0 = np.dot(diff_Y0, diff_price)
+        # dot_price_Y1 = np.dot(diff_Y1, diff_price)
+        # print('dot_price_y1=', dot_price_Y1)
         if dot_price_Y0 < 0:
             print('转Y0')
-            Y0 = (-1) * Y0
-            sample_pca.col_0 = Y0
+            sample_pca.col_0 = (-1) * sample_pca.col_0
         if dot_price_Y1 < 0:
             print('转Y1')
-            Y1 = (-1) * Y1
-            sample_pca.col_1 = Y1
+            sample_pca.col_1 = (-1) * sample_pca.col_1
+
+        Y0 = sample_pca.col_0
+        Y1 = sample_pca.col_1
         # os.exit()
         # print(Y1[-5:])
         # print(sample_prices[-5:])
@@ -133,11 +137,11 @@ def execute(start_date='', end_date=''):
         flags = []
         for i in range(sample_len):
             flag = 0
-            if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] >= 0.2 and sample_prices.iloc[i] <= \
+            if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] >= 0.2 and sample_prices.iloc[i] < \
                     sample_prices.iloc[i - 1]:
                 flag = 1
             elif Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] <= 0.2 and sample_prices.iloc[
-                i] >= sample_prices.iloc[i - 1]:
+                i] > sample_prices.iloc[i - 1]:
                 flag = -1
             flags.append(flag)
 
@@ -168,6 +172,7 @@ def execute(start_date='', end_date=''):
         print('mean=', mean)
 
         print('std=', std)
+        print('dot_price_y1=', dot_price_Y1)
         do_idx = np.not_equal(0, flags)
         s1 = pd.Series(flags)[do_idx]
         # s2 = pd.Series(sample_Y.index)[np.not_equal(0, flags)]

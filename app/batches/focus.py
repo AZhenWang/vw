@@ -21,7 +21,7 @@ def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
     codes = DB.get_latestopendays_code_list(
-        latest_open_days=sample_len + 25, date_id=trade_cal.iloc[0]['date_id'])
+        latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
     # code_ids = [2187]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
@@ -42,29 +42,30 @@ def execute(start_date='', end_date=''):
                 sample_pca = pca_features
                 sample_prices = prices
                 sample_Y = Y
-            Y0 = sample_pca.col_0
-            Y1 = sample_pca.col_1
-            diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
-            diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
-            print('diff_Y1=', diff_Y1)
-            diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
+
+            diff_Y0 = np.where(np.diff(pca_features.col_0) > 0, 1, -1)
+            diff_Y1 = np.where(np.diff(pca_features.col_1) > 0, 1, -1)
+            diff_price = np.where(np.diff(prices) > 0, 1, -1)
             dot_price_Y0 = np.dot(diff_Y0, diff_price)
             dot_price_Y1 = np.dot(diff_Y1, diff_price)
-            print('dot_price_y1=', dot_price_Y1)
             if dot_price_Y0 < 0:
                 print('转Y0')
-                Y0 = (-1) * Y0
+                sample_pca.col_0 = (-1) * sample_pca.col_0
             if dot_price_Y1 < 0:
                 print('转Y1')
-                Y1 = (-1) * Y1
+                sample_pca.col_1 = (-1) * sample_pca.col_1
+
+            Y0 = sample_pca.col_0
+            Y1 = sample_pca.col_1
+
             mean = 0
             std = np.std(Y0)
 
             # 大趋势买卖点
             flag = 0
-            if Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] >= 0.2 and sample_prices.iloc[-1] <= sample_prices.iloc[-2]:
+            if Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] >= 0.2 and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
                 flag = 1
-            elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] <= 0.2 and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
+            elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] <= 0.2 and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
                 flag = -1
             holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
@@ -76,29 +77,42 @@ def execute(start_date='', end_date=''):
             # y_hat = knn_predict(pca_features, Y, k=2, sample_interval=244*2,
             #                     pre_predict_interval=pre_predict_interval, predict_idx=sample_Y.index[-1])
 
-            bottom_dis = 20
+            bottom_dis = 30
             point_args = np.diff(np.where(np.diff(Y0[-bottom_dis:]) > 0, 0, 1))
             peaks = Y0[-bottom_dis + 1:-1][point_args == 1]
             bottoms = np.floor((Y0[-bottom_dis + 1:-1][point_args == -1])*100)/100
             amplitude = 0
+            # if len(bottoms) >= 2 and len(peaks) >= 2:
+            #     if Y0.iloc[-2] < Y0.iloc[-1] and (Y0.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] >= bottoms.iloc[-2]:
+            #         # 底上升
+            #         amplitude = 1
+            #     elif Y0.iloc[-2] > Y0.iloc[-1] and (Y0.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] <= bottoms.iloc[-2]) and peaks.iloc[-1] < peaks.iloc[-2]:
+            #         # 底下降
+            #         amplitude = -1
+
+            qqb = 0
+            point_args_price = np.diff(np.where(np.diff(sample_prices[-bottom_dis:]) > 0, 0, 1))
+            peaks_price = sample_prices[-bottom_dis + 1:-1][point_args_price == 1]
+            bottoms_price = np.floor((sample_prices[-bottom_dis + 1:-1][point_args_price == -1]) * 100) / 100
             if len(bottoms) >= 2 and len(peaks) >= 2:
-                if Y0.iloc[-2] < Y0.iloc[-1] and (Y0.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] >= bottoms.iloc[-2]:
-                    # 底上升
-                    amplitude = 1
-                elif Y0.iloc[-2] > Y0.iloc[-1] and (Y0.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] <= bottoms.iloc[-2]) and peaks.iloc[-1] < peaks.iloc[-2]:
-                    # 底下降
-                    amplitude = -1
-            pre50_down_days = (Y0[-50:-1] < Y1[-50:-1]).sum()
+                if Y0.iloc[-1] < peaks.iloc[-1] and sample_prices.iloc[-1] > peaks_price.iloc[-1]:
+                    # 顶背离
+                    qqb = -1
+                elif Y0.iloc[-1] > bottoms.iloc[-1] and sample_prices.iloc[-1] < bottoms_price.iloc[-1]:
+                    # 底背离
+                    qqb = 1
+            # pre50_down_days = (Y0[-50:-1] < Y1[-50:-1]).sum()
+            pre4_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=date_id, period=4)
             new_rows.loc[i] = {
                 'date_id': date_id,
                 'code_id': code_id,
                 'recommend_type': 'pca',
                 'star_idx': holdings[-1],
                 'average': round(Y0.iloc[-1], 2),
-                'pre50_down_days': pre50_down_days,
-                'amplitude': amplitude,
+                'pre4_sum': round(pre4_sum),
+                'qqb': qqb,
                 'moods': round(Y1.iloc[-1], 2),
-                'flag': flag
+                'flag': flag,
             }
         if not new_rows.empty:
             new_rows.to_sql('recommend_stocks', DB.engine, index=False, if_exists='append', chunksize=1000)
