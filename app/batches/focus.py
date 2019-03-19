@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [2187]
+    # code_ids = [247]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -69,7 +69,6 @@ def execute(start_date='', end_date=''):
                 flag = -1
             holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
-
             if daily.empty or (holdings[-1] == 0 and flag == 0):
                 continue
             y1_y1 = Y1[-3:-1].max() - Y1.iloc[-1]
@@ -89,12 +88,11 @@ def execute(start_date='', end_date=''):
             #     elif Y0.iloc[-2] > Y0.iloc[-1] and (Y0.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] <= bottoms.iloc[-2]) and peaks.iloc[-1] < peaks.iloc[-2]:
             #         # 底下降
             #         amplitude = -1
-
             qqb = 0
             point_args_price = np.diff(np.where(np.diff(sample_prices[-bottom_dis:]) > 0, 0, 1))
             peaks_price = sample_prices[-bottom_dis + 1:-1][point_args_price == 1]
             bottoms_price = np.floor((sample_prices[-bottom_dis + 1:-1][point_args_price == -1]) * 100) / 100
-            if len(bottoms) >= 2 and len(peaks) >= 2:
+            if len(bottoms_price) >= 1 and len(peaks_price) >= 1:
                 if Y0.iloc[-1] < peaks.iloc[-1] and sample_prices.iloc[-1] > peaks_price.iloc[-1]:
                     # 顶背离
                     qqb = -1
