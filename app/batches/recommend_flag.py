@@ -58,12 +58,11 @@ def execute(start_date='', end_date=''):
                 elif holding < 0:
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               closed_date_id=recommended_date_id)
-
                 content = {
                     'flag': int(log.flag),
                     'code_id': code_id,
                     'ts_code': log.ts_code,
-                    'name': log.name,
+                    'name': log['name'],
                     'recommend_at': log.cal_date,
                     'average': log.average,
                     'moods': log.moods,
@@ -72,7 +71,6 @@ def execute(start_date='', end_date=''):
                     'rose': rose
                 }
                 recommend_stocks.loc[i] = content
-
     if not recommend_stocks.empty:
         recommend_stocks.sort_values(by=['recommend_at', 'flag', 'moods', 'rose'],
                                      ascending=[False, False, False, False], inplace=True)

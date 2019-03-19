@@ -54,7 +54,7 @@ def execute(start_date='', end_date=''):
                 content = {
                     'code_id': code_id,
                     'ts_code': log.ts_code,
-                    'name': log.name,
+                    'name': log['name'],
                     'recommend_at': log.cal_date,
                     'average': log.average,
                     'moods': log.moods,
