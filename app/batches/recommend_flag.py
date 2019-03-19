@@ -72,6 +72,7 @@ def execute(start_date='', end_date=''):
                     'rose': rose
                 }
                 recommend_stocks.loc[i] = content
+
     if not recommend_stocks.empty:
         recommend_stocks.sort_values(by=['flag', 'recommend_at', 'moods', 'rose'],
                                      ascending=[False, False, False, False], inplace=True)

@@ -6,7 +6,7 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 # 取半年样本区间
-sample_len = 122
+sample_len = 30
 n_components = 2
 pre_predict_interval = 5
 
@@ -62,9 +62,9 @@ def execute(start_date='', end_date=''):
 
             # 大趋势买卖点
             flag = 0
-            if Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] > 0 and sample_prices.iloc[-1] <= sample_prices.iloc[-2]:
+            if Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] >= 0.2 and sample_prices.iloc[-1] <= sample_prices.iloc[-2]:
                 flag = 1
-            elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] < 0 and abs(Y0.iloc[-1]) > 0.3 and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
+            elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] <= 0.2 and abs(Y0.iloc[-1]) > 0.3 and sample_prices.iloc[-1] >= sample_prices.iloc[-2]:
                 flag = -1
             holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)

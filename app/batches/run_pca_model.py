@@ -16,11 +16,11 @@ from app.common.function import knn_predict
 
 
 pre_predict_interval = 5
-sample_len = 122
+sample_len = 30
 
 
 def execute(start_date='', end_date=''):
-    end_date = '20190318'
+    end_date = '20190315'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
     pca = Pca(cal_date=end_date)
@@ -133,10 +133,10 @@ def execute(start_date='', end_date=''):
         flags = []
         for i in range(sample_len):
             flag = 0
-            if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] > 0 and sample_prices.iloc[i] <= \
+            if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] >= 0.2 and sample_prices.iloc[i] <= \
                     sample_prices.iloc[i - 1]:
                 flag = 1
-            elif Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] < 0 and abs(Y0.iloc[i]) > 0.3 and sample_prices.iloc[
+            elif Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] <= 0.2 and sample_prices.iloc[
                 i] >= sample_prices.iloc[i - 1]:
                 flag = -1
             flags.append(flag)
