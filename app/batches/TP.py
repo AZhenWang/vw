@@ -46,6 +46,11 @@ def execute(start_date='', end_date=''):
     filter_ffts[noised_indices] = 0
     filter_pows = np.abs(filter_ffts)
     filter_sigs = nf.ifft(filter_ffts)
+    print('filter_pows', filter_pows)
+    print('filter_sigs', filter_sigs)
+    print('filter_sigs_real', filter_sigs.real)
+    print('filter_sigs_pows', np.abs(filter_sigs))
+    os.exit()
 
     fund_freq_1 = np.abs(freqs[ffts_pows == b1])[0]
     print('fund_freq_1=', fund_freq_1)
