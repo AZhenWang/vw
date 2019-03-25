@@ -41,7 +41,6 @@ def execute(start_date='', end_date=''):
     fig, ax = plt.subplots(2, 1, figsize=(16, 16), sharex=True)
 
     index_daily = DB.get_index_daily(ts_code='000001.SH', start_date_id=start_date_id, end_date_id=end_date_id)
-    index_daily.sort_values(by='cal_date', ascending=True, inplace=True)
     gp = index_daily.groupby('ts_code')
     for ts_code, group_data in gp:
         group_data = group_data.set_index('cal_date')

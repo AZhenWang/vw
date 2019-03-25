@@ -43,23 +43,33 @@ class DB(object):
 
     @classmethod
     def get_open_cal_date(cls, start_date='', end_date='', period=''):
-        if period != '':
+        if start_date == '':
             trade_cal = pd.read_sql(
                 sa.text(
                     'SELECT id as date_id, cal_date FROM trade_cal '
-                    ' where is_open = 1 and cal_date >= :sd and cal_date <= :ed '
+                    ' where is_open = 1 and cal_date <= :ed'
                     ' order by cal_date desc limit :period'),
                 cls.engine,
-                params={'sd': start_date, 'ed': end_date, 'period': period}
+                params={'ed': str(end_date), 'period': period}
             )
 
+        elif end_date == '':
+            trade_cal = pd.read_sql(
+                sa.text(
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where is_open = 1 and cal_date >= :sd'
+                    ' order by cal_date asc limit :period'),
+                cls.engine,
+                params={'sd': str(start_date), 'period': period}
+            )
         else:
             trade_cal = pd.read_sql(
                 sa.text(
-                    'SELECT id as date_id, cal_date FROM trade_cal where is_open = 1 and cal_date between :sd and :ed'
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where is_open = 1 and cal_date between :sd and :ed'
                     ' order by cal_date desc'),
                 cls.engine,
-                params={'sd': start_date, 'ed': end_date}
+                params={'sd': str(start_date), 'ed': str(end_date)}
             )
         trade_cal.sort_values(by='cal_date', inplace=True)
         return trade_cal
@@ -90,7 +100,7 @@ class DB(object):
                 sa.text(
                     'SELECT id as date_id, cal_date FROM trade_cal '
                     ' where is_open = 1 and id between :sdi and :edi'
-                    ' order by cal_date desc limit :period'),
+                    ' order by cal_date desc'),
                 cls.engine,
                 params={'sdi': str(start_date_id), 'edi': str(end_date_id), 'period': period}
             )
@@ -125,7 +135,7 @@ class DB(object):
     def get_index_daily(cls, ts_code='', start_date_id='', end_date_id=''):
         if ts_code != '':
             index_list = pd.read_sql(
-                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol FROM index_daily id '
+                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol, id.date_id FROM index_daily id '
                         ' left join index_basic ib on ib.id = id.index_id'
                         ' left join trade_cal tc on tc.id = id.date_id'
                         ' where ib.ts_code=:ts_code'
@@ -135,13 +145,15 @@ class DB(object):
             )
         else:
             index_list = pd.read_sql(
-                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol FROM index_daily id '
+                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol, id.date_id FROM index_daily id '
                         ' left join index_basic ib on ib.id = id.index_id'
                         ' left join trade_cal tc on tc.id = id.date_id'
                         ' where id.date_id between :sdi and :edi'),
                 cls.engine,
                 params={'sdi': str(start_date_id), 'edi': str(end_date_id)}
             )
+        index_list.sort_values(by='date_id', inplace=True)
+        index_list.set_index('date_id', inplace=True)
         return index_list
 
     @classmethod
@@ -237,17 +249,31 @@ class DB(object):
 
     @classmethod
     def get_code_info(cls, code_id, start_date='', end_date='', period=''):
-        if period == '':
+        if start_date == '':
             code_info = pd.read_sql(
                 sa.text(
                     ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor FROM  daily d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed'
-                    ' order by tc.cal_date desc '),
+                    ' where d.code_id = :code_id and tc.cal_date <= :ed'
+                    ' order by tc.cal_date desc '
+                    ' limit :period'),
                 cls.engine,
-                params={'code_id': str(code_id), 'sd': str(start_date), 'ed': str(end_date)}
+                params={'code_id': str(code_id), 'ed': str(end_date), 'period': period}
+            )
+        elif end_date == '':
+            code_info = pd.read_sql(
+                sa.text(
+                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor FROM  daily d '
+                    ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
+                    ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
+                    ' left join trade_cal tc on tc.id = d.date_id'
+                    ' where d.code_id = :code_id and tc.cal_date >= :sd'
+                    ' order by tc.cal_date desc '
+                    ' limit :period'),
+                cls.engine,
+                params={'code_id': str(code_id), 'sd': str(start_date), 'period': period}
             )
         else:
             code_info = pd.read_sql(
@@ -257,10 +283,9 @@ class DB(object):
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
                     ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed '
-                    ' order by tc.cal_date desc '
-                    ' limit :period'),
+                    ' order by tc.cal_date desc '),
                 cls.engine,
-                params={'code_id': str(code_id), 'sd': str(start_date), 'ed': str(end_date), 'period': period}
+                params={'code_id': str(code_id), 'sd': str(start_date), 'ed': str(end_date)}
             )
 
         code_info.sort_values(by='date_id', inplace=True)
