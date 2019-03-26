@@ -33,13 +33,32 @@ class DB(object):
                           cls.engine, params=[str(pct_chg), str(date_id), str(code_id)])
 
     @classmethod
-    def get_cal_date(cls, start_date, end_date):
-        existed_cal_date = pd.read_sql(
-            sa.text('SELECT cal_date FROM trade_cal where cal_date >= :sd and cal_date <= :ed'),
-            cls.engine,
-            params={'sd': start_date, 'ed': end_date}
-        )
-        return existed_cal_date
+    def get_cal_date(cls, start_date='', end_date='', limit=''):
+        if start_date =='':
+            trade_cal = pd.read_sql(
+                sa.text('SELECT id as date_id, cal_date FROM trade_cal where cal_date <= :ed'
+                        ' order by id desc'
+                        ' limit :limit'),
+                cls.engine,
+                params={'ed': end_date, 'limit': limit}
+            )
+        elif end_date =='':
+            trade_cal = pd.read_sql(
+                sa.text('SELECT id as date_id, cal_date FROM trade_cal where cal_date >= :sd'
+                        ' order by id asc'
+                        ' limit :limit'),
+                cls.engine,
+                params={'sd': start_date, 'limit': limit}
+            )
+        else:
+            trade_cal = pd.read_sql(
+                sa.text('SELECT id as date_id,  cal_date FROM trade_cal where cal_date >= :sd and cal_date <= :ed'),
+                cls.engine,
+                params={'sd': start_date, 'ed': end_date}
+            )
+
+        trade_cal.sort_values(by='cal_date', inplace=True)
+        return trade_cal
 
     @classmethod
     def get_open_cal_date(cls, start_date='', end_date='', period=''):
@@ -135,7 +154,7 @@ class DB(object):
     def get_index_daily(cls, ts_code='', start_date_id='', end_date_id=''):
         if ts_code != '':
             index_list = pd.read_sql(
-                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol, id.date_id FROM index_daily id '
+                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol, id.date_id, id.pct_chg FROM index_daily id '
                         ' left join index_basic ib on ib.id = id.index_id'
                         ' left join trade_cal tc on tc.id = id.date_id'
                         ' where ib.ts_code=:ts_code'
@@ -145,7 +164,7 @@ class DB(object):
             )
         else:
             index_list = pd.read_sql(
-                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol, id.date_id FROM index_daily id '
+                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol, id.date_id, id.pct_chg  FROM index_daily id '
                         ' left join index_basic ib on ib.id = id.index_id'
                         ' left join trade_cal tc on tc.id = id.date_id'
                         ' where id.date_id between :sdi and :edi'),

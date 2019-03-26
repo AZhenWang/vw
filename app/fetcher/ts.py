@@ -1,5 +1,5 @@
 from app.fetcher.common import Interface
-from conf.myapp import ts_token
+from conf.myapp import ts_token, init_date
 from app.saver.tables import fields_map
 from app.saver.logic import DB
 
@@ -30,7 +30,7 @@ class Ts(Interface):
 
     def update_trade_cal(self):
         api = 'trade_cal'
-        existed_cal_date = DB.get_cal_date(start_date='', end_date=self.end_date)
+        existed_cal_date = DB.get_cal_date(start_date=init_date, end_date=self.end_date)
         new_rows = self.pro.query(api, fields=fields_map[api], start_date=existed_cal_date.iloc[-1]['cal_date'], end_date=self.end_date)
         if not existed_cal_date.empty:
             new_rows = new_rows[~new_rows['cal_date'].isin(existed_cal_date['cal_date'])]

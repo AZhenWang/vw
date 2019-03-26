@@ -1,4 +1,5 @@
 import pandas as pd
+from conf.myapp import init_date
 from app.saver.logic import DB
 from app.common import function as CF
 
@@ -99,7 +100,7 @@ class Assembly(object):
 
     def pack_features(self, code_id):
         self.code_id = code_id
-        data = DB.get_code_info(code_id=code_id, end_date=self.end_date)
+        data = DB.get_code_info(code_id=code_id, start_date=init_date, end_date=self.end_date)
         data = data[data['vol'] != 0]
 
         Adj_close = data['close'] * data['adj_factor']
