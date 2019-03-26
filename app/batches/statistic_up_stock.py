@@ -41,7 +41,6 @@ def execute(start_date='', end_date=''):
     fig, ax = plt.subplots(2, 1, figsize=(16, 16), sharex=True)
 
     index_daily = DB.get_index_daily(ts_code='000001.SH', start_date_id=start_date_id, end_date_id=end_date_id)
-    print('index_daily=', len(index_daily), index_daily, 'buy=', len(buy), buy, 'sell=', len(sell), sell, 'data=', len(data), data, 'holdings=', len(holdings), holdings)
     gp = index_daily.groupby('ts_code')
     for ts_code, group_data in gp:
         group_data = group_data.set_index('cal_date')
@@ -52,8 +51,8 @@ def execute(start_date='', end_date=''):
 
         ax0_0 = ax[0]
         ax0_0.plot(adj_index, label=ts_code)
-        ax0_0.plot(np.multiply(index_daily['close'], buy), 'r^', label='buy')
-        ax0_0.plot(np.multiply(index_daily['close'], sell), 'g^', label='sell')
+        ax0_0.plot(np.multiply(adj_index, buy), 'r^', label='buy')
+        ax0_0.plot(np.multiply(adj_index, sell), 'g^', label='sell')
         ax1 = ax[1]
         ax1.plot(cum_return_set, label=ts_code + '=' + str(round(cum_return_set[-1], 2)))
 
@@ -62,7 +61,7 @@ def execute(start_date='', end_date=''):
     plt.xticks(xticks_loc, data.iloc[xticks_loc]['cal_date'], rotation=60)
 
     ax0_0 = ax[0]
-    ax0_0.legend(loc=2, ncol=4)
+    # ax0_0.legend(loc=2, ncol=4)
     ax0_0.set_ylabel('Index')
     # ratio_lable = {
     #     1: '1',
@@ -82,12 +81,12 @@ def execute(start_date='', end_date=''):
     # }
     color = 'tab:red'
     ax0_1 = ax[0].twinx()
-    ax0_1.plot(data['up_stock_ratio'], color=color, label='up_stock_ratio', linestyle='-')
+    ax0_1.plot(data['up_stock_ratio'], color=color, linestyle='-')
     ax0_1.yaxis.set_ticks(list(ratio_lable.keys()))
     ax0_1.yaxis.set_ticklabels(list(ratio_lable.values()))
     ax0_1.tick_params(axis='y', labelcolor=color)
     ax0_1.grid()
-    ax0_1.legend(loc=1)
+    # ax0_1.legend(loc=1)
     ax0_1.set_title('Up-stock percentage by threshold')
     ax0_1.set_xlabel('Time')
     ax0_1.set_ylabel('Up-stock ratio')
@@ -111,10 +110,11 @@ def execute(start_date='', end_date=''):
 
 def get_holdings(Y_hat):
     holdings = [0] * 2
+    holding = 0
     for i in range(2, len(Y_hat)):
         if (Y_hat[i] > Y_hat[i - 1]) and (Y_hat[i - 1] > 8):
             holding = 1
-        else:
+        elif (Y_hat[i] < Y_hat[i - 1]) and (Y_hat[i] < 8):
             holding = 0
 
         holdings.append(holding)
