@@ -3,6 +3,7 @@
 import sys
 import getopt
 from datetime import datetime, timedelta
+from conf.myapp import init_date
 
 
 def usage():
@@ -38,7 +39,7 @@ if file_name:
             now = datetime.now()
             today = now.strftime('%Y%m%d')
             if not start_date:
-                start_date = '19901219'
+                start_date = init_date
             if not end_date or end_date >= today:
                 yesterday = (now - timedelta(1)).strftime('%Y%m%d')
                 hour = now.hour
