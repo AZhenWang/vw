@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [247]
+    # code_ids = [2772]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -63,7 +63,12 @@ def execute(start_date='', end_date=''):
 
             # 大趋势买卖点
             flag = 0
-            if Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] >= 0.2 and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
+            if Y0.iloc[-1] > Y0.iloc[-2] and Y0.iloc[-2] < Y0.iloc[-3] \
+                    and Y0.iloc[-1] > Y1.iloc[-1] and Y0.iloc[-2] < Y1.iloc[-2] \
+                    and Y0.iloc[-3] > Y1.iloc[-3] \
+                    and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
+                flag = 2
+            elif Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] >= 0 and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
                 flag = 1
             elif Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] <= 0.2 and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
                 flag = -1
