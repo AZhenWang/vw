@@ -15,13 +15,12 @@ def execute(start_date='', end_date=''):
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-2]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
-    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type=recommend_type)
+    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] == 3]
-    print('logs=', logs)
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name',  'market',
                                              'predict_rose', 'pct_chg', 'moods', 'qqb',
-                                             'code_id', 'recommend_at', 'holding_at', 'holding_pct_chg',
+                                             'code_id', 'type', 'recommend_at', 'holding_at', 'holding_pct_chg',
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
@@ -88,6 +87,7 @@ def execute(start_date='', end_date=''):
                     'market': market,
                     'moods': logs.iloc[i]['moods'],
                     'code_id': code_id,
+                    'type': recommend_type,
                     'recommend_at': logs.iloc[i]['cal_date'],
                     'holding_at': focus_daily.at[0, 'cal_date'],
                     'holding_pct_chg': focus_daily.at[0, 'pct_chg']

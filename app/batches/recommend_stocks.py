@@ -15,10 +15,10 @@ def execute(start_date='', end_date=''):
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-5]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
-    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type=recommend_type)
+    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] >= 1]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['star', 'ts_code', 'code_name', 'recommend_at', 'market', 'star_count',
+    recommend_stocks = pd.DataFrame(columns=['star', 'ts_code', 'code_name', 'type', 'recommend_at', 'market', 'star_count',
                                              'predict_rose', 'pct_chg',  'average', 'moods', 'qqb', 'pre4_sum',
                                              'code_id', 'holding_at', 'holding_pct_chg',
                                              ])
@@ -121,6 +121,7 @@ def execute(start_date='', end_date=''):
                 content = {
                     'ts_code': logs.iloc[i]['ts_code'],
                     'code_name': logs.iloc[i]['name'],
+                    'type': recommend_type,
                     'recommend_at': logs.iloc[i]['cal_date'],
                     'star': logs.iloc[i]['star_idx'],
                     'star_count': star_count,

@@ -14,7 +14,7 @@ def execute(start_date='', end_date=''):
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
-    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type=recommend_type)
+    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['flag']!=0]
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'name',
@@ -55,6 +55,7 @@ def execute(start_date='', end_date=''):
                     'code_id': code_id,
                     'ts_code': log.ts_code,
                     'name': log['name'],
+                    'type': recommend_type,
                     'recommend_at': log.cal_date,
                     'average': log.average,
                     'moods': log.moods,

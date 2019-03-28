@@ -14,10 +14,10 @@ def execute(start_date='', end_date=''):
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
-    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type=recommend_type)
+    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['flag']!=0]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'name',
+    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'name', 'type',
                                              'recommend_at', 'average', 'moods', 'flag', 'qqb', 'pre4_sum', 'rose'
                                              ])
     for i in range(len(logs)):
@@ -30,7 +30,7 @@ def execute(start_date='', end_date=''):
         holding = 0
         if focus_log.empty and not pre_flag_log.empty:
             if pre_flag_log.at[0, 'flag'] == 1 and log.flag == -1 \
-                and pre_flag_log.at[0, 'average'] < pre_flag_log.at[0, 'moods'] \
+                    and pre_flag_log.at[0, 'average'] < pre_flag_log.at[0, 'moods'] \
                     and log.average > log.moods:
                     holding = 1
 
@@ -50,11 +50,12 @@ def execute(start_date='', end_date=''):
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               closed_date_id=recommended_date_id)
                 content = {
-                    'flag': int(log.flag),
+                    'flag': holding,
                     'code_id': code_id,
                     'ts_code': log.ts_code,
                     'name': log['name'],
                     'recommend_at': log.cal_date,
+                    'type': recommend_type,
                     'average': log.average,
                     'moods': log.moods,
                     'qqb': log.qqb,
