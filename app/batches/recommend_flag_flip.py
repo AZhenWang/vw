@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 
 pre_predict_interval = 5
 n_components = 2
-recommend_type = 'rf'
+recommend_type = 'rff'
 
 def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
@@ -29,19 +29,11 @@ def execute(start_date='', end_date=''):
         pre_flag_log = DB.get_pre_flag_logs(code_id=code_id, date_id=recommended_date_id-1, period=1, recommend_type='pca')
         holding = 0
         if focus_log.empty and not pre_flag_log.empty:
-            if pre_flag_log.at[0, 'flag'] == 1:
-                if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods']:
+            if pre_flag_log.at[0, 'flag'] == 1 and log.flag == -1 \
+                and pre_flag_log.at[0, 'average'] < pre_flag_log.at[0, 'moods'] \
+                    and log.average > log.moods:
                     holding = 1
 
-                elif log.flag == -1 and pre_flag_log.at[0, 'average'] < log.average and 0.4 <= log.average:
-                    holding = -1
-
-            elif pre_flag_log.at[0, 'flag'] == -1:
-                if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods'] and log.moods >= 0.2:
-                    holding = 1
-
-                elif log.flag == -1 and pre_flag_log.at[0, 'date_id'] < log.date_id - 1 and pre_flag_log.at[0, 'average'] > log.average and 0.5 <= pre_flag_log.at[0, 'average']:
-                    holding = -1
             if holding != 0:
                 daily = DB.get_code_daily(code_id=code_id, date_id=recommended_date_id)
                 rose = int(np.floor((daily.at[0, 'close'] - daily.at[0, 'open']) * 100 / daily.at[0, 'open']))

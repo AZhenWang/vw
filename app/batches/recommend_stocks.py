@@ -7,13 +7,15 @@ from email.mime.text import MIMEText
 
 pre_predict_interval = 5
 n_components = 2
+recommend_type = 'rs'
+
 
 def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-5]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
-    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
+    logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type=recommend_type)
     logs = logs[logs['star_idx'] >= 1]
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['star', 'ts_code', 'code_name', 'recommend_at', 'market', 'star_count',
@@ -74,7 +76,7 @@ def execute(start_date='', end_date=''):
                     DB.insert_focus_stocks(code_id=code_id,
                                            star_idx=logs.iloc[i]['star_idx'],
                                            predict_rose=predict_rose,
-                                           recommend_type='pca',
+                                           recommend_type=recommend_type,
                                            recommended_date_id=recommended_date_id,
                                            )
         else:
