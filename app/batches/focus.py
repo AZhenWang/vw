@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [1481]
+    # code_ids = [2772]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -108,9 +108,9 @@ def execute(start_date='', end_date=''):
                     qqb = 1
             # pre30_down_days = (Y0[-50:-1] < Y1[-50:-1]).sum()
             pre4_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=date_id, period=4)
-            pre40_down_days = round(
-                (sample_prices[-40:-1].max() - sample_prices[-40:-1].min()) * 100 / sample_prices[-40:-1].min(), 2)
-
+            pre40_sum = round(
+                (sample_prices[:-1].max() - sample_prices[:-1].min()) * 100 / sample_prices[:-1].min(), 2)
+            positive_mean = round((Y0 - Y1)[Y0 > Y1].mean(), 2)
             new_rows.loc[i] = {
                 'date_id': date_id,
                 'code_id': code_id,
@@ -118,7 +118,8 @@ def execute(start_date='', end_date=''):
                 'star_idx': holdings[-1],
                 'average': round(Y0.iloc[-1], 2),
                 'pre4_sum': round(pre4_sum),
-                'pre40_sum': pre40_down_days,
+                'pre40_sum': pre40_sum,
+                'pre40_positive_mean': positive_mean,
                 'qqb': qqb,
                 'moods': round(Y1.iloc[-1], 2),
                 'flag': flag,

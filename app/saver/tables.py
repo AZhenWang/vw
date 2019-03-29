@@ -38,7 +38,8 @@ fields_map = {
 
     # 股票预测
     'recommend_stocks': [
-        'date_id', 'code_id', 'recommend_type', 'star_idx', 'average', 'qqb', 'moods', 'flag', 'pre4_sum', 'pre40_sum'
+        'date_id', 'code_id', 'recommend_type', 'star_idx', 'average', 'qqb', 'moods', 'flag',
+        'pre4_sum', 'pre40_sum', 'pre40_positive_mean'
     ],
 
     # 指数
