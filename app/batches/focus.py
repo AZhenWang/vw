@@ -20,10 +20,10 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     cal_length = len(trade_cal)
-    # codes = DB.get_latestopendays_code_list(
-    #     latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
-    # code_ids = codes['code_id']
-    code_ids = [2772]
+    codes = DB.get_latestopendays_code_list(
+        latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
+    code_ids = codes['code_id']
+    # code_ids = [1481]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -66,7 +66,8 @@ def execute(start_date='', end_date=''):
             if Y0.iloc[-1] > Y0.iloc[-2] and Y0.iloc[-2] < Y0.iloc[-3] \
                     and Y0.iloc[-1] > Y1.iloc[-1] and Y0.iloc[-2] < Y1.iloc[-2] \
                     and Y0.iloc[-3] > Y1.iloc[-3] \
-                    and Y0[-10:-1].max() > 0.5 and Y0.iloc[-2] < 0 \
+                    and Y1.iloc[-1] > Y1.iloc[-2] \
+                    and Y0[-20:-1].max() > 0.5 and Y0.iloc[-2] < -0.2 \
                     and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
                 flag = 2
             elif Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] >= 0 and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
