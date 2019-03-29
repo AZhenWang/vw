@@ -8,6 +8,7 @@ create table recommend_stocks(
    qqb float null comment'背离形态',
    flag float default 0 null comment'可信度',
    pre4_sum int null comment'过去4天涨幅和',
+   pre40_sum int null comment'过去40天总变动幅度',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(`code_id`),
