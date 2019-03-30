@@ -6,7 +6,7 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 # 取半年样本区间
-sample_len = 40
+sample_len = 60
 n_components = 2
 pre_predict_interval = 5
 
@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [211]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -106,11 +106,12 @@ def execute(start_date='', end_date=''):
                 elif Y0.iloc[-1] > bottoms.iloc[-1] and sample_prices.iloc[-1] < bottoms_price.iloc[-1]:
                     # 底背离
                     qqb = 1
-            # pre30_down_days = (Y0[-50:-1] < Y1[-50:-1]).sum()
             pre4_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=date_id, period=4)
             pre40_sum = round(
                 (sample_prices[:-1].max() - sample_prices[:-1].min()) * 100 / sample_prices[:-1].min(), 2)
-            positive_mean = round((Y0 - Y1)[Y0 > Y1].mean(), 2)
+            # positive_mean = round((Y0 - Y1)[Y0 > Y1].mean(), 2)
+            positive_mean = round((Y0[:-3] - Y1[:-3])[Y0[:-3] > Y1[:-3]].mean(), 2)
+            negative_mean = round((Y1[:-3] - Y0[:-3])[Y0[:-3] < Y1[:-3]].mean(), 2)
             new_rows.loc[i] = {
                 'date_id': date_id,
                 'code_id': code_id,
@@ -120,6 +121,7 @@ def execute(start_date='', end_date=''):
                 'pre4_sum': round(pre4_sum),
                 'pre40_sum': pre40_sum,
                 'pre40_positive_mean': positive_mean,
+                'pre40_negative_mean': negative_mean,
                 'qqb': qqb,
                 'moods': round(Y1.iloc[-1], 2),
                 'flag': flag,

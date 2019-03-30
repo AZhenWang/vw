@@ -11,6 +11,7 @@ create table recommend_stocks(
    pre4_sum int null comment'过去4天涨幅和',
    pre40_sum int null comment'过去40天总变动幅度',
    pre40_positive_mean float null comment'过去40天Y0-Y1为正的平均值',
+   pre40_negative_mean float null comment'过去40天Y1-Y0为正的平均值',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(`code_id`),
