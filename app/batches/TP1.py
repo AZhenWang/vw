@@ -7,7 +7,7 @@ import matplotlib.pylab as plt
 plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
 
 def execute(start_date='', end_date=''):
-    year_dis = 9
+    year_dis = 18
     per_year = 244
     period = year_dis * per_year
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=period)
@@ -57,7 +57,7 @@ def execute(start_date='', end_date=''):
 
     ffts_pows = np.abs(ffts)
     #  选择几个频率
-    ts = 3
+    ts = 4
     pow = np.sort(pd.unique(ffts_pows[freqs > 0]))
     pow = pow[::-1]
     pow_low_band = pow[ts:]
@@ -101,9 +101,9 @@ def execute(start_date='', end_date=''):
         print('A=', A, ', F=', F, ',P=', P)
         fx0 = A * np.cos(2 * np.pi * F * times + P)
         z += fx0
-        ax1.plot(x_axis, fx0, label='f0'+str(round(sub_time_period, 1)), linewidth=i+1, alpha=0.8)
+        ax1.plot(x_axis, fx0, label='f'+str(round(sub_time_period, 1)), linewidth=i+1, alpha=0.8)
         ax1.axhline(A, color='g')
-        ax1.plot(x_axis, filter_sigs, label='c'+str(round(sub_time_period, 1)))
+        # ax1.plot(x_axis, filter_sigs, label='c'+str(round(sub_time_period, 1)))
     ax0_1.plot(x_axis, z+ffts_pows[freqs == 0]/period, label='z', color='r', linewidth=4, alpha=0.5)
     ax1.plot(x_axis, z, label='z')
 
@@ -111,7 +111,7 @@ def execute(start_date='', end_date=''):
     # pow_band = pow_high_band
     # pow_band = pow_low_band
     pow_band = pow
-    predict_time = 20*10
+    predict_time = 20*2
     init_len = 0
     # init_len = x_len
     shift_time = init_len + predict_time
@@ -205,5 +205,3 @@ def execute(start_date='', end_date=''):
     # plt.title('FFD')
 
     plt.show()
-
-

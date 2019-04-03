@@ -14,13 +14,12 @@ matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei']
 from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
-
 pre_predict_interval = 5
-sample_len = 30
+sample_len = 120
 
 
 def execute(start_date='', end_date=''):
-    end_date = '20190318'
+    # end_date = '20190326'
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=1)
     date_id = trade_cal.iloc[-1]['date_id']
     pca = Pca(cal_date=end_date)
@@ -33,8 +32,9 @@ def execute(start_date='', end_date=''):
     # new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     # draw = False
     draw = True
-    codes = [677]
-    # 2633:光大嘉宝, 2867:妙可蓝多, 540:雪莱特,  2412:恒力股份， 3547：恒润股份， 677：特尔佳
+    codes = [52]
+    # 1481:精准信息， 211：万方发展, 52:中国长城
+    # 2633:光大嘉宝, 2867:妙可蓝多, 540:雪莱特,  2412:恒力股份， 3547：恒润股份， 677：特尔佳, 432:天保基建
     # 687:鱼跃医疗，2187：东方金钰, 2876:秋林集团, 42:深天马A, 2011:广和通， 782：乐通, 819:赫美集团， 975：达华智能
     # 1241:银宝山新，3368: 薄天环境， 1836：赢合科技， 1442：东方财富, 3179:汇嘉时代, 3476:柯利达,
     # 20190122预测：2179:4, 346:2，3067:2, 996:4-2, 2750:2
@@ -137,14 +137,20 @@ def execute(start_date='', end_date=''):
         flags = []
         for i in range(sample_len):
             flag = 0
-            if Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] >= 0.2 and sample_prices.iloc[i] < \
+            if Y0.iloc[i] > Y0.iloc[i-1] and Y0.iloc[i-1] < Y0.iloc[i-2] \
+                    and Y0.iloc[i] > Y1.iloc[i] and Y0.iloc[i-1] < Y1.iloc[i-1] \
+                    and Y0.iloc[i-2] > Y1.iloc[i-2] \
+                    and Y1.iloc[i] > Y1.iloc[i-1] \
+                    and Y0[i - 20:i].max() > 0.5 and Y0.iloc[i-1] < -0 \
+                    and sample_prices.iloc[i] > sample_prices.iloc[i-1]:
+                flag = 2
+            elif Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] >= 0 and sample_prices.iloc[i] < \
                     sample_prices.iloc[i - 1]:
                 flag = 1
             elif Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] <= 0.2 and sample_prices.iloc[
                 i] > sample_prices.iloc[i - 1]:
                 flag = -1
             flags.append(flag)
-
 
         # flags = [0, 0]
         # for i in range(2, sample_len):
@@ -182,9 +188,42 @@ def execute(start_date='', end_date=''):
         s5 = pd.concat([s3, s4], axis=1)
         s6 = sample_pca.shift()[do_idx]
         s7 = pd.concat([s5, s6], axis=1)
-        s8 = s6-s4
+        s8 = s4-s6
         p = pd.concat([s7, s8], axis=1)
         print('p=', p)
+        print('flags=', flags[-3:])
+        pre40_sum = round((sample_prices[-40:-1].max() - sample_prices[-40:-1].min()) / sample_prices[-40:-1].min(), 2)
+        print('pre40_sum=', pre40_sum)
+        pre40_y0_mean = Y0.mean()
+        pre40_y1_mean = Y1.mean()
+        positive_mean = (Y0[:-3] - Y1[:-3])[Y0[:-3] > Y1[:-3]].mean()
+        negative_mean = (Y1[:-3] - Y0[:-3])[Y0[:-3] < Y1[:-3]].mean()
+
+        positive_std = (Y0[:-3] - Y1[:-3])[Y0[:-3] > Y1[:-3]].std()
+        negative_std = (Y1[:-3] - Y0[:-3])[Y0[:-3] < Y1[:-3]].std()
+
+        positive_pct_std = (Y0[:-3] - Y0.shift()[:-3])[Y0[:-3] > Y1[:-3]].std()
+        negative_pct_std = (Y1[:-3] - Y1.shift()[:-3])[Y0[:-3] < Y1[:-3]].std()
+
+        print('Y0-=', round(Y0.iloc[-1] - Y0[-3:].min(), 2), 'Y1-=', round(Y1.iloc[-1] - Y1[-3:].min(), 2))
+        print('pre40_y0_mean', ',pre40_y1_mean')
+        print(round(pre40_y0_mean, 2), round(pre40_y1_mean, 2))
+        print('positive_mean', ', negative_mean')
+        print(round(positive_mean, 2), round(negative_mean, 2))
+        print('positive_std', ', negative_std')
+        print(round(positive_std, 2), round(negative_std, 2))
+        print('positive_pct_std', ', negative_pct_std')
+        print(round(positive_pct_std, 2), round(negative_pct_std, 2))
+
+        pct_std0 = (sample_dailys[:-3]['pct_chg'])[Y0[:-3] > Y1[:-3]].std()
+        pct_std1 = (sample_dailys[:-3]['pct_chg'])[Y0[:-3] < Y1[:-3]].std()
+        pct_mean0 = (sample_dailys[:-3]['pct_chg'])[Y0[:-3] > Y1[:-3]].mean()
+        pct_mean1 = (sample_dailys[:-3]['pct_chg'])[Y0[:-3] < Y1[:-3]].mean()
+        print('Y0-mean', ', Y1-mean')
+        print(round(pct_mean0, 2), round(pct_mean1, 2))
+        print('Y0-std', ', Y1-std')
+        print(round(pct_std0, 2), round(pct_std1, 2))
+        # os.exit
         sample_dailys['dateTime'] = mdates.date2num(
             sample_dailys['cal_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
         sample_dailys['close'] = sample_dailys['close'] * sample_dailys['adj_factor']
@@ -216,7 +255,7 @@ def execute(start_date='', end_date=''):
             ax0.set_title(str(code_id) + '-图形信号')
 
             ax1 = ax0.twinx()
-            ax1.plot(x_axis, sample_prices, 'b-', label='price')
+            ax1.plot(x_axis, sample_prices, 'b-', label='price', alpha=0.5)
             ax1.plot(x_axis, np.multiply(sample_prices, buy), 'mo', label='buy')
             ax1.plot(x_axis, np.multiply(sample_prices, sell), 'co', label='sell')
             ax1.plot(x_axis, np.multiply(sample_prices, flag_buy), 'rv', label='flag_buy')
