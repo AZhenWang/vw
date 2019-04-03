@@ -111,19 +111,18 @@ def execute(start_date='', end_date=''):
         ax1.plot(x_axis, fx0, label='f'+str(round(sub_time_period, 1)), linewidth=i+1, alpha=0.8)
         ax1.axhline(A, color='g')
         # ax1.plot(x_axis, filter_sigs, label='c'+str(round(sub_time_period, 1)))
-    ax0_1.plot(x_axis, z+ffts_pows[freqs == 0]/period, label='z', color='r', linewidth=4, alpha=0.5)
+    ax0_1.plot(x_axis, z+ffts_pows[freqs == 0]/x_len, label='z', color='r', linewidth=4, alpha=0.5)
     ax1.plot(x_axis, z, label='z')
-
     ax2 = fig.add_subplot(313)
     pow_band = pow_high_band
     # pow_band = pow_low_band
     # pow_band = pow
-    predict_time = 30*3
+    predict_time = 60
     # init_len = 0
     # init_len = x_len - 1
     init_len = 30
     shift_time = init_len + predict_time + 1
-    shift_times = times[x_len - 1 - init_len] + np.arange(shift_time)*unit
+    shift_times = times[x_len - 1 - init_len] + np.arange(1, shift_time+1)*unit
     # shift_times = times[init_len - x_len] + np.arange(shift_time) * unit
     shift_x_axis = np.arange(shift_time)
     s = [0]*shift_time
@@ -163,8 +162,17 @@ def execute(start_date='', end_date=''):
         shift_fx = A * np.cos(2 * np.pi * F * shift_times + P)
         s1 += shift_fx
         # ax2.plot(shift_x_axis, shift_fx, label='s'+str(round(sub_time_period, 1)), linewidth=i + 1, alpha=0.8)
+
+    # s1 = s1 + ffts_pows[freqs == 0]/x_len
     print('max=', s1[:init_len].max())
     print(s1[init_len - 3: init_len + 3])
+    today_v = s1[init_len]
+    tomorrow_v = s1[init_len+1]
+    diffs = (s1[init_len+1:] - today_v) * 100 / abs(today_v)
+    mean = np.mean(diffs)
+    std = np.std(diffs)
+    diff = (tomorrow_v - today_v) * 100 / abs(today_v)
+    print('today_v=', today_v, 'tomorrow_v=', tomorrow_v, 'diff=', diff, 'mean=', mean, 'std=', std)
     ax2.axhline(s1[:init_len].max())
     ax2.axvline(init_len, color='r', linewidth=1, alpha=0.5)
     ax2.axvline(init_len+30, color='y', linewidth=1, alpha=0.5)

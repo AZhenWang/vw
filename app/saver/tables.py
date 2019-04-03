@@ -58,6 +58,9 @@ fields_map = {
         'code_id', 'star_idx', 'predict_rose', 'recommend_type',
         'recommended_date_id', 'closed_date_id', 'holding_date_id', 'star_count'
     ],
+    'tp_logs': [
+        'cal_date', 'date_id', 'code_id', 'today_v', 'tomorrow_v', 'diff', 'mean', 'std'
+    ],
 
 }
 

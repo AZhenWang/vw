@@ -662,6 +662,12 @@ class DB(object):
         )
         return logs
 
+    @classmethod
+    def delete_tp_log(cls, date_id, code_id):
+        pd.io.sql.execute('delete from tp_logs where date_id=%s and code_id = %s',
+                          cls.engine,
+                          params=[str(date_id), str(code_id)])
+
 
     # @staticmethod
     # def validate_field(columns, fields):

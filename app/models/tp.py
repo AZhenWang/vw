@@ -10,12 +10,12 @@ class Tp(object):
 
         pass
 
-    def run(self, y, fs=0.618, predict_time=3):
+    def run(self, y, fs=0.618, predict_len=3):
         """
         傅立叶分析周期规律
         :param y: 用来分析周期规律的一维数据
         :param fs: 筛选原周期幅度的多少来预测接下来的规律，0-1之间的值
-        :param predict_time: 向后预测天数
+        :param predict_len: 向后预测天数
         :return: 预测值，一维数组
         """
         x_len = len(y)
@@ -40,11 +40,10 @@ class Tp(object):
         low_idx = [i for i in all_idx if i not in high_idx]
         pow_low_band = pow[low_idx]
 
-        shift_time = predict_time
-        shift_times = times[-1] + np.arange(shift_time) * unit
-        s = [0] * shift_time
+        shift_times = times[-1] + np.arange(predict_len) * unit
+        s = [0] * predict_len
 
-        pow_band = pow_high_band
+        pow_band = pow_low_band
         for i in range(len(pow_band)):
             fund_freq = np.abs(freqs[ffts_pows == pow_band[i]])[0]
             noised_indices = np.where(np.abs(freqs) != fund_freq)
@@ -56,5 +55,8 @@ class Tp(object):
             P = np.angle(ffts[freqs > 0][ffts_pows[freqs > 0] == pow_band[i]])
             shift_fx = A * np.cos(2 * np.pi * F * shift_times + P)
             s += shift_fx
+
+        s = s
+        # s = s + ffts_pows[freqs == 0] / x_len
 
         return s
