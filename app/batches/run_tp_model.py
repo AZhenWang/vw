@@ -18,7 +18,7 @@ def execute(start_date='', end_date=''):
     print('trade_cal=', trade_cal)
     print('start_date=', start_date)
     print('end_date=', end_date)
-    code_id = '432'
+    code_id = '2772'
     # code_id = ''
     # index_code = '000001.SH'
     # index_code = '399001.SZ'
@@ -94,13 +94,14 @@ def execute(start_date='', end_date=''):
     ax0_1.plot(x_axis, mixed_filter_sigs, label='c', color='k', linewidth=1)
 
     z = [0]*x_len
-    pow_band = pow_high_band
+    # pow_band = pow_high_band
+    pow_band = pow
     for i in range(4):
         fund_freq = np.abs(freqs[ffts_pows == pow_band[i]])[0]
-        noised_indices = np.where(np.abs(freqs) != fund_freq)
-        filter_ffts = ffts.copy()
-        filter_ffts[noised_indices] = 0
-        filter_sigs = nf.ifft(nf.ifftshift(filter_ffts)).real
+        # noised_indices = np.where(np.abs(freqs) != fund_freq)
+        # filter_ffts = ffts.copy()
+        # filter_ffts[noised_indices] = 0
+        # filter_sigs = nf.ifft(nf.ifftshift(filter_ffts)).real
         sub_time_period = year_dis / (fund_freq * 2 * np.pi)
 
         A = pow_band[i] * 2 / period
@@ -111,17 +112,18 @@ def execute(start_date='', end_date=''):
         ax1.plot(x_axis, fx0, label='f'+str(round(sub_time_period, 1)), linewidth=i+1, alpha=0.8)
         ax1.axhline(A, color='g')
         # ax1.plot(x_axis, filter_sigs, label='c'+str(round(sub_time_period, 1)))
+    print('最后的值:', z[-3:])
     ax0_1.plot(x_axis, z+ffts_pows[freqs == 0]/x_len, label='z', color='r', linewidth=4, alpha=0.5)
     ax1.plot(x_axis, z, label='z')
     ax2 = fig.add_subplot(313)
     pow_band = pow_high_band
     # pow_band = pow_low_band
     # pow_band = pow
-    predict_time = 60
+    predict_time = 30*5
     # init_len = 0
     # init_len = x_len - 1
-    init_len = 30
-    shift_time = init_len + predict_time + 1
+    init_len = 30*3
+    shift_time = init_len + predict_time
     shift_times = times[x_len - 1 - init_len] + np.arange(1, shift_time+1)*unit
     # shift_times = times[init_len - x_len] + np.arange(shift_time) * unit
     shift_x_axis = np.arange(shift_time)
@@ -129,11 +131,11 @@ def execute(start_date='', end_date=''):
 
     for i in range(len(pow_band)):
         fund_freq = np.abs(freqs[ffts_pows == pow_band[i]])[0]
-        noised_indices = np.where(np.abs(freqs) != fund_freq)
-        filter_ffts = ffts.copy()
-        filter_ffts[noised_indices] = 0
-        filter_sigs = nf.ifft(nf.ifftshift(filter_ffts)).real
-        sub_time_period = year_dis / (fund_freq * 2 * np.pi)
+        # noised_indices = np.where(np.abs(freqs) != fund_freq)
+        # filter_ffts = ffts.copy()
+        # filter_ffts[noised_indices] = 0
+        # filter_sigs = nf.ifft(nf.ifftshift(filter_ffts)).real
+        # sub_time_period = year_dis / (fund_freq * 2 * np.pi)
 
         A = pow_band[i] * 2 / x_len
         F = fund_freq
@@ -150,11 +152,11 @@ def execute(start_date='', end_date=''):
     s1 = [0] * shift_time
     for i in range(len(pow_band)):
         fund_freq = np.abs(freqs[ffts_pows == pow_band[i]])[0]
-        noised_indices = np.where(np.abs(freqs) != fund_freq)
-        filter_ffts = ffts.copy()
-        filter_ffts[noised_indices] = 0
-        filter_sigs = nf.ifft(nf.ifftshift(filter_ffts)).real
-        sub_time_period = year_dis / (fund_freq * 2 * np.pi)
+        # noised_indices = np.where(np.abs(freqs) != fund_freq)
+        # filter_ffts = ffts.copy()
+        # filter_ffts[noised_indices] = 0
+        # filter_sigs = nf.ifft(nf.ifftshift(filter_ffts)).real
+        # sub_time_period = year_dis / (fund_freq * 2 * np.pi)
 
         A = pow_band[i] * 2 / x_len
         F = fund_freq
@@ -164,11 +166,11 @@ def execute(start_date='', end_date=''):
         # ax2.plot(shift_x_axis, shift_fx, label='s'+str(round(sub_time_period, 1)), linewidth=i + 1, alpha=0.8)
 
     # s1 = s1 + ffts_pows[freqs == 0]/x_len
-    print('max=', s1[:init_len].max())
-    print(s1[init_len - 3: init_len + 3])
-    today_v = s1[init_len]
-    tomorrow_v = s1[init_len+1]
-    diffs = (s1[init_len+1:] - today_v) * 100 / abs(today_v)
+    # print(s1[init_len - 3: init_len + 3])
+    print('s1=', s1)
+    today_v = s1[init_len-1]
+    tomorrow_v = s1[init_len]
+    diffs = (s1[init_len:] - today_v) * 100 / abs(today_v)
     mean = np.mean(diffs)
     std = np.std(diffs)
     diff = (tomorrow_v - today_v) * 100 / abs(today_v)

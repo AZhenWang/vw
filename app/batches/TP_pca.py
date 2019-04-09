@@ -24,11 +24,11 @@ def execute(start_date='', end_date=''):
     print('trade_cal=', trade_cal)
     print('start_date=', start_date)
     print('end_date=', end_date)
-    # code_id = '432'
-    code_id = ''
+    code_id = '2772'
+    # code_id = ''
     # index_code = '000001.SH'
-    index_code = '399001.SZ'
-    # index_code = ''
+    # index_code = '399001.SZ'
+    index_code = ''
     if index_code != '':
         daily = DB.get_index_daily(ts_code=index_code, start_date_id=start_date_id, end_date_id=end_date_id)
         daily_data = daily['close']
@@ -43,6 +43,7 @@ def execute(start_date='', end_date=''):
         pca_features, prices, Y, _ = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
                                              n_components=n_components, return_y=True)
         daily_data = pca_features.set_index(Y.index).col_0
+        print('old_pca_col_0=', daily_data)
         daily_data.name = 'close'
     else:
         daily_data = pd.DataFrame()
@@ -112,7 +113,7 @@ def execute(start_date='', end_date=''):
     # init_len = x_len - 1
     init_len = 30
     shift_time = init_len + predict_time + 1
-    shift_times = times[x_len - 1 - init_len] + np.arange(shift_time) * unit
+    shift_times = times[x_len - 1 - init_len] + np.arange(1, shift_time+1) * unit
     # shift_times = times[init_len - x_len] + np.arange(shift_time) * unit
     shift_x_axis = np.arange(shift_time)
     # 测试曲线
@@ -139,8 +140,8 @@ def execute(start_date='', end_date=''):
     ax0_1.plot(x_axis, z+ffts_pows[freqs == 0]/period, label='z', color='r', linewidth=4, alpha=0.5)
     ax1.plot(x_axis, z, label='z')
 
-    ax2.axvline(init_len, color='k', linewidth=1, alpha=0.5)
-    ax2.axvline(init_len + 30, color='y', linewidth=1, alpha=0.5)
+    ax2.axvline(init_len-1, color='k', linewidth=1, alpha=0.5)
+    ax2.axvline(init_len-1 + 30, color='y', linewidth=1, alpha=0.5)
 
     pow_band = pow
     s1 = [0] * shift_time
@@ -176,7 +177,8 @@ def execute(start_date='', end_date=''):
         pca_features, prices, Y, _ = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
                                              n_components=n_components, return_y=True)
         next_y = pca_features.set_index(Y.index).col_0
-        next_y = next_y[Y.index >= next_trade_cal.iloc[0]['date_id']]
+        next_y = next_y[Y.index > next_trade_cal.iloc[0]['date_id']]
+        print('new_pca_col_0=', next_y)
         next_y.name = 'close'
     else:
         return
@@ -186,7 +188,7 @@ def execute(start_date='', end_date=''):
         next_y = next_data.join(next_y, on='date_id')
         next_y.fillna(method='ffill', inplace=True)
         next_y.fillna(method='backfill', inplace=True)
-        fact_next_y = y[-init_len:-1]
+        fact_next_y = y[-init_len:]
         fact_next_y = fact_next_y.append(next_y['close'])
         # ax2_1 = ax2.twinx()
         # ax2_1.plot(shift_x_axis, fact_next_y, linewidth=1)

@@ -1,12 +1,14 @@
 from app.models.tp import Tp
 from app.saver.logic import DB
-from conf.myapp import init_date
+from app.models.pca import Pca
 import numpy as np
 import pandas as pd
 from app.saver.tables import fields_map
 
 # 向前预测时间长度
 predict_len = 60
+n_components = 2
+pre_predict_interval = 5
 
 
 def execute(start_date='', end_date=''):
@@ -25,7 +27,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=365*10, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [445]
     for code_id in code_ids:
         print('code_id=', code_id)
         new_rows = pd.DataFrame(columns=fields_map['tp_logs'])
@@ -35,6 +37,11 @@ def execute(start_date='', end_date=''):
 
         tp_model = Tp()
         data_len = len(dailys)
+
+        pca = Pca(cal_date=end_date)
+        pca_features, prices = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
+                                       n_components=n_components)
+
         k = 0
         for i in range(data_len-cal_length, data_len):
             date_id = dailys.index[i]
@@ -43,6 +50,7 @@ def execute(start_date='', end_date=''):
             DB.delete_tp_log(code_id=code_id, date_id=date_id)
 
             Y = dailys[k:i+1]
+
             predict_Y = tp_model.run(y=Y, fs=0.3, predict_len=predict_len)
             today_v = predict_Y[0]
             tomorrow_v = predict_Y[1]
@@ -50,6 +58,18 @@ def execute(start_date='', end_date=''):
             mean = np.mean(diffs)
             std = np.std(diffs)
             diff = (tomorrow_v - today_v) * 100/abs(today_v)
+
+            pca_0 = pca_features.col_0[prices.index <= date_id]
+            predict_pca_0 = tp_model.run(y=pca_0, predict_len=predict_len)
+            today_pca = predict_pca_0[0]
+            tomorrow_pca = predict_pca_0[1]
+            pca_diffs = (predict_pca_0 - today_pca) * 100 / abs(today_pca)
+            pca_mean = np.mean(predict_pca_0)
+            pca_std = np.std(predict_pca_0)
+            # pca_mean = np.mean(pca_diffs)
+            # pca_std = np.std(pca_diffs)
+            pca_diff = tomorrow_pca - today_pca
+
             new_rows.loc[i] = {
                 'cal_date': cal_date,
                 'date_id': date_id,
@@ -59,6 +79,9 @@ def execute(start_date='', end_date=''):
                 'diff': round(diff, 2),
                 'mean': round(mean, 2),
                 'std': round(std, 2),
+                'pca_diff': round(pca_diff, 2),
+                'pca_mean': round(pca_mean, 2),
+                'pca_std': round(pca_std, 2),
             }
             k += 1
         if not new_rows.empty:

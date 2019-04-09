@@ -16,7 +16,7 @@ def execute(start_date='', end_date=''):
     end_date_id = trade_cal.iloc[-1]['date_id']
     end_date = trade_cal.iloc[-1]['cal_date']
 
-    code_id = '2187'
+    code_id = '432'
     if code_id == '':
         daily = DB.get_index_daily(ts_code='000001.SH', start_date_id=start_date_id, end_date_id=end_date_id)
         print('daily=', daily)

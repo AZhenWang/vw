@@ -44,6 +44,7 @@ class Tp(object):
         s = [0] * predict_len
 
         pow_band = pow_low_band
+        pow_band = pow
         for i in range(len(pow_band)):
             fund_freq = np.abs(freqs[ffts_pows == pow_band[i]])[0]
             noised_indices = np.where(np.abs(freqs) != fund_freq)
@@ -56,7 +57,7 @@ class Tp(object):
             shift_fx = A * np.cos(2 * np.pi * F * shift_times + P)
             s += shift_fx
 
-        s = s
-        # s = s + ffts_pows[freqs == 0] / x_len
+        # s = s
+        s = s + ffts_pows[freqs == 0] / x_len
 
         return s

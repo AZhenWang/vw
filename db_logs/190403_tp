@@ -9,6 +9,9 @@ create table tp_logs(
    diff FLOAT NULL comment'明天与今天的比率',
    mean FLOAT NULL comment'接下来两个月与今天的比率平均值',
    std FLOAT NULL comment'接下来两个月与今天的比率标准差',
+   pca_diff FLOAT NULL comment'明天与今天的pca_col0差值',
+   pca_mean FLOAT NULL comment'接下来两个月的pca_col0平均值',
+   pca_std FLOAT NULL comment'接下来两个月的pca_col0标准差',
    PRIMARY KEY(id),
    index(`code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'周期分析';

@@ -59,7 +59,7 @@ fields_map = {
         'recommended_date_id', 'closed_date_id', 'holding_date_id', 'star_count'
     ],
     'tp_logs': [
-        'cal_date', 'date_id', 'code_id', 'today_v', 'tomorrow_v', 'diff', 'mean', 'std'
+        'cal_date', 'date_id', 'code_id', 'today_v', 'tomorrow_v', 'diff', 'mean', 'std', 'pca_diff', 'pca_mean', 'pca_std'
     ],
 
 }

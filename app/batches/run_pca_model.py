@@ -15,7 +15,7 @@ from app.saver.tables import fields_map
 from app.common.function import knn_predict
 
 pre_predict_interval = 5
-sample_len = 120
+sample_len = 60
 
 
 def execute(start_date='', end_date=''):
@@ -32,8 +32,8 @@ def execute(start_date='', end_date=''):
     # new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     # draw = False
     draw = True
-    codes = [52]
-    # 1481:精准信息， 211：万方发展, 52:中国长城
+    codes = [2018]
+    # 1481:精准信息， 211：万方发展, 52:中国长城, 2018:正元智慧
     # 2633:光大嘉宝, 2867:妙可蓝多, 540:雪莱特,  2412:恒力股份， 3547：恒润股份， 677：特尔佳, 432:天保基建
     # 687:鱼跃医疗，2187：东方金钰, 2876:秋林集团, 42:深天马A, 2011:广和通， 782：乐通, 819:赫美集团， 975：达华智能
     # 1241:银宝山新，3368: 薄天环境， 1836：赢合科技， 1442：东方财富, 3179:汇嘉时代, 3476:柯利达,
@@ -79,7 +79,6 @@ def execute(start_date='', end_date=''):
             sample_pca = pca_features
             sample_prices = prices
             sample_dailys = dailys
-
         diff_Y0 = np.where(np.diff(pca_features.col_0) > 0, 1, -1)
         diff_Y1 = np.where(np.diff(pca_features.col_1) > 0, 1, -1)
         diff_price = np.where(np.diff(prices) > 0, 1, -1)

@@ -101,6 +101,7 @@ class Assembly(object):
     def pack_features(self, code_id):
         self.code_id = code_id
         data = DB.get_code_info(code_id=code_id, start_date=init_date, end_date=self.end_date)
+        print('data=', data)
         data = data[data['vol'] != 0]
 
         Adj_close = data['close'] * data['adj_factor']
@@ -123,7 +124,6 @@ class Assembly(object):
         pre_adj_close = Adj_close.shift(1)
         fm = pd.concat([Adj_close, pre_adj_close], axis=1).min(axis=1)
         daily_return = (Adj_close - pre_adj_close) / fm
-
         dr_positive = daily_return.copy()
         dr_positive[dr_positive < 0] = 0
         dr_nagetive = daily_return.copy()
@@ -144,7 +144,6 @@ class Assembly(object):
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
         X = pd.DataFrame(feature_dict).dropna()
-
         self.date_idxs = X.index
         self.adj_close = Adj_close[self.date_idxs]
         self.data = data.loc[self.date_idxs]
