@@ -18,7 +18,7 @@ def execute(start_date='', end_date=''):
     print('trade_cal=', trade_cal)
     print('start_date=', start_date)
     print('end_date=', end_date)
-    code_id = '2772'
+    code_id = '171'
     # code_id = ''
     # index_code = '000001.SH'
     # index_code = '399001.SZ'

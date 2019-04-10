@@ -668,6 +668,15 @@ class DB(object):
                           cls.engine,
                           params=[str(date_id), str(code_id)])
 
+    @classmethod
+    def update_pool(cls, start_date_id, end_date_id):
+        pd.io.sql.execute(' insert into pool (code_id) '
+                          ' ( select distinct tl.code_id from tp_logs tl '
+                          '   where tl.diff > 0 and tl.mean > 0'
+                          '   and tl.date_id between %s and %s)',
+                          cls.engine,
+                          params=[str(start_date_id), str(end_date_id)])
+
 
     # @staticmethod
     # def validate_field(columns, fields):

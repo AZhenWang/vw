@@ -1,4 +1,3 @@
-
 create table tp_logs(
    id INT NOT NULL AUTO_INCREMENT,
    code_id INT NOT NULL,
@@ -12,6 +11,16 @@ create table tp_logs(
    pca_diff FLOAT NULL comment'明天与今天的pca_col0差值',
    pca_mean FLOAT NULL comment'接下来两个月的pca_col0平均值',
    pca_std FLOAT NULL comment'接下来两个月的pca_col0标准差',
+   pca_diff_mean FLOAT NULL comment'接下来两个月的pca_col0与今日值的差的平均值',
+   pca_diff_std FLOAT NULL comment'接下来两个月的pca_col0与今日值的差的标准差',
    PRIMARY KEY(id),
    index(`code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'周期分析';
+
+create table pool(
+   id INT NOT NULL AUTO_INCREMENT,
+   code_id INT NOT NULL,
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`code_id`),
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'近期股票池';

@@ -24,10 +24,10 @@ def execute(start_date='', end_date=''):
     first_date = pre_cal.iloc[0]['cal_date']
 
     cal_length = len(trade_cal)
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=365*10, date_id=trade_cal.iloc[0]['date_id'])
-    code_ids = codes['code_id']
-    # code_ids = [445]
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=365*10, date_id=trade_cal.iloc[0]['date_id'])
+    # code_ids = codes['code_id']
+    code_ids = [432]
     for code_id in code_ids:
         print('code_id=', code_id)
         new_rows = pd.DataFrame(columns=fields_map['tp_logs'])
@@ -66,8 +66,8 @@ def execute(start_date='', end_date=''):
             pca_diffs = (predict_pca_0 - today_pca) * 100 / abs(today_pca)
             pca_mean = np.mean(predict_pca_0)
             pca_std = np.std(predict_pca_0)
-            # pca_mean = np.mean(pca_diffs)
-            # pca_std = np.std(pca_diffs)
+            pca_diff_mean = np.mean(pca_diffs)
+            pca_diff_std = np.std(pca_diffs)
             pca_diff = tomorrow_pca - today_pca
 
             new_rows.loc[i] = {
@@ -82,6 +82,8 @@ def execute(start_date='', end_date=''):
                 'pca_diff': round(pca_diff, 2),
                 'pca_mean': round(pca_mean, 2),
                 'pca_std': round(pca_std, 2),
+                'pca_diff_mean': round(pca_diff_mean, 2),
+                'pca_diff_std': round(pca_diff_std, 2),
             }
             k += 1
         if not new_rows.empty:

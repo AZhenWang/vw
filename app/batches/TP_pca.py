@@ -21,10 +21,7 @@ def execute(start_date='', end_date=''):
     start_date = trade_cal.iloc[0]['cal_date']
     end_date_id = trade_cal.iloc[-1]['date_id']
     end_date = trade_cal.iloc[-1]['cal_date']
-    print('trade_cal=', trade_cal)
-    print('start_date=', start_date)
-    print('end_date=', end_date)
-    code_id = '2772'
+    code_id = '171'
     # code_id = ''
     # index_code = '000001.SH'
     # index_code = '399001.SZ'
@@ -43,7 +40,6 @@ def execute(start_date='', end_date=''):
         pca_features, prices, Y, _ = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
                                              n_components=n_components, return_y=True)
         daily_data = pca_features.set_index(Y.index).col_0
-        print('old_pca_col_0=', daily_data)
         daily_data.name = 'close'
     else:
         daily_data = pd.DataFrame()
@@ -161,6 +157,18 @@ def execute(start_date='', end_date=''):
 
     ax2.plot(shift_x_axis, s1, linewidth=1, color='r', label='s1', alpha=0.5)
 
+    predict_pca_0 = s1[init_len:init_len+60]
+    today_pca = s1[init_len-1]
+    tomorrow_pca = s1[init_len]
+    pca_diffs = (predict_pca_0 - today_pca) * 100 / abs(today_pca)
+    pca_mean = np.mean(predict_pca_0)
+    pca_std = np.std(predict_pca_0)
+    pca_diff_mean = np.mean(pca_diffs)
+    pca_diff_std = np.std(pca_diffs)
+    pca_diff = tomorrow_pca - today_pca
+    print('pca_mean=', pca_mean, 'pca_std', pca_std)
+    print('pca_diff=', pca_diff, 'pca_diff_mean=', pca_diff_mean, 'pca_diff_std=', pca_diff_std)
+
     next_trade_cal = DB.get_cal_date(start_date=end_date, limit=predict_time)
     if index_code != '':
         daily = DB.get_index_daily(ts_code=index_code, start_date_id=next_trade_cal.iloc[0]['date_id'],
@@ -178,7 +186,6 @@ def execute(start_date='', end_date=''):
                                              n_components=n_components, return_y=True)
         next_y = pca_features.set_index(Y.index).col_0
         next_y = next_y[Y.index > next_trade_cal.iloc[0]['date_id']]
-        print('new_pca_col_0=', next_y)
         next_y.name = 'close'
     else:
         return
