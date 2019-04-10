@@ -672,7 +672,7 @@ class DB(object):
     def update_pool(cls, start_date_id, end_date_id):
         pd.io.sql.execute(' insert into pool (code_id) '
                           ' ( select distinct tl.code_id from tp_logs tl '
-                          '   where tl.diff > 0 and tl.mean > 0'
+                          '   where tl.diff > 0 and tl.mean > 0 and sb.name not like "%ST%"'
                           '   and tl.date_id between %s and %s)',
                           cls.engine,
                           params=[str(start_date_id), str(end_date_id)])
