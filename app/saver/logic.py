@@ -670,10 +670,13 @@ class DB(object):
 
     @classmethod
     def update_pool(cls, start_date_id, end_date_id):
+        pd.io.sql.execute(' truncate pool',
+                          cls.engine)
         pd.io.sql.execute(' insert into pool (code_id) '
-                          ' ( select distinct tl.code_id from tp_logs tl '
+                          ' ( select distinct tl.code_id from tp_logs tl'
+                          '   left join stock_basic sb on sb.id = tl.code_id '
                           '   where tl.diff > 0 and tl.mean > 0 and sb.name not like "%ST%"'
-                          '   and tl.date_id between %s and %s)',
+                          '   and tl.date_id between %s and %s order by tl.diff desc, tl.mean desc)',
                           cls.engine,
                           params=[str(start_date_id), str(end_date_id)])
 
