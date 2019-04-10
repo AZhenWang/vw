@@ -24,10 +24,10 @@ def execute(start_date='', end_date=''):
     first_date = pre_cal.iloc[0]['cal_date']
 
     cal_length = len(trade_cal)
-    # codes = DB.get_latestopendays_code_list(
-    #     latest_open_days=365*10, date_id=trade_cal.iloc[0]['date_id'])
-    # code_ids = codes['code_id']
-    code_ids = [432]
+    codes = DB.get_latestopendays_code_list(
+        latest_open_days=365*5, date_id=trade_cal.iloc[0]['date_id'])
+    code_ids = codes['code_id']
+    # code_ids = [432]
     for code_id in code_ids:
         print('code_id=', code_id)
         new_rows = pd.DataFrame(columns=fields_map['tp_logs'])
