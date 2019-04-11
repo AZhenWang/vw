@@ -675,11 +675,37 @@ class DB(object):
         pd.io.sql.execute(' insert into pool (code_id) '
                           ' ( select distinct tl.code_id from tp_logs tl'
                           '   left join stock_basic sb on sb.id = tl.code_id '
-                          '   where tl.diff > 0 and tl.mean > 0 and sb.name not like "%ST%"'
-                          '   and tl.date_id between %s and %s order by tl.diff desc, tl.mean desc)',
+                          '   where tl.diff > 0 and tl.pca_mean > 0.1'
+                          '   and sb.name not like "%ST%"'
+                          '   and tl.date_id between %s and %s order by tl.diff desc, tl.pca_mean desc)',
                           cls.engine,
                           params=[str(start_date_id), str(end_date_id)])
 
+    @classmethod
+    def get_tp_logs(cls, code_id='', start_date_id='', end_date_id=''):
+        if code_id == '':
+            logs = pd.read_sql(
+                sa.text(' select sb.name as ts_name, sb.ts_code, tl.*, d.pct_chg from tp_logs tl '
+                        ' left join daily d on d.code_id = tl.code_id and d.date_id = tl.date_id '
+                        ' left join stock_basic sb on sb.id = tl.code_id'
+                        ' where tl.date_id between :sdi and :edi '
+                        ' order by tl.date_id asc'
+                        ),
+                cls.engine,
+                params={'sdi': str(start_date_id), 'edi': str(end_date_id)}
+            )
+        else:
+            logs = pd.read_sql(
+                sa.text(' select tl.*, d.pct_chg from tp_logs tl '
+                        ' left join daily d on d.code_id = tl.code_id and d.date_id = tl.date_id '
+                        ' where tl.code_id = :code_id'
+                        ' and tl.date_id between :sdi and :edi '
+                        ' order by tl.date_id asc'
+                        ),
+                cls.engine,
+                params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id)}
+            )
+        return logs
 
     # @staticmethod
     # def validate_field(columns, fields):
