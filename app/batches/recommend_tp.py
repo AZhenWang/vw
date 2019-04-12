@@ -74,8 +74,8 @@ def execute(start_date='', end_date=''):
                 recommend_stocks.loc[i] = content
                 i += 1
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['recommend_at', 'pca_mean'],
-                                     ascending=[False, False], inplace=True)
+        recommend_stocks.sort_values(by=['hold_at', 'recommend_at', 'pca_mean'],
+                                     ascending=[False, False, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
