@@ -12,7 +12,8 @@ recommend_type = 'tp'
 def execute(start_date='', end_date=''):
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['recommend_at', 'code_id', 'ts_code', 'name', 'down_pdm_sum', 'up_pdm_sum',
-                                             'up_ratio', 'pca_diff_mean', 'pdm_ratio', 'up_pct_sum', 'down_pct_sum', 'pct_chg',
+                                              'up_pct_sum', 'down_pct_sum', 'up_ratio', 'pca_diff_mean',
+                                             'pdm_ratio', 'yester_pct_chg', 'pct_chg',
                                              'hold_at',
                                              ])
 
@@ -81,6 +82,7 @@ def execute(start_date='', end_date=''):
                             'down_pct_sum': int(round(down_pct_sum)),
                             'pca_diff_mean': round(group_data.iloc[-1]['pca_diff_mean'], 2),
                             'pdm_ratio': round(group_data.iloc[-2]['pca_diff_mean'] / group_data.iloc[-1]['pca_diff_mean'], 2),
+                            'yester_pct_chg': round(group_data.iloc[-2]['pct_chg'], 1),
                             'pct_chg': round(log.pct_chg, 1),
                             'hold_at': hold_at,
                         }
