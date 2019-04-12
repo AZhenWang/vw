@@ -34,8 +34,12 @@ def execute(start_date='', end_date=''):
                 continue
             down_pca = group_data[group_data['pca_diff_mean'] > 0]
             up_pca = group_data[group_data['pca_diff_mean'] <= 0]
+            up_pca_len = len(up_pca)
+            if up_pca_len <= 1:
+                continue
+            down_pca_len = len(down_pca)
 
-            up_ratio = len(up_pca) / (len(up_pca) + len(down_pca))
+            up_ratio = up_pca_len / (up_pca_len + down_pca_len)
 
             down_pct = group_data[group_data['pct_chg'] < 0]
             up_pct = group_data[group_data['pct_chg'] >= 0]
