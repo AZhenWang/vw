@@ -688,7 +688,8 @@ class DB(object):
                 sa.text(' select sb.name as ts_name, sb.ts_code, tl.*, d.pct_chg from tp_logs tl '
                         ' left join daily d on d.code_id = tl.code_id and d.date_id = tl.date_id '
                         ' left join stock_basic sb on sb.id = tl.code_id'
-                        ' where tl.date_id between :sdi and :edi '
+                        ' where tl.date_id between :sdi and :edi'
+                        ' and sb.name not like "%ST%" '
                         ' order by tl.date_id asc'
                         ),
                 cls.engine,
@@ -696,8 +697,9 @@ class DB(object):
             )
         else:
             logs = pd.read_sql(
-                sa.text(' select tl.*, d.pct_chg from tp_logs tl '
+                sa.text(' select  sb.name as ts_name, sb.ts_code, tl.*, d.pct_chg from tp_logs tl '
                         ' left join daily d on d.code_id = tl.code_id and d.date_id = tl.date_id '
+                        ' left join stock_basic sb on sb.id = tl.code_id'
                         ' where tl.code_id = :code_id'
                         ' and tl.date_id between :sdi and :edi '
                         ' order by tl.date_id asc'
