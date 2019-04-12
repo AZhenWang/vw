@@ -36,9 +36,10 @@ def execute(start_date='', end_date=''):
             down_pca = group_data[group_data['pca_diff_mean'] > 0]
             up_pca = group_data[group_data['pca_diff_mean'] <= 0]
             up_pca_len = len(up_pca)
-            if up_pca_len <= 1:
-                continue
             down_pca_len = len(down_pca)
+            if (up_pca_len + down_pca_len) < 10 or up_pca_len < 5:
+                continue
+
             up_ratio = up_pca_len / (up_pca_len + down_pca_len)
 
             up_pdm_sum = up_pca['pca_diff_mean'].sum()
