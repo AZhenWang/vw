@@ -11,8 +11,8 @@ recommend_type = 'tp'
 
 def execute(start_date='', end_date=''):
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['recommend_at', 'code_id', 'ts_code', 'name',
-                                             'hold_at', 'pca_mean'
+    recommend_stocks = pd.DataFrame(columns=['recommend_at', 'code_id', 'ts_code', 'name', 'pca_mean',
+                                             'hold_at', 'pca_chg'
                                              ])
 
     i = 1
@@ -68,14 +68,16 @@ def execute(start_date='', end_date=''):
                         'code_id': code_id,
                         'ts_code': log.ts_code,
                         'name': log.ts_name,
+                        'pca_mean': log.pca_mean,
                         'hold_at': hold_at,
-                        'pca_mean': log.pca_mean
+                        'pca_chg': log.pct_chg,
+
                     }
                 recommend_stocks.loc[i] = content
                 i += 1
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['hold_at', 'recommend_at', 'pca_mean'],
-                                     ascending=[False, False, False], inplace=True)
+        recommend_stocks.sort_values(by=['hold_at', 'recommend_at', 'pca_mean', 'pca_chg'],
+                                     ascending=[False, False, False, True], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
