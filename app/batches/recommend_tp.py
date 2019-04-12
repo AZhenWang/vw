@@ -24,7 +24,7 @@ def execute(start_date='', end_date=''):
         logs = DB.get_tp_logs(start_date_id=start_date_id, end_date_id=end_date_id)
         gp = logs.groupby('code_id')
         for code_id, group_data in gp:
-            if group_data.empty:
+            if group_data.empty or group_data.iloc[-1]['pca_mean'] < 0.09:
                 continue
             recommended_date_id = group_data.iloc[-1]['date_id']
             hold_at = ''
