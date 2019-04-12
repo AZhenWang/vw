@@ -11,10 +11,10 @@ recommend_type = 'tp'
 
 def execute(start_date='', end_date=''):
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['recommend_at', 'code_id', 'ts_code', 'name', 'down_pdm_sum', 'up_pdm_sum',
-                                              'up_pct_sum', 'down_pct_sum', 'up_ratio', 'pca_diff_mean',
-                                             'pdm_ratio', 'yester_pct_chg', 'pct_chg',
-                                             'hold_at',
+    recommend_stocks = pd.DataFrame(columns=['recommend', 'code_id', 'ts_code', 'name', 'down_pdm_sum', 'up_pdm_sum',
+                                              'up_pct_sum', 'down_pct_sum', 'up_ratio', 'pdm',
+                                             'pdm_ratio', 'yes_pct_chg', 'pct_chg',
+                                             'hold',
                                              ])
 
     i = 1
@@ -71,7 +71,7 @@ def execute(start_date='', end_date=''):
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
                                               holding_date_id=recommended_date_id)
                     content = {
-                            'recommend_at': log.cal_date,
+                            'recommend': log.cal_date,
                             'code_id': code_id,
                             'ts_code': log.ts_code,
                             'name': log.ts_name,
@@ -80,16 +80,16 @@ def execute(start_date='', end_date=''):
                             'up_ratio': round(up_ratio, 2),
                             'up_pct_sum': int(round(up_pct_sum)),
                             'down_pct_sum': int(round(down_pct_sum)),
-                            'pca_diff_mean': round(group_data.iloc[-1]['pca_diff_mean'], 2),
+                            'pdm': round(group_data.iloc[-1]['pca_diff_mean'], 2),
                             'pdm_ratio': round(group_data.iloc[-2]['pca_diff_mean'] / group_data.iloc[-1]['pca_diff_mean'], 2),
-                            'yester_pct_chg': round(group_data.iloc[-2]['pct_chg'], 1),
+                            'yes_pct_chg': round(group_data.iloc[-2]['pct_chg'], 1),
                             'pct_chg': round(log.pct_chg, 1),
-                            'hold_at': hold_at,
+                            'hold': hold_at,
                         }
                     recommend_stocks.loc[i] = content
                     i += 1
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['recommend_at', 'pdm_ratio', 'down_pdm_sum',  'up_pdm_sum', 'up_ratio', 'up_pct_sum', 'down_pct_sum'],
+        recommend_stocks.sort_values(by=['pdm_ratio', 'recommend', 'down_pdm_sum',  'up_pdm_sum', 'up_ratio', 'up_pct_sum', 'down_pct_sum'],
                                      ascending=[False, False, False, False, False, True, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
