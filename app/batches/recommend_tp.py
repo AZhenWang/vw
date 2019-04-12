@@ -52,7 +52,7 @@ def execute(start_date='', end_date=''):
             if up_ratio > 0.75 and down_pct_sum < -11 and up_pct_sum < 30:
                 DB.insert_focus_stocks(code_id=code_id,
                                        star_idx=0,
-                                       predict_rose=0,
+                                       predict_rose=log.pca_mean,
                                        recommend_type=recommend_type,
                                        recommended_date_id=recommended_date_id,
                                        )
