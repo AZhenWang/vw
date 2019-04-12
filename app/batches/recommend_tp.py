@@ -89,8 +89,8 @@ def execute(start_date='', end_date=''):
                     recommend_stocks.loc[i] = content
                     i += 1
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['down_pdm_sum', 'pdm_ratio', 'hold_at', 'recommend_at', 'up_pdm_sum', 'up_ratio', 'up_pct_sum', 'down_pct_sum'],
-                                     ascending=[False, False, False, False, False, False, True, False], inplace=True)
+        recommend_stocks.sort_values(by=['recommend_at', 'pdm_ratio', 'down_pdm_sum',  'up_pdm_sum', 'up_ratio', 'up_pct_sum', 'down_pct_sum'],
+                                     ascending=[False, False, False, False, False, True, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
