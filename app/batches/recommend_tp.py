@@ -11,7 +11,7 @@ recommend_type = 'tp'
 
 def execute(start_date='', end_date=''):
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['recommend_at', 'code_id', 'ts_code', 'name', 'up_pdm_sum',
+    recommend_stocks = pd.DataFrame(columns=['recommend_at', 'code_id', 'ts_code', 'name', 'down_pdm_sum', 'up_pdm_sum',
                                              'up_ratio', 'up_pct_sum', 'down_pct_sum', 'pca_chg',
                                              'hold_at',
                                              ])
@@ -43,6 +43,7 @@ def execute(start_date='', end_date=''):
             up_ratio = up_pca_len / (up_pca_len + down_pca_len)
 
             up_pdm_sum = up_pca['pca_diff_mean'].sum()
+            down_pdm_sum = down_pca['pca_diff_mean'].sum()
 
             down_pct = group_data[group_data['pct_chg'] < 0]
             up_pct = group_data[group_data['pct_chg'] >= 0]
@@ -52,7 +53,7 @@ def execute(start_date='', end_date=''):
             holding = 0
             # 一、升多跌少，标准门槛：4天上升，1天下降
             # 二、稳升急跌，升的总值不多，但是次数多。跌的次数虽然少，但跌的总和最少12个点
-            if up_ratio > 0.75 and down_pct_sum < -11 and up_pct_sum < 35:
+            if up_ratio >= 0.6 and down_pct_sum < -11 and up_pct_sum < 36.2:
                 DB.insert_focus_stocks(code_id=code_id,
                                        star_idx=0,
                                        predict_rose=log.pca_mean,
@@ -73,19 +74,18 @@ def execute(start_date='', end_date=''):
                         'ts_code': log.ts_code,
                         'name': log.ts_name,
                         'up_pdm_sum': int(round(up_pdm_sum)),
+                        'down_pdm_sum': int(round(down_pdm_sum)),
                         'up_ratio': round(up_ratio, 2),
                         'up_pct_sum': int(round(up_pct_sum)),
                         'down_pct_sum': int(round(down_pct_sum)),
                         'pca_chg': round(log.pct_chg, 1),
                         'hold_at': hold_at,
-
-
                     }
                 recommend_stocks.loc[i] = content
                 i += 1
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['hold_at', 'recommend_at', 'up_pdm_sum', 'up_ratio', 'up_pct_sum', 'down_pct_sum'],
-                                     ascending=[False, False, False, False, True, False], inplace=True)
+        recommend_stocks.sort_values(by=['down_pdm_sum', 'hold_at', 'recommend_at', 'up_pdm_sum', 'up_ratio', 'up_pct_sum', 'down_pct_sum'],
+                                     ascending=[False, False, False, True, False, True, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
