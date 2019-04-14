@@ -55,7 +55,7 @@ def execute(start_date='', end_date=''):
             holding = 0
             # 一、升多跌少，标准门槛：4天上升，1天下降
             # 二、稳升急跌，升的总值不多，但是次数多。跌的次数虽然少，但跌的总和最少12个点
-            if up_ratio >= 0.6 and down_pct_sum < -11 and up_pct_sum < 36.2 and up_pct_sum > -2000:
+            if up_ratio >= 0.6 and down_pct_sum < -11 and up_pct_sum < 36.2 and up_pct_sum < -2000:
                 DB.insert_focus_stocks(code_id=code_id,
                                        star_idx=0,
                                        predict_rose=log.pca_mean,
