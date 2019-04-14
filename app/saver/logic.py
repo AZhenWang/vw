@@ -203,6 +203,18 @@ class DB(object):
         return code_list
 
     @classmethod
+    def get_code_list_before_date(cls, min_list_date=''):
+        code_list = pd.read_sql(
+            sa.text(' select sb.id as code_id from stock_basic sb'
+                    ' where sb.list_date<=:mld and sb.list_status = :ls'
+                    ),
+            cls.engine,
+            params={'ls': 'L', 'mld': str(min_list_date)}
+        )
+
+        return code_list
+
+    @classmethod
     def get_existed_codes(cls, table_name, date_id):
         existed_codes = pd.read_sql(
             sa.text(
