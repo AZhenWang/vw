@@ -55,8 +55,6 @@ def execute(start_date='', end_date=''):
             holding = 0
             # 一、升多跌少，标准门槛：4天上升，1天下降
             # 二、稳升急跌，升的总值不多，但是次数多。跌的次数虽然少，但跌的总和最少12个点
-            print(up_ratio, down_pct_sum, up_pct_sum, up_pdm_sum)
-            print(up_ratio >= 0.6, down_pct_sum < -11,  up_pct_sum < 36.2,  up_pdm_sum > -2000)
             if up_ratio >= 0.6 and down_pct_sum < -11 and up_pct_sum < 36.2 and up_pdm_sum > -2000:
                 DB.insert_focus_stocks(code_id=code_id,
                                        star_idx=0,
@@ -65,9 +63,9 @@ def execute(start_date='', end_date=''):
                                        recommended_date_id=recommended_date_id,
                                        )
                 if (group_data.iloc[-1]['pca_mean'] < group_data.iloc[-2]['pca_mean'] \
-                    and group_data.iloc[-1]['pca_diff_mean'] > group_data.iloc[-1]['pca_diff_std'] * 0.4) \
-                        or (group_data.iloc[-1]['pca_mean'] > group_data.iloc[-2]['pca_mean']
-                            and group_data.iloc[-1]['pca_diff_mean'] < 0 and group_data.iloc[-2]['pca_diff_mean'] > 0 ):
+                    and group_data.iloc[-1]['pca_diff_mean'] > group_data.iloc[-1]['pca_diff_std'] * 0.9):
+                    # or (group_data.iloc[-1]['pca_mean'] > group_data.iloc[-2]['pca_mean']
+                    #     and group_data.iloc[-1]['pca_diff_mean'] < 0 and group_data.iloc[-2]['pca_diff_mean'] > 0)
                     holding = 1
                     hold_at = group_data.iloc[-1]['cal_date']
                 if holding > 0:
