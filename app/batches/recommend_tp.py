@@ -26,6 +26,7 @@ def execute(start_date='', end_date=''):
         logs = DB.get_tp_logs(start_date_id=start_date_id, end_date_id=end_date_id)
         gp = logs.groupby('code_id')
         for code_id, group_data in gp:
+            print('code_id=', code_id)
             if group_data.empty:
                 continue
             recommended_date_id = group_data.iloc[-1]['date_id']
@@ -89,7 +90,7 @@ def execute(start_date='', end_date=''):
                     recommend_stocks.loc[i] = content
                     i += 1
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['pdm_ratio', 'recommend', 'down_pdm_sum',  'up_pdm_sum', 'up_ratio', 'up_pct_sum', 'down_pct_sum'],
+        recommend_stocks.sort_values(by=['up_ratio', 'recommend', 'down_pdm_sum',  'up_pdm_sum', 'pdm_ratio', 'up_pct_sum', 'down_pct_sum'],
                                      ascending=[False, False, False, False, False, True, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
