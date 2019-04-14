@@ -25,9 +25,11 @@ def execute(start_date='', end_date=''):
 
     cal_length = len(trade_cal)
     codes = DB.get_latestopendays_code_list(
-        latest_open_days=365*5, date_id=trade_cal.iloc[0]['date_id'])
+        latest_open_days=period, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [432]
+    # code_ids = [1475]
+    # code_ids = [238, 462, 2756, 2274, 2308, 1481]
+    # 238: 东方电子，462：豫能控股， 2756：红阳能源， 2274：莲花健康， 2308：天津松江
     for code_id in code_ids:
         print('code_id=', code_id)
         new_rows = pd.DataFrame(columns=fields_map['tp_logs'])
@@ -79,11 +81,11 @@ def execute(start_date='', end_date=''):
                 'diff': round(diff, 2),
                 'mean': round(mean, 2),
                 'std': round(std, 2),
-                'pca_diff': round(pca_diff, 2),
-                'pca_mean': round(pca_mean, 2),
-                'pca_std': round(pca_std, 2),
-                'pca_diff_mean': round(pca_diff_mean, 2),
-                'pca_diff_std': round(pca_diff_std, 2),
+                'pca_diff': round(pca_diff, 3),
+                'pca_mean': round(pca_mean, 3),
+                'pca_std': round(pca_std, 3),
+                'pca_diff_mean': round(pca_diff_mean, 3),
+                'pca_diff_std': round(pca_diff_std, 3),
             }
             k += 1
         if not new_rows.empty:
