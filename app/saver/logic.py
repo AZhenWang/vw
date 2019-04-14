@@ -685,7 +685,7 @@ class DB(object):
     def get_tp_logs(cls, code_id='', start_date_id='', end_date_id=''):
         if code_id == '':
             logs = pd.read_sql(
-                sa.text(' select sb.name as ts_name, sb.ts_code, tl.*, d.pct_chg from tp_logs tl '
+                sa.text(' select sb.name as ts_name, sb.ts_code, tl.diff as pca_diff, tl.*, d.pct_chg from tp_logs tl '
                         ' left join daily d on d.code_id = tl.code_id and d.date_id = tl.date_id '
                         ' left join stock_basic sb on sb.id = tl.code_id'
                         ' where tl.date_id between :sdi and :edi'
@@ -697,7 +697,7 @@ class DB(object):
             )
         else:
             logs = pd.read_sql(
-                sa.text(' select  sb.name as ts_name, sb.ts_code, tl.*, d.pct_chg from tp_logs tl '
+                sa.text(' select  sb.name as ts_name, sb.ts_code, tl.diff as pca_diff, tl.*, d.pct_chg from tp_logs tl '
                         ' left join daily d on d.code_id = tl.code_id and d.date_id = tl.date_id '
                         ' left join stock_basic sb on sb.id = tl.code_id'
                         ' where tl.code_id = :code_id'
