@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
         trade_cal = DB.get_open_cal_date(period=20, end_date=cal_date)
         end_date_id = trade_cal.iloc[-1]['date_id']
         start_date_id = trade_cal.iloc[0]['date_id']
-        logs = DB.get_tp_logs(code_id='694', start_date_id=start_date_id, end_date_id=end_date_id)
+        logs = DB.get_tp_logs(start_date_id=start_date_id, end_date_id=end_date_id)
         gp = logs.groupby('code_id')
         for code_id, group_data in gp:
             print('code_id=', code_id)
