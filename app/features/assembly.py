@@ -101,7 +101,6 @@ class Assembly(object):
     def pack_features(self, code_id):
         self.code_id = code_id
         data = DB.get_code_info(code_id=code_id, start_date=init_date, end_date=self.end_date)
-        print('data=', data)
         data = data[data['vol'] != 0]
 
         Adj_close = data['close'] * data['adj_factor']
