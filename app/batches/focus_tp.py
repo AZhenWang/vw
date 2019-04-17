@@ -6,7 +6,7 @@ import pandas as pd
 from app.saver.tables import fields_map
 
 # 向前预测时间长度
-predict_len = 60
+predict_len = 6
 n_components = 2
 pre_predict_interval = 5
 
@@ -26,7 +26,7 @@ def execute(start_date='', end_date=''):
     cal_length = len(trade_cal)
     codes = DB.get_code_list_before_date(min_list_date=first_date,)
     code_ids = codes['code_id']
-    # code_ids = [694]
+    # code_ids = [2772]
     # code_ids = [238, 462, 2756, 2274, 2308, 1481]
     # 238: 东方电子，462：豫能控股， 2756：红阳能源， 2274：莲花健康， 2308：天津松江
     for code_id in code_ids:
@@ -52,7 +52,9 @@ def execute(start_date='', end_date=''):
 
             Y = dailys[k:i+1]
 
-            predict_Y = tp_model.run(y=Y, fs=0.3, predict_len=predict_len)
+            predict_Y = tp_model.run(y=Y, fs=0.32, predict_len=predict_len)
+            if np.sum(predict_Y) == 0:
+                break
             today_v = predict_Y[0]
             tomorrow_v = predict_Y[1]
             diffs = (predict_Y - today_v) * 100/abs(today_v)
@@ -60,7 +62,11 @@ def execute(start_date='', end_date=''):
             std = np.std(diffs)
             diff = (tomorrow_v - today_v) * 100/abs(today_v)
 
-            pca_0 = pca_features.col_0[prices.index <= date_id]
+            # print('pca_features.col_0=', pca_features.col_0)
+            # print('prices.index=', prices.index)
+            # print('date_id=', date_id)
+            pca_0 = pca_features.col_0[prices.index <= date_id][k:]
+            # print('pca_0=', pca_0)
             predict_pca_0 = tp_model.run(y=pca_0, predict_len=predict_len)
             today_pca = predict_pca_0[0]
             tomorrow_pca = predict_pca_0[1]
@@ -70,6 +76,9 @@ def execute(start_date='', end_date=''):
             pca_diff_mean = np.mean(pca_diffs)
             pca_diff_std = np.std(pca_diffs)
             pca_diff = tomorrow_pca - today_pca
+            pca_max = np.max(predict_pca_0[1:])
+            # print('predict_pca_0=', predict_pca_0)
+            # os.exit
 
             new_rows.loc[i] = {
                 'cal_date': cal_date,
@@ -82,9 +91,10 @@ def execute(start_date='', end_date=''):
                 'std': round(std, 2),
                 'pca_diff': round(pca_diff, 3),
                 'pca_mean': round(pca_mean, 3),
-                'pca_std': round(pca_std, 3),
+                'pca_max': round(pca_max, 2),
+                # 'pca_std': round(pca_std, 2),
                 'pca_diff_mean': round(pca_diff_mean, 3),
-                'pca_diff_std': round(pca_diff_std, 3),
+                'pca_diff_std': round(pca_diff_std, 2),
             }
             k += 1
         if not new_rows.empty:
