@@ -63,9 +63,9 @@ def execute(start_date='', end_date=''):
                                        recommended_date_id=recommended_date_id,
                                        )
                 if (group_data.iloc[-1]['pca_mean'] < group_data.iloc[-2]['pca_mean'] \
-                    and group_data.iloc[-1]['pca_diff_mean'] > group_data.iloc[-1]['pca_diff_std']):
-                    # or (group_data.iloc[-1]['pca_mean'] > group_data.iloc[-2]['pca_mean']
-                    #     and group_data.iloc[-1]['pca_diff_mean'] < 0 and group_data.iloc[-2]['pca_diff_mean'] > 0)
+                    and group_data.iloc[-1]['pca_diff_mean'] > group_data.iloc[-1]['pca_diff_std']) \
+                    or (group_data.iloc[-1]['pca_mean'] > group_data.iloc[-2]['pca_mean'] \
+                        and group_data.iloc[-1]['pca_diff_mean'] < 0 and group_data.iloc[-2]['pca_diff_mean'] > 0):
                     holding = 1
                     hold_at = group_data.iloc[-1]['cal_date']
                 if holding > 0:
