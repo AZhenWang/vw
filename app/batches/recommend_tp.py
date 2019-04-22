@@ -11,8 +11,8 @@ recommend_type = 'tp'
 
 def execute(start_date='', end_date=''):
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['recommend', 'code_id', 'ts_code', 'name', 'diff', 'down_pdm_sum', 'up_pdm_sum',
-                                              'up_pct_sum', 'down_pct_sum', 'up_ratio', 'pdm',
+    recommend_stocks = pd.DataFrame(columns=['recommend', 'code_id', 'ts_code', 'name', 'diff', 'up_ratio', 'down_pdm_sum', 'up_pdm_sum',
+                                              'up_pct_sum', 'down_pct_sum', 'pdm',
                                              'pdm_ratio', 'yes_pct_chg', 'pct_chg', 'pca_max',
                                              'hold',
                                              ])
@@ -76,7 +76,7 @@ def execute(start_date='', end_date=''):
                             'code_id': code_id,
                             'ts_code': log.ts_code,
                             'name': log.ts_name,
-                            'diff': log.diff,
+                            'diff': log.tp_diff,
                             'up_pdm_sum': int(round(up_pdm_sum)),
                             'down_pdm_sum': int(round(down_pdm_sum)),
                             'up_ratio': round(up_ratio, 2),
