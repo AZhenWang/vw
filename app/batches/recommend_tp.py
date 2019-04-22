@@ -11,7 +11,7 @@ recommend_type = 'tp'
 
 def execute(start_date='', end_date=''):
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['recommend', 'code_id', 'ts_code', 'name', 'down_pdm_sum', 'up_pdm_sum',
+    recommend_stocks = pd.DataFrame(columns=['recommend', 'code_id', 'ts_code', 'name', 'diff', 'down_pdm_sum', 'up_pdm_sum',
                                               'up_pct_sum', 'down_pct_sum', 'up_ratio', 'pdm',
                                              'pdm_ratio', 'yes_pct_chg', 'pct_chg', 'pca_max',
                                              'hold',
@@ -76,6 +76,7 @@ def execute(start_date='', end_date=''):
                             'code_id': code_id,
                             'ts_code': log.ts_code,
                             'name': log.ts_name,
+                            'diff': log.diff,
                             'up_pdm_sum': int(round(up_pdm_sum)),
                             'down_pdm_sum': int(round(down_pdm_sum)),
                             'up_ratio': round(up_ratio, 2),
@@ -91,8 +92,8 @@ def execute(start_date='', end_date=''):
                     recommend_stocks.loc[i] = content
                     i += 1
     if not recommend_stocks.empty:
-        recommend_stocks.sort_values(by=['up_ratio', 'recommend', 'down_pdm_sum',  'up_pdm_sum', 'pdm_ratio', 'up_pct_sum', 'down_pct_sum'],
-                                     ascending=[False, False, False, False, False, True, False], inplace=True)
+        recommend_stocks.sort_values(by=['diff', 'up_ratio', 'recommend', 'down_pdm_sum',  'up_pdm_sum', 'pdm_ratio', 'up_pct_sum', 'down_pct_sum'],
+                                     ascending=[False, False, False, False, False, False, True, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
