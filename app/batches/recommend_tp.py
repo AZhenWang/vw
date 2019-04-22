@@ -12,8 +12,7 @@ recommend_type = 'tp'
 def execute(start_date='', end_date=''):
     msgs = []
     recommend_stocks = pd.DataFrame(columns=['recommend', 'code_id', 'ts_code', 'name', 'diff', 'up_ratio', 'down_pdm_sum', 'up_pdm_sum',
-                                              'up_pct_sum', 'down_pct_sum', 'pdm',
-                                             'pdm_ratio', 'yes_pct_chg', 'pct_chg', 'pca_max',
+                                              'up_pct_sum', 'down_pct_sum', 'pdm', 'pd_std', 'pct_chg',
                                              'hold',
                                              ])
 
@@ -83,10 +82,8 @@ def execute(start_date='', end_date=''):
                             'up_pct_sum': int(round(up_pct_sum)),
                             'down_pct_sum': int(round(down_pct_sum)),
                             'pdm': round(group_data.iloc[-1]['pca_diff_mean'], 2),
-                            'pdm_ratio': round(group_data.iloc[-2]['pca_diff_mean'] / group_data.iloc[-1]['pca_diff_mean'], 2),
-                            'yes_pct_chg': round(group_data.iloc[-2]['pct_chg'], 1),
+                            'pd_std': round(group_data.iloc[-1]['pca_diff_std'], 2),
                             'pct_chg': round(log.pct_chg, 1),
-                            'pca_max': log.pca_max,
                             'hold': hold_at,
                         }
                     recommend_stocks.loc[i] = content
