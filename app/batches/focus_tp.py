@@ -26,7 +26,7 @@ def execute(start_date='', end_date=''):
     cal_length = len(trade_cal)
     codes = DB.get_code_list_before_date(min_list_date=first_date,)
     code_ids = codes['code_id']
-    # code_ids = [563]
+    # code_ids = [2756]
     # code_ids = [1475,  2756]
     # 238: 东方电子，462：豫能控股， 2756：红阳能源， 2274：莲花健康， 2308：天津松江
     for code_id in code_ids:
