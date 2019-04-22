@@ -90,7 +90,7 @@ def execute(start_date='', end_date=''):
                     i += 1
     if not recommend_stocks.empty:
         recommend_stocks.sort_values(by=['diff', 'up_ratio', 'recommend', 'down_pdm_sum',  'up_pdm_sum', 'up_pct_sum', 'down_pct_sum'],
-                                     ascending=[False, False, False, False, False, False, True, False], inplace=True)
+                                     ascending=[False, False, False, False, False, True, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
