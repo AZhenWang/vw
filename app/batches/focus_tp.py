@@ -4,9 +4,10 @@ from app.models.pca import Pca
 import numpy as np
 import pandas as pd
 from app.saver.tables import fields_map
+import matplotlib.pyplot as plt
 
 # 向前预测时间长度
-predict_len = 6
+predict_len = 8
 n_components = 2
 pre_predict_interval = 5
 
@@ -26,7 +27,7 @@ def execute(start_date='', end_date=''):
     cal_length = len(trade_cal)
     codes = DB.get_code_list_before_date(min_list_date=first_date,)
     code_ids = codes['code_id']
-    # code_ids = [2756]
+    # code_ids = [462]
     # code_ids = [1475,  2756]
     # 238: 东方电子，462：豫能控股， 2756：红阳能源， 2274：莲花健康， 2308：天津松江
     for code_id in code_ids:
@@ -53,13 +54,14 @@ def execute(start_date='', end_date=''):
             Y = dailys[k:i+1]
 
             predict_Y = tp_model.run(y=Y, fs=0.32, predict_len=predict_len)
+
             if np.sum(predict_Y) == 0:
                 break
             today_v = predict_Y[0]
             tomorrow_v = predict_Y[1]
             diffs = (predict_Y - today_v) * 100/abs(today_v)
             mean = np.mean(diffs)
-            std = np.std(diffs)
+            # std = np.std(diffs)
             diff = (tomorrow_v - today_v) * 100/abs(today_v)
 
             # print('pca_features.col_0=', pca_features.col_0)
@@ -68,15 +70,19 @@ def execute(start_date='', end_date=''):
             pca_0 = pca_features.col_0[prices.index <= date_id][k:]
             # print('pca_0=', pca_0)
             predict_pca_0 = tp_model.run(y=pca_0, predict_len=predict_len)
+            # plt.plot(range(len(predict_pca_0)), predict_pca_0)
+            # plt.show()
+            # return
             today_pca = predict_pca_0[0]
             tomorrow_pca = predict_pca_0[1]
             pca_diffs = (predict_pca_0 - today_pca) * 100 / abs(today_pca)
-            pca_mean = np.mean(predict_pca_0)
-            pca_std = np.std(predict_pca_0)
+            pca_mean = np.mean(predict_pca_0[1:8])
+            # pca_std = np.std(predict_pca_0)
+            std = np.max(predict_pca_0[1:8]) - today_pca
             pca_diff_mean = np.mean(pca_diffs)
             pca_diff_std = np.std(pca_diffs)
             pca_diff = tomorrow_pca - today_pca
-            pca_max = np.max(predict_pca_0[1:])
+            pca_min = np.min(predict_pca_0[1:8])
             # print('predict_pca_0=', predict_pca_0)
             # os.exit
 
@@ -91,7 +97,7 @@ def execute(start_date='', end_date=''):
                 'std': round(std, 2),
                 'pca_diff': round(pca_diff, 3),
                 'pca_mean': round(pca_mean, 3),
-                'pca_max': round(pca_max, 2),
+                'pca_min': round(pca_min, 3),
                 # 'pca_std': round(pca_std, 2),
                 'pca_diff_mean': round(pca_diff_mean, 3),
                 'pca_diff_std': round(pca_diff_std, 2),

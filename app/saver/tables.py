@@ -60,7 +60,7 @@ fields_map = {
     ],
     'tp_logs': [
         'cal_date', 'date_id', 'code_id', 'today_v', 'tomorrow_v',
-        'diff', 'mean', 'std', 'pca_diff', 'pca_mean', 'pca_max', 'pca_diff_mean', 'pca_diff_std'
+        'diff', 'mean', 'std', 'pca_diff', 'pca_mean', 'pca_min', 'pca_diff_mean', 'pca_diff_std'
     ],
     'pool': [
         'code_id',

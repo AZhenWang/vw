@@ -393,7 +393,7 @@ class DB(object):
                     ' left join trade_cal tc on tc.id = cv.date_id'
                     ' where cv.code_id = :ci and cv.feature_group_number = :gn and cv.classifier_id = :classifier_id'), cls.engine,
             params={'ci': code_id, 'gn': group_number, 'classifier_id': classifier_id})
-        existed_classified_v.set_index('date_id', inplace=True, drop=False)
+        existed_classified_v = existed_classified_v.set_index('date_id', drop=False)
         return existed_classified_v
 
     @classmethod

@@ -31,7 +31,7 @@ class Knn(Interface):
         self.sample_interval = sample_interval
         self.pre_predict_interval = pre_predict_interval
         self.memory_size = memory_size
-        self.feature_assembly = Assembly(end_date=self.end_date, sample_interval=self.sample_interval,
+        self.feature_assembly = Assembly(end_date=self.end_date,
                                          pre_predict_interval=self.pre_predict_interval)
 
         if single_code_id == '':
@@ -68,7 +68,6 @@ class Knn(Interface):
                 old_classified_v = existed_classified_v[
                     existed_classified_v['date_id'].isin(trade_dates)]
                 new_dates = trade_dates[~trade_dates.isin(existed_classified_v['date_id'])]
-
                 if not new_dates.empty:
                     new_classified_v = pd.DataFrame(columns=fields_map['classified_v'])
                     for predict_date_id in new_dates:
@@ -96,16 +95,11 @@ class Knn(Interface):
 
                         new_classified_v.iloc[-1, -3] = str(round(score, 3))
                         new_classified_v.iloc[-1, -2] = str(round(cum_return, 3))
-                        new_classified_v.iloc[-1, -1] = holdings[-1]
+                        new_classified_v.holding = holdings
 
-                    if self.store:
                         if not new_classified_v.empty:
                             DB.batch_delete_classified_v(expired_classified_v['id'])
                             new_classified_v.to_sql('classified_v', DB.engine, index=False, if_exists='append', chunksize=1000)
-                    else:
-                        new_rows = old_classified_v.append(new_classified_v)
-                        new_rows.sort_index(inplace=True)
-                        return new_rows
 
     def knn_predict(self, X, Y, predict_idx):
         """predict one date by knn algorithm
