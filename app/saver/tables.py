@@ -13,6 +13,12 @@ fields_map = {
     'adj_factor': [
         'date_id', 'code_id', 'adj_factor',
     ],
+    'moneyflow': [
+        'date_id', 'code_id', 'buy_sm_vol', 'buy_sm_amount', 'sell_sm_vol', 'sell_sm_amount', 'buy_md_vol', 'buy_md_amount',
+        'sell_md_vol', 'sell_md_amount',  'buy_lg_vol', 'buy_lg_amount', 'sell_lg_vol', 'sell_lg_amount',
+        'buy_elg_vol', 'buy_elg_amount', 'sell_elg_vol', 'sell_elg_amount', 'net_mf_vol', 'net_mf_amount'
+    ],
+
     'stock_basic': [
         'ts_code', 'name', 'area', 'industry', 'market',
         'curr_type', 'list_status', 'list_date', 'delist_date', 'is_hs',
@@ -36,11 +42,6 @@ fields_map = {
         'r2_score', 'cum_return', 'holding'
     ],
 
-    # 股票预测
-    'recommend_stocks': [
-        'date_id', 'code_id', 'recommend_type', 'star_idx', 'average', 'qqb', 'moods', 'flag',
-        'pre4_sum', 'pre40_sum', 'pre40_positive_mean', 'pre40_negative_mean'
-    ],
 
     # 指数
     'index_basic': [
@@ -54,16 +55,23 @@ fields_map = {
         'index_id', 'date_id', 'total_mv', 'float_mv', 'total_share', 'float_share', 'free_share',
         'turnover_rate', 'turnover_rate_f', 'pe', 'pe_ttm', 'pb'
     ],
+
+
+    # 股票预测
+    'recommend_stocks': [
+        'date_id', 'code_id', 'recommend_type', 'star_idx', 'average', 'qqb', 'moods', 'flag',
+        'pre4_sum', 'pre40_sum', 'pre40_positive_mean', 'pre40_negative_mean'
+    ],
+
     'focus_stocks': [
         'code_id', 'star_idx', 'predict_rose', 'recommend_type',
         'recommended_date_id', 'closed_date_id', 'holding_date_id', 'star_count'
     ],
     'tp_logs': [
-        'cal_date', 'date_id', 'code_id', 'today_v', 'tomorrow_v',
+        'date_id', 'code_id', 'today_v', 'tomorrow_v',
         'diff', 'mean', 'std', 'pca_diff', 'pca_mean', 'pca_min', 'pca_diff_mean', 'pca_diff_std'
     ],
     'pool': [
         'code_id',
     ],
-
 }

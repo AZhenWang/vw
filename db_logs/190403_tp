@@ -2,7 +2,6 @@ create table tp_logs(
    id INT NOT NULL AUTO_INCREMENT,
    code_id INT NOT NULL,
    date_id INT NOT NULL,
-   cal_date INT NOT  NULL,
    today_v FLOAT NULL comment'今天波动值',
    tomorrow_v FLOAT NULL comment'明天波动值',
    diff FLOAT NULL comment'明天与今天的比率',
