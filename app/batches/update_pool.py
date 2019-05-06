@@ -14,8 +14,8 @@ def execute(start_date='', end_date=''):
     :param end_date:
     :return:
     """
-    period = 5
+    period = 7
     trade_cal = DB.get_open_cal_date(end_date=end_date, period=period)
     start_date_id = trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
-    DB.update_pool(start_date_id, end_date_id=end_date_id)
+    DB.update_pool(start_date_id, end_date_id=end_date_id, recommend_type='rs')

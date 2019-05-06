@@ -13,7 +13,7 @@ recommend_type = 'rs'
 def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     today_date_id = trade_cal.iloc[-1]['date_id']
-    end_date_id = trade_cal.iloc[-5]['date_id']
+    end_date_id = trade_cal.iloc[-4]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['star_idx'] >= 1]
@@ -34,6 +34,7 @@ def execute(start_date='', end_date=''):
         grand_pre_date_id = pre_trade_cal.iloc[0]['date_id']
         next_date_id = after_trade_cal.iloc[1]['date_id']
         big_next_date = after_trade_cal.iloc[-1]['cal_date']
+        market = []
         data = DB.count_threshold_group_by_date_id(start_date_id=grand_pre_date_id, end_date_id=next_date_id)
         data.eval('up_stock_ratio=up_stock_number/list_stock_number*100', inplace=True)
         data['up_stock_ratio'] = data['up_stock_ratio'].apply(np.round, decimals=2)
@@ -64,21 +65,21 @@ def execute(start_date='', end_date=''):
                             predict_rose = (np.floor(recommended_daily.at[0, 'pct_chg'])) * 10
 
             if predict_rose > 0:
-                # 20天内已经有提示的，此时就不再提示
-                pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=20)
-
-                latestfocus_logs = DB.get_stock_focus_logs(code_id=code_id, start_date_id=pre_trade_cal.iloc[0]['date_id'],
-                                                           end_date_id=pre_trade_cal.iloc[-2]['date_id'],
-                                                           star_idx=logs.iloc[i]['star_idx'], recommend_type='pca')
-                if latestfocus_logs.holding_date_id.any():
-                    predict_rose = 0
-                else:
-                    DB.insert_focus_stocks(code_id=code_id,
-                                           star_idx=logs.iloc[i]['star_idx'],
-                                           predict_rose=predict_rose,
-                                           recommend_type=recommend_type,
-                                           recommended_date_id=recommended_date_id,
-                                           )
+                # # 20天内已经有提示的，此时就不再提示
+                # pre_trade_cal = DB.get_open_cal_date_by_id(end_date_id=recommended_date_id, period=20)
+                #
+                # latestfocus_logs = DB.get_stock_focus_logs(code_id=code_id, start_date_id=pre_trade_cal.iloc[0]['date_id'],
+                #                                            end_date_id=pre_trade_cal.iloc[-2]['date_id'],
+                #                                            star_idx=logs.iloc[i]['star_idx'], recommend_type='pca')
+                # if latestfocus_logs.holding_date_id.any():
+                #     predict_rose = 0
+                # else:
+                DB.insert_focus_stocks(code_id=code_id,
+                                       star_idx=logs.iloc[i]['star_idx'],
+                                       predict_rose=predict_rose,
+                                       recommend_type=recommend_type,
+                                       recommended_date_id=recommended_date_id,
+                                       )
         else:
             predict_rose = focus_log.at[0, 'predict_rose']
             pre_pct_chg_sum = focus_log.at[0, 'pre_pct_chg_sum']
@@ -111,7 +112,7 @@ def execute(start_date='', end_date=''):
                                               holding_date_id=holding_date_id)
                     break
 
-            if send and len(big_later_dailys) > 0:
+            if send:
                 star_count = DB.count_recommend_star(code_id=code_id, start_date_id=recommended_date_id,
                                                      end_date_id=date_id, star_idx=logs.iloc[i]['star_idx'],
                                                      recommend_type='pca')

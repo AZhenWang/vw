@@ -283,10 +283,14 @@ class DB(object):
         if start_date == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor FROM  daily d '
+                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor, '
+                    ' mf.buy_elg_vol, mf.sell_elg_vol, mf.buy_lg_vol, mf.sell_lg_vol,'
+                    ' mf.buy_md_vol, mf.sell_md_vol, mf.buy_sm_vol, mf.sell_sm_vol '
+                    ' FROM  daily d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
+                    ' left join moneyflow mf on mf.code_id = d.code_id and mf.date_id = d.date_id'
                     ' where d.code_id = :code_id and tc.cal_date <= :ed'
                     ' order by tc.cal_date desc '
                     ' limit :period'),
@@ -296,10 +300,14 @@ class DB(object):
         elif end_date == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor FROM  daily d '
+                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor, '
+                    ' mf.buy_elg_vol, mf.sell_elg_vol, mf.buy_lg_vol, mf.sell_lg_vol,'
+                    ' mf.buy_md_vol, mf.sell_md_vol, mf.buy_sm_vol, mf.sell_sm_vol '
+                    ' FROM  daily d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
+                    ' left join moneyflow mf on mf.code_id = d.code_id and mf.date_id = d.date_id'
                     ' where d.code_id = :code_id and tc.cal_date >= :sd'
                     ' order by tc.cal_date desc '
                     ' limit :period'),
@@ -309,10 +317,14 @@ class DB(object):
         else:
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor FROM daily d '
+                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor,'
+                    ' mf.buy_elg_vol, mf.sell_elg_vol, mf.buy_lg_vol, mf.sell_lg_vol,'
+                    ' mf.buy_md_vol, mf.sell_md_vol, mf.buy_sm_vol, mf.sell_sm_vol '
+                    ' FROM daily d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
+                    ' left join moneyflow mf on mf.code_id = d.code_id and mf.date_id = d.date_id'
                     ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed '
                     ' order by tc.cal_date desc '),
                 cls.engine,
@@ -681,17 +693,25 @@ class DB(object):
                           params=[str(date_id), str(code_id)])
 
     @classmethod
-    def update_pool(cls, start_date_id, end_date_id):
+    def update_pool(cls, start_date_id, end_date_id, recommend_type=''):
         pd.io.sql.execute(' truncate pool',
                           cls.engine)
+        # pd.io.sql.execute(' insert into pool (code_id) '
+        #                   ' ( select distinct tl.code_id from tp_logs tl'
+        #                   '   left join stock_basic sb on sb.id = tl.code_id '
+        #                   '   where tl.diff > 0 and tl.pca_mean > 0.1'
+        #                   '   and sb.name not like "%ST%"'
+        #                   '   and tl.date_id between %s and %s order by tl.diff desc, tl.pca_mean desc)',
+        #                   cls.engine,
+        #                   params=[str(start_date_id), str(end_date_id)])
         pd.io.sql.execute(' insert into pool (code_id) '
-                          ' ( select distinct tl.code_id from tp_logs tl'
-                          '   left join stock_basic sb on sb.id = tl.code_id '
-                          '   where tl.diff > 0 and tl.pca_mean > 0.1'
-                          '   and sb.name not like "%ST%"'
-                          '   and tl.date_id between %s and %s order by tl.diff desc, tl.pca_mean desc)',
+                          ' ( select distinct fs.code_id from focus_stocks fs'
+                          '   left join stock_basic sb on sb.id = fs.code_id '
+                          '   where fs.recommended_date_id >= %s and fs.recommended_date_id <= %s'
+                          '   and fs.recommend_type = %s and fs.closed_date_id is null'
+                          '   and sb.name not like "%ST%")',
                           cls.engine,
-                          params=[str(start_date_id), str(end_date_id)])
+                          params=[str(start_date_id), str(end_date_id), recommend_type])
 
     @classmethod
     def get_tp_logs(cls, code_id='', start_date_id='', end_date_id=''):
