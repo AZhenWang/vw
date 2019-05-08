@@ -34,6 +34,8 @@ def execute(start_date='', end_date=''):
     # 238: 东方电子，462：豫能控股， 2756：红阳能源， 2274：莲花健康， 2308：天津松江
     for code_id in code_ids:
         print('code_id=', code_id)
+        if code_id < 775:
+            continue
         new_rows = pd.DataFrame(columns=fields_map['tp_logs'])
         dailys_data = DB.get_code_info(code_id=code_id, start_date=first_date, end_date=end_date)
         if dailys_data.empty:
