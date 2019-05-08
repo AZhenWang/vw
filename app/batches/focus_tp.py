@@ -27,15 +27,17 @@ def execute(start_date='', end_date=''):
     full_cal = DB.get_cal_date(start_date=first_date, end_date=end_date)
 
     cal_length = len(trade_cal)
-    codes = DB.get_code_list_before_date(min_list_date=first_date,)
-    code_ids = codes['code_id']
-    # code_ids = [213]
+    # codes = DB.get_code_list_before_date(min_list_date=first_date,)
+    # code_ids = codes['code_id']
+    code_ids = [19]
     # code_ids = [1475,  2756]
     # 238: 东方电子，462：豫能控股， 2756：红阳能源， 2274：莲花健康， 2308：天津松江
     for code_id in code_ids:
         print('code_id=', code_id)
         new_rows = pd.DataFrame(columns=fields_map['tp_logs'])
         dailys_data = DB.get_code_info(code_id=code_id, start_date=first_date, end_date=end_date)
+        if dailys_data.empty:
+            continue
         dailys = dailys_data['close'] * dailys_data['adj_factor']
         dailys.name = 'close'
         # data = pd.DataFrame(full_cal['date_id'], columns=['date_id'])
