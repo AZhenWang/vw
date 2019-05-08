@@ -95,7 +95,7 @@ def execute(start_date='', end_date=''):
                 later_daily = big_later_dailys.iloc[j]
                 date_id = big_later_dailys.index[j]
                 later_recommend_log = DB.get_recommend_log(code_id=code_id, date_id=date_id, recommend_type='pca')
-                if later_daily['close'] < recommended_daily.at[0, 'open'] * 0.99:
+                if later_daily['close'] < recommended_daily.at[0, 'close']:
                     closed_date_id = date_id
                     send = False
                     DB.update_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id,
