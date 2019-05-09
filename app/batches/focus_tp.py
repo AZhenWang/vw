@@ -19,8 +19,7 @@ def execute(start_date='', end_date=''):
     :param end_date:
     :return:
     """
-    # period = 365*18
-    period = 20
+    period = 365*18
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     pre_cal = DB.get_cal_date(end_date=start_date, limit=period)
     first_date = pre_cal.iloc[0]['cal_date']
@@ -29,13 +28,11 @@ def execute(start_date='', end_date=''):
     cal_length = len(trade_cal)
     codes = DB.get_code_list_before_date(min_list_date=first_date,)
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [213]
     # code_ids = [1475,  2756]
     # 238: 东方电子，462：豫能控股， 2756：红阳能源， 2274：莲花健康， 2308：天津松江
     for code_id in code_ids:
         print('code_id=', code_id)
-        if code_id < 775:
-            continue
         new_rows = pd.DataFrame(columns=fields_map['tp_logs'])
         dailys_data = DB.get_code_info(code_id=code_id, start_date=first_date, end_date=end_date)
         if dailys_data.empty:
@@ -74,6 +71,7 @@ def execute(start_date='', end_date=''):
             DB.delete_tp_log(code_id=code_id, date_id=date_id)
 
             Y = dailys[k:i+1]
+            print(Y)
             # Y = dailys[dailys['date_id'] <= date_id]['close'][k:]
 
             predict_Y = tp_model.run(y=Y, fs=0.32, predict_len=predict_len)
