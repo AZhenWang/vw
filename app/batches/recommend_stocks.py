@@ -143,5 +143,5 @@ def execute(start_date='', end_date=''):
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
-        send_email(subject=end_date + '中长期预测', msgs=msgs)
+        send_email(subject=end_date + 'rs-中长期预测', msgs=msgs)
 

@@ -17,8 +17,9 @@ def execute(start_date='', end_date=''):
     logs = DB.get_recommended_stocks(start_date_id=start_date_id, end_date_id=end_date_id, recommend_type='pca')
     logs = logs[logs['flag']!=0]
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'name',
-                                             'recommend_at', 'average', 'moods', 'flag', 'qqb', 'pre4_sum', 'rose'
+    recommend_stocks = pd.DataFrame(columns=['code_id', 'ts_code', 'name', 'type',
+                                             'recommend_at', 'average', 'moods', 'flag', 'qqb',
+                                             'pre4_sum', 'rose', 'holding'
                                              ])
     for i in range(len(logs)):
         code_id = logs.iloc[i]['code_id']
@@ -62,7 +63,8 @@ def execute(start_date='', end_date=''):
                     'flag': int(log.flag),
                     'qqb': int(log.qqb),
                     'pre4_sum': log.pre4_sum,
-                    'rose': rose
+                    'rose': rose,
+                    'holding': holding
                 }
                 recommend_stocks.loc[i] = content
 
@@ -73,5 +75,5 @@ def execute(start_date='', end_date=''):
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
-        send_email(subject=end_date + '短期预测', msgs=msgs)
+        send_email(subject=end_date + 'rfs-短期预测', msgs=msgs)
 

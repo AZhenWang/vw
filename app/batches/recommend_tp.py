@@ -95,5 +95,5 @@ def execute(start_date='', end_date=''):
         recommend_text = recommend_stocks.to_string(index=False)
 
         msgs.append(MIMEText(recommend_text, 'plain', 'utf-8'))
-        send_email(subject=end_date + '--tp进', msgs=msgs)
+        send_email(subject=end_date + '-rt预测', msgs=msgs)
 
