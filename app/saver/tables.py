@@ -18,6 +18,9 @@ fields_map = {
         'sell_md_vol', 'sell_md_amount',  'buy_lg_vol', 'buy_lg_amount', 'sell_lg_vol', 'sell_lg_amount',
         'buy_elg_vol', 'buy_elg_amount', 'sell_elg_vol', 'sell_elg_amount', 'net_mf_vol', 'net_mf_amount'
     ],
+    'block_trade': [
+        'date_id', 'code_id', 'price', 'vol', 'amount', 'buyer', 'seller'
+    ],
 
     'stock_basic': [
         'ts_code', 'name', 'area', 'industry', 'market',
