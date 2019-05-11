@@ -28,3 +28,18 @@ create table moneyflow(
     index(`code_id`),
     CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'个股资金流向';
+
+create table block_trade(
+    id INT NOT NULL AUTO_INCREMENT,
+    code_id INT NOT NULL,
+    date_id INT NOT NULL,
+    price	float	comment'成交价',
+    vol	float	comment'成交量（万股）',
+    amount	float	comment'成交金额',
+    buyer	varchar(255)	comment'买方营业部',
+    seller	varchar(255)	comment'卖方营业部',
+    created_at timestamp not null default CURRENT_TIMESTAMP,
+    PRIMARY KEY(id),
+    index(`code_id`),
+    index(`price`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'大宗交易';
