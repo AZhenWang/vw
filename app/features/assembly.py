@@ -29,6 +29,10 @@ class Assembly(object):
             'Boll_ratio': '20日移动平均线的布尔比率',
             'Volume_SMA': '20日移动平均交易量',
             'Amplitude': '日实际变化幅度占当天总波动比率',
+            'BELG_SAM5': '特大单买入5日移动平均线',
+            'BLG_SAM5': '大单买入5日移动平均线',
+            'BMD_SAM5': '中单买入5日移动平均线',
+            'BSM_SAM5': '小单买入5日移动平均线',
         }
         DB.truncate_features()
         for name in features:
@@ -138,6 +142,15 @@ class Assembly(object):
         Amplitude.fillna(1, inplace=True)
 
         Turnover_rate = data['turnover_rate_f']
+
+        BELG_SAM5 = (data['buy_elg_vol'] - data['sell_elg_vol']) / (data['buy_elg_vol'] + data['sell_elg_vol']).rolling(window=20).mean()
+        BLG_SAM5 = (data['buy_lg_vol'] - data['sell_lg_vol']) / (data['buy_lg_vol'] + data['sell_lg_vol']).rolling(window=20).mean()
+        BMD_SAM5 = (data['buy_md_vol'] - data['sell_md_vol']) / (data['buy_md_vol'] + data['sell_md_vol']).rolling(window=20).mean()
+        BSM_SAM5 = (data['buy_sm_vol'] - data['sell_sm_vol']) / (data['buy_sm_vol'] + data['sell_sm_vol']).rolling(window=20).mean()
+        # # BELG_SAM5 = (data['buy_elg_vol'] - data['sell_elg_vol'])
+        # BLG_SAM5 = (data['buy_lg_vol'] - data['sell_lg_vol'])
+        # BMD_SAM5 = (data['buy_md_vol'] - data['sell_md_vol'])
+        # BSM_SAM5 = (data['buy_sm_vol'] - data['sell_sm_vol'])
 
         feature_dict = {}
         for feature in self.features['name']:
