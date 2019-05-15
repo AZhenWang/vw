@@ -30,16 +30,16 @@ def execute(start_date='', end_date=''):
         pre_flag_log = DB.get_pre_flag_logs(code_id=code_id, date_id=recommended_date_id-1, period=1, recommend_type='pca')
         holding = 0
         if focus_log.empty and not pre_flag_log.empty:
-            if pre_flag_log.at[0, 'flag'] == 1:
-                if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods']:
-                    holding = 1
+            if pre_flag_log.at[0, 'flag'] > 0:
+                if log.flag > 0 and log.moods >= pre_flag_log.at[0, 'moods']:
+                    holding = log.flag
 
                 elif log.flag == -1 and pre_flag_log.at[0, 'average'] < log.average and 0.4 <= log.average:
                     holding = -1
 
             elif pre_flag_log.at[0, 'flag'] == -1:
-                if log.flag == 1 and log.moods >= pre_flag_log.at[0, 'moods'] and log.moods >= 0.2:
-                    holding = 1
+                if log.flag > 0 and log.moods >= pre_flag_log.at[0, 'moods'] and log.moods >= 0.2:
+                    holding = log.flag
 
                 elif log.flag == -1 and pre_flag_log.at[0, 'date_id'] < log.date_id - 1 and pre_flag_log.at[0, 'average'] > log.average and 0.5 <= pre_flag_log.at[0, 'average']:
                     holding = -1
@@ -70,7 +70,7 @@ def execute(start_date='', end_date=''):
                     'qqb': log.qqb,
                     'pre4_sum': log.pre4_sum,
                     'rose': rose,
-                    'holding': holding,
+                    'holding': int(holding),
                 }
                 recommend_stocks.loc[i] = content
     if not recommend_stocks.empty:

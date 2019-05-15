@@ -33,6 +33,8 @@ def execute(start_date='', end_date=''):
                 holding = 1
             if log.flag == 1 and log.qqb == 0 and log.pre4_sum > 5:
                 holding = 1
+            if log.flag == 2 and log.qqb >= 0:
+                holding = 2
             if log.flag == -1 and log.qqb < 0:
                 holding = -1
 
@@ -64,7 +66,7 @@ def execute(start_date='', end_date=''):
                     'qqb': int(log.qqb),
                     'pre4_sum': log.pre4_sum,
                     'rose': rose,
-                    'holding': holding
+                    'holding': int(holding)
                 }
                 recommend_stocks.loc[i] = content
 

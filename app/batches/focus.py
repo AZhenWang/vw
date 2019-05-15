@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [1501]
     pca = Pca(cal_date=trade_cal.iloc[-1]['cal_date'])
     for code_id in code_ids:
         print('code_id=', code_id)
@@ -67,13 +67,14 @@ def execute(start_date='', end_date=''):
                     and Y0.iloc[-1] > Y1.iloc[-1] and Y0.iloc[-2] < Y1.iloc[-2] \
                     and Y0.iloc[-3] > Y1.iloc[-3] \
                     and Y1.iloc[-1] > Y1.iloc[-2] \
-                    and Y0[-20:-1].max() > 0.5 and Y0.iloc[-2] < -0.2 \
+                    and Y0[-20:-1].max() > 0.5 and Y0.iloc[-2] < -0\
                     and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
                 flag = 2
             elif Y0.iloc[-1] > Y0.iloc[-2] and Y1.iloc[-1] > Y1.iloc[-2] and Y1.iloc[-1] >= 0 and sample_prices.iloc[-1] < sample_prices.iloc[-2]:
                 flag = 1
             elif Y0.iloc[-1] < Y0.iloc[-2] and Y1.iloc[-1] < Y1.iloc[-2] and Y1.iloc[-1] <= 0.2 and sample_prices.iloc[-1] > sample_prices.iloc[-2]:
                 flag = -1
+
             holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
             daily = DB.get_code_daily(code_id=code_id, date_id=date_id)
             if daily.empty or (holdings[-1] == 0 and flag == 0):
@@ -108,7 +109,7 @@ def execute(start_date='', end_date=''):
                     qqb = 1
             pre4_sum = DB.sum_pct_chg(code_id=code_id, end_date_id=date_id, period=4)
             pre40_sum = round(
-                (sample_prices[:-1].max() - sample_prices[:-1].min()) * 100 / sample_prices[:-1].min(), 2)
+                (sample_prices.iloc[-40] - sample_prices.iloc[-1]) * 100 / sample_prices.iloc[-1], 2)
             # positive_mean = round((Y0 - Y1)[Y0 > Y1].mean(), 2)
             positive_mean = round((Y0[:-3] - Y1[:-3])[Y0[:-3] > Y1[:-3]].mean(), 2)
             negative_mean = round((Y1[:-3] - Y0[:-3])[Y0[:-3] < Y1[:-3]].mean(), 2)
