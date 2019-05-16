@@ -1,0 +1,36 @@
+
+create table weekly(
+   id INT NOT NULL AUTO_INCREMENT,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
+   open FLOAT4 not null,
+   high FLOAT4 not null,
+   close FLOAT4 not null,
+   low FLOAT4 not null,
+   pct_chg FLOAT4 not null comment'涨跌幅',
+   vol double null comment'成交量（手）',
+   amount double null comment'成交额 （千元）',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`code_id`),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'周线行情';
+
+
+create table monthly(
+   id INT NOT NULL AUTO_INCREMENT,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
+   open FLOAT4 not null,
+   high FLOAT4 not null,
+   close FLOAT4 not null,
+   low FLOAT4 not null,
+   pct_chg FLOAT4 not null comment'涨跌幅',
+   vol double null comment'成交量（手）',
+   amount double null comment'成交额 （千元）',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`code_id`),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'月线行情';
+
