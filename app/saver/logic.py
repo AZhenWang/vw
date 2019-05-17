@@ -279,18 +279,15 @@ class DB(object):
         return daily
 
     @classmethod
-    def get_code_info(cls, code_id, start_date='', end_date='', period=''):
+    def get_code_info(cls, code_id, start_date='', end_date='', period='', TTB='daily'):
         if start_date == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor, '
-                    ' mf.buy_elg_vol, mf.sell_elg_vol, mf.buy_lg_vol, mf.sell_lg_vol,'
-                    ' mf.buy_md_vol, mf.sell_md_vol, mf.buy_sm_vol, mf.sell_sm_vol '
-                    ' FROM  daily d '
+                    ' SELECT tc.cal_date, d.*, af.adj_factor'
+                    ' FROM  ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' left join moneyflow mf on mf.code_id = d.code_id and mf.date_id = d.date_id'
                     ' where d.code_id = :code_id and tc.cal_date <= :ed'
                     ' order by tc.cal_date desc '
                     ' limit :period'),
@@ -300,14 +297,11 @@ class DB(object):
         elif end_date == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor, '
-                    ' mf.buy_elg_vol, mf.sell_elg_vol, mf.buy_lg_vol, mf.sell_lg_vol,'
-                    ' mf.buy_md_vol, mf.sell_md_vol, mf.buy_sm_vol, mf.sell_sm_vol '
-                    ' FROM  daily d '
+                    ' SELECT tc.cal_date, d.*, af.adj_factor '
+                    ' FROM  ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' left join moneyflow mf on mf.code_id = d.code_id and mf.date_id = d.date_id'
                     ' where d.code_id = :code_id and tc.cal_date >= :sd'
                     ' order by tc.cal_date desc '
                     ' limit :period'),
@@ -317,14 +311,11 @@ class DB(object):
         else:
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, db.turnover_rate_f, af.adj_factor,'
-                    ' mf.buy_elg_vol, mf.sell_elg_vol, mf.buy_lg_vol, mf.sell_lg_vol,'
-                    ' mf.buy_md_vol, mf.sell_md_vol, mf.buy_sm_vol, mf.sell_sm_vol '
-                    ' FROM daily d '
+                    ' SELECT tc.cal_date, d.*, af.adj_factor'
+                    ' FROM ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' left join moneyflow mf on mf.code_id = d.code_id and mf.date_id = d.date_id'
                     ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed '
                     ' order by tc.cal_date desc '),
                 cls.engine,

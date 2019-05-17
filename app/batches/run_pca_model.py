@@ -32,7 +32,17 @@ def execute(start_date='', end_date=''):
     # new_rows = pd.DataFrame(columns=fields_map['rate_yearly'])
     # draw = False
     draw = True
-    codes = [171]
+    # TTB = 'daily'
+    TTB = 'weekly'
+    # TTB = 'monthly'
+    codes = [1481]
+
+    # 213：仁和药业，1501：瑞普生物, 271：美锦能源， 1527：中金环境, 521：中钢天源
+    # 622: 汉钟精机， 2373：维维股份， 331：美利云， 944：双塔食品，
+    # 2850：哈投股份， 2406：美克家居， 2430：五洲交通， 2198：林海股份， 365：新希望，
+    # 79：长虹华意,  1475: 金刚玻璃， 2756：红阳能源， 2702：舍得酒业， 462：豫能控股，1575：福安药业， 1949：兴齐眼药， 250：沈阳化工
+    # 2292：安彩高科， 137：中原环保， 236：山推股份， 251：模塑科技
+    # 238:东方电子，462：豫能控股， 2756：红阳能源， 2274：莲花健康， 2308：天津松江， 171: 启迪古汉,
     # 1481:精准信息， 211：万方发展, 52:中国长城, 2018:正元智慧
     # 2633:光大嘉宝, 2867:妙可蓝多, 540:雪莱特,  2412:恒力股份， 3547：恒润股份， 677：特尔佳, 432:天保基建
     # 687:鱼跃医疗，2187：东方金钰, 2876:秋林集团, 42:深天马A, 2011:广和通， 782：乐通, 819:赫美集团， 975：达华智能
@@ -69,7 +79,7 @@ def execute(start_date='', end_date=''):
     i = 0
     n_components = 2
     for code_id in codes:
-        pca_features, prices, Y, dailys = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval, n_components=n_components, return_y=True)
+        pca_features, prices, Y, dailys = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval, n_components=n_components, return_y=True, TTB=TTB)
         if sample_len != 0:
             sample_pca = pca_features[-sample_len:].reset_index(drop=True)
             sample_prices = prices[-sample_len:].reset_index(drop=True)
@@ -79,24 +89,24 @@ def execute(start_date='', end_date=''):
             sample_pca = pca_features
             sample_prices = prices
             sample_dailys = dailys
-        diff_Y0 = np.where(np.diff(pca_features.col_0) > 0, 1, -1)
-        diff_Y1 = np.where(np.diff(pca_features.col_1) > 0, 1, -1)
-        diff_price = np.where(np.diff(prices) > 0, 1, -1)
-        dot_price_Y0 = np.dot(diff_Y0, diff_price)
-        dot_price_Y1 = np.dot(diff_Y1, diff_price)
-        print('dot_price_y1=', dot_price_Y1)
-        # diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
-        # diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
-        # diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
+        # diff_Y0 = np.where(np.diff(pca_features.col_0) > 0, 1, -1)
+        # diff_Y1 = np.where(np.diff(pca_features.col_1) > 0, 1, -1)
+        # diff_price = np.where(np.diff(prices) > 0, 1, -1)
         # dot_price_Y0 = np.dot(diff_Y0, diff_price)
         # dot_price_Y1 = np.dot(diff_Y1, diff_price)
         # print('dot_price_y1=', dot_price_Y1)
-        if dot_price_Y0 < 0:
-            print('转Y0')
-            sample_pca.col_0 = (-1) * sample_pca.col_0
-        if dot_price_Y1 < 0:
-            print('转Y1')
-            sample_pca.col_1 = (-1) * sample_pca.col_1
+        # # diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
+        # # diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
+        # # diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
+        # # dot_price_Y0 = np.dot(diff_Y0, diff_price)
+        # # dot_price_Y1 = np.dot(diff_Y1, diff_price)
+        # # print('dot_price_y1=', dot_price_Y1)
+        # if dot_price_Y0 < 0:
+        #     print('转Y0')
+        #     sample_pca.col_0 = (-1) * sample_pca.col_0
+        # if dot_price_Y1 < 0:
+        #     print('转Y1')
+        #     sample_pca.col_1 = (-1) * sample_pca.col_1
 
         Y0 = sample_pca.col_0
         Y1 = sample_pca.col_1
@@ -143,10 +153,10 @@ def execute(start_date='', end_date=''):
                     and Y0[i - 20:i].max() > 0.5 and Y0.iloc[i-1] < -0 \
                     and sample_prices.iloc[i] > sample_prices.iloc[i-1]:
                 flag = 2
-            elif Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] >= 0 and sample_prices.iloc[i] < \
+            elif Y0.iloc[i] > Y0.iloc[i - 1] and  Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] >= 0 and sample_prices.iloc[i] < \
                     sample_prices.iloc[i - 1]:
                 flag = 1
-            elif Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] <= 0.2 and sample_prices.iloc[
+            elif Y0.iloc[i] < Y0.iloc[i - 1] and Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] <= 0.2 and sample_prices.iloc[
                 i] > sample_prices.iloc[i - 1]:
                 flag = -1
             flags.append(flag)
@@ -169,6 +179,7 @@ def execute(start_date='', end_date=''):
 
         buy, sell = get_buy_sell_points(holdings)
         flag_buy, flag_sell = get_buy_sell_points(flags)
+        print('holdings=', holdings[-5:])
         print('buy=', buy[-5:])
         print('sell=', sell[-5:])
         print('len(holding)=', len(holdings), ', len(buy)=', len(buy))
@@ -177,7 +188,6 @@ def execute(start_date='', end_date=''):
         print('mean=', mean)
 
         print('std=', std)
-        print('dot_price_y1=', dot_price_Y1)
         do_idx = np.not_equal(0, flags)
         s1 = pd.Series(flags)[do_idx]
         # s2 = pd.Series(sample_Y.index)[np.not_equal(0, flags)]
@@ -192,9 +202,8 @@ def execute(start_date='', end_date=''):
         print('p=', p)
         print('flags=', flags[-3:])
         pre40_sum = round((sample_prices[-40:-1].max() - sample_prices[-40:-1].min()) / sample_prices[-40:-1].min(), 2)
-        print('pre40_sum=', pre40_sum)
-        pre40_y0_mean = Y0.mean()
-        pre40_y1_mean = Y1.mean()
+        pre40_y0_mean = Y0[-20:].mean()
+        pre40_y1_mean = Y1[-20:].mean()
         positive_mean = (Y0[:-3] - Y1[:-3])[Y0[:-3] > Y1[:-3]].mean()
         negative_mean = (Y1[:-3] - Y0[:-3])[Y0[:-3] < Y1[:-3]].mean()
 
@@ -204,16 +213,6 @@ def execute(start_date='', end_date=''):
         positive_pct_std = (Y0[:-3] - Y0.shift()[:-3])[Y0[:-3] > Y1[:-3]].std()
         negative_pct_std = (Y1[:-3] - Y1.shift()[:-3])[Y0[:-3] < Y1[:-3]].std()
 
-        print('Y0-=', round(Y0.iloc[-1] - Y0[-3:].min(), 2), 'Y1-=', round(Y1.iloc[-1] - Y1[-3:].min(), 2))
-        print('pre40_y0_mean', ',pre40_y1_mean')
-        print(round(pre40_y0_mean, 2), round(pre40_y1_mean, 2))
-        print('positive_mean', ', negative_mean')
-        print(round(positive_mean, 2), round(negative_mean, 2))
-        print('positive_std', ', negative_std')
-        print(round(positive_std, 2), round(negative_std, 2))
-        print('positive_pct_std', ', negative_pct_std')
-        print(round(positive_pct_std, 2), round(negative_pct_std, 2))
-
         pct_std0 = (sample_dailys[:-3]['pct_chg'])[Y0[:-3] > Y1[:-3]].std()
         pct_std1 = (sample_dailys[:-3]['pct_chg'])[Y0[:-3] < Y1[:-3]].std()
         pct_mean0 = (sample_dailys[:-3]['pct_chg'])[Y0[:-3] > Y1[:-3]].mean()
@@ -222,6 +221,25 @@ def execute(start_date='', end_date=''):
         print(round(pct_mean0, 2), round(pct_mean1, 2))
         print('Y0-std', ', Y1-std')
         print(round(pct_std0, 2), round(pct_std1, 2))
+        print('explained_variance_ratio_=', pca.explained_variance_ratio_)
+
+        qqb = 0
+        bottom_dis = 20
+        point_args_price = np.diff(np.where(np.diff(sample_prices[-bottom_dis:]) > 0, 0, 1))
+        peaks_price = sample_prices[-bottom_dis + 1:-1][point_args_price == 1]
+        bottoms_price = np.floor((sample_prices[-bottom_dis + 1:-1][point_args_price == -1]) * 100) / 100
+        point_args = np.diff(np.where(np.diff(Y[-bottom_dis:]) > 0, 0, 1))
+        peaks = np.ceil((Y[-bottom_dis + 1:-1][point_args == 1]) * 100) / 100
+        bottoms = np.floor((Y[-bottom_dis + 1:-1][point_args == -1]) * 100) / 100
+        if len(bottoms_price) >= 1 and len(peaks_price) >= 1:
+            if Y0.iloc[-1] < peaks.iloc[-1] and sample_prices.iloc[-1] > peaks_price.iloc[-1]:
+                # 顶背离
+                qqb = -1
+            elif Y0.iloc[-1] > bottoms.iloc[-1] and sample_prices.iloc[-1] < bottoms_price.iloc[-1]:
+                # 底背离
+                qqb = 1
+        print('log', flags[-5:], 'qqb', qqb)
+        print('Y0=', round(Y0.iloc[-1], 4), 'Y1=', round(Y1.iloc[-1], 4), 'Y0>Y1:', Y0.iloc[-1] > Y1.iloc[-1])
         # os.exit
         sample_dailys['dateTime'] = mdates.date2num(
             sample_dailys['cal_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
@@ -355,7 +373,7 @@ def get_holdings(Y, Y1, sample_prices):
             # print('大双底部')
 
         elif (Y[i - bottom_dis:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
-                and Y[i - 5:i].min() < mean + std \
+                and bottoms.iloc[-1] < mean + std \
                 and (Y[i] - Y[i - 5:i].min()) > 1.328 * std \
                 and 2 * std > Y[i] > mean and Y[i] > Y[i - 1]:
             # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%

@@ -10,7 +10,7 @@ class Assembly(object):
     up_threshold = -0.05
     down_threshold = -0.03
 
-    def __init__(self, end_date='', pre_predict_interval=5):
+    def __init__(self, end_date='', pre_predict_interval=5, TTB='daily'):
         self.end_date = end_date
         self.pre_predict_interval = pre_predict_interval
         self.features = DB.get_features()
@@ -18,6 +18,7 @@ class Assembly(object):
         self.data = []
         self.adj_close = []
         self.date_idxs = []
+        self.TTB = TTB
 
     @staticmethod
     def init_features_table():
@@ -62,9 +63,9 @@ class Assembly(object):
 
     @classmethod
     def update_threshold(cls, code_id, cal_date, period=''):
-        data = DB.get_code_info(code_id=code_id, end_date=cal_date, period=period)
+        data = DB.get_code_info(code_id=code_id, end_date=cal_date, period=period, TTB=cls.TTB)
         data = data[data['vol'] != 0]
-        adj_close = data['close'] * data['adj_factor']
+        adj_close = data['close']
 
         # next_adj_close = adj_close.shift(-1)
         # fm = pd.concat([next_adj_close, adj_close], axis=1).min(axis=1)
@@ -104,11 +105,11 @@ class Assembly(object):
 
     def pack_features(self, code_id):
         self.code_id = code_id
-        data = DB.get_code_info(code_id=code_id, start_date=init_date, end_date=self.end_date)
+        data = DB.get_code_info(code_id=code_id, start_date=init_date, end_date=self.end_date, TTB=self.TTB)
         data = data[data['vol'] != 0]
 
-        Adj_close = data['close'] * data['adj_factor']
-        Adj_open = data['open'] * data['adj_factor']
+        Adj_close = data['close']*data['adj_factor']
+        Adj_open = data['open']*data['adj_factor']
 
         dr_window5 = Adj_close.rolling(window=5)
         dr_window10 = Adj_close.rolling(window=10)
@@ -140,17 +141,6 @@ class Assembly(object):
 
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         Amplitude.fillna(1, inplace=True)
-
-        Turnover_rate = data['turnover_rate_f']
-
-        BELG_SAM5 = (data['buy_elg_vol'] - data['sell_elg_vol']) / (data['buy_elg_vol'] + data['sell_elg_vol']).rolling(window=20).mean()
-        BLG_SAM5 = (data['buy_lg_vol'] - data['sell_lg_vol']) / (data['buy_lg_vol'] + data['sell_lg_vol']).rolling(window=20).mean()
-        BMD_SAM5 = (data['buy_md_vol'] - data['sell_md_vol']) / (data['buy_md_vol'] + data['sell_md_vol']).rolling(window=20).mean()
-        BSM_SAM5 = (data['buy_sm_vol'] - data['sell_sm_vol']) / (data['buy_sm_vol'] + data['sell_sm_vol']).rolling(window=20).mean()
-        # # BELG_SAM5 = (data['buy_elg_vol'] - data['sell_elg_vol'])
-        # BLG_SAM5 = (data['buy_lg_vol'] - data['sell_lg_vol'])
-        # BMD_SAM5 = (data['buy_md_vol'] - data['sell_md_vol'])
-        # BSM_SAM5 = (data['buy_sm_vol'] - data['sell_sm_vol'])
 
         feature_dict = {}
         for feature in self.features['name']:

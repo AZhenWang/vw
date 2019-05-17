@@ -56,11 +56,7 @@ def execute(start_date='', end_date=''):
     if daily_data.empty:
         return
 
-    data = pd.DataFrame(trade_cal['date_id'],  columns=['date_id'])
-    data = data.join(daily_data, on='date_id')
-    data.fillna(method='ffill', inplace=True)
-    data.dropna(inplace=True)
-    y = data['close']
+    y = daily_data
 
     x_len = len(y)
     # times = np.linspace(0, 2*np.pi, x_len)
@@ -206,12 +202,8 @@ def execute(start_date='', end_date=''):
         return
 
     if not next_y.empty:
-        next_data = pd.DataFrame(next_trade_cal['date_id'], columns=['date_id'])
-        next_y = next_data.join(next_y, on='date_id')
-        next_y.fillna(method='ffill', inplace=True)
-        next_y.fillna(method='backfill', inplace=True)
         fact_next_y = y[-init_len:]
-        fact_next_y = fact_next_y.append(next_y['close'])
+        fact_next_y = fact_next_y.append(next_y)
         # ax2_1 = ax2.twinx()
         # ax2_1.plot(shift_x_axis, fact_next_y, linewidth=1)
         # ax2_1.plot(range(len(fact_next_y)), fact_next_y, linewidth=1)

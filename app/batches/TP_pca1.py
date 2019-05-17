@@ -24,11 +24,12 @@ def execute(start_date='', end_date=''):
     print('trade_cal=', trade_cal)
     print('start_date=', start_date)
     print('end_date=', end_date)
-    code_id = '2018'
-    # code_id = ''
-    # index_code = '000001.SH'
-    # index_code = '399001.SZ'
+    # code_id = '2018'
+    code_id = ''
     index_code = ''
+    index_code = '000001.SH'
+    # index_code = '399001.SZ'
+
     if index_code != '':
         daily = DB.get_index_daily(ts_code=index_code, start_date_id=start_date_id, end_date_id=end_date_id)
         daily_data = daily['close']
@@ -111,7 +112,7 @@ def execute(start_date='', end_date=''):
             print('A=', A, 'F=', F, 'P=', P)
             shift_fx = A * np.cos(2 * np.pi * F * shift_times + P)
             s += shift_fx
-        s = s + ftt_pow[freqs == 0] / x_len
+        # s = s + ftt_pow[freqs == 0] / x_len
 
         ax2.plot(shift_x_axis, s, label='s'+str(k))
 

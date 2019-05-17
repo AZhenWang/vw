@@ -7,7 +7,7 @@ import matplotlib.pylab as plt
 plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
 
 def execute(start_date='', end_date=''):
-    year_dis = 18
+    year_dis = 5
     per_year = 365
     period = year_dis * per_year
     trade_cal = DB.get_cal_date(end_date=end_date, limit=period)
@@ -18,11 +18,14 @@ def execute(start_date='', end_date=''):
     print('trade_cal=', trade_cal)
     print('start_date=', start_date)
     print('end_date=', end_date)
-    code_id = '171'
+    code_id = '1501'
     # code_id = ''
+    index_code = ''
     # index_code = '000001.SH'
     # index_code = '399001.SZ'
-    index_code = ''
+    predict_time = 30 * 3
+    init_len = 30 * 2
+
     if index_code != '':
         daily = DB.get_index_daily(ts_code=index_code, start_date_id=start_date_id, end_date_id=end_date_id)
         daily_data = daily['close']
@@ -47,7 +50,8 @@ def execute(start_date='', end_date=''):
     y = data['close']
 
     x_len = len(y)
-    times = np.linspace(0, 2*np.pi, x_len)
+    fact_len = x_len / period * 2 * np.pi
+    times = np.linspace(0, fact_len, x_len)
     x_axis = np.arange(x_len)
     # 频率序列，将数据按照这个序列展开
     unit = times[1] - times[0]
@@ -71,6 +75,7 @@ def execute(start_date='', end_date=''):
     ts = 4
     pow = np.sort(pd.unique(ffts_pows[freqs > 0]))
     pow = pow[::-1]
+
     pow_low_band = pow[ts:]
     pow_high_band = pow[:ts]
 
@@ -108,9 +113,10 @@ def execute(start_date='', end_date=''):
         F = fund_freq
         P = np.angle(ffts[freqs>0][ffts_pows[freqs>0] == pow_band[i]])
         fx0 = A * np.cos(2 * np.pi * F * times + P)
+        print('times=',times, len(times))
         z += fx0
         ax1.plot(x_axis, fx0, label='f'+str(round(sub_time_period, 1)), linewidth=i+1, alpha=0.8)
-        ax1.axhline(A, color='g')
+        ax1.axhline(A, color='gray')
         # ax1.plot(x_axis, filter_sigs, label='c'+str(round(sub_time_period, 1)))
     print('最后的值:', z[-3:])
     ax0_1.plot(x_axis, z+ffts_pows[freqs == 0]/x_len, label='z', color='r', linewidth=4, alpha=0.5)
@@ -119,11 +125,9 @@ def execute(start_date='', end_date=''):
     pow_band = pow_high_band
     # pow_band = pow_low_band
     # pow_band = pow
-    predict_time = 30*5
-    # init_len = 0
-    # init_len = x_len - 1
-    init_len = 30*3
+
     shift_time = init_len + predict_time
+
     shift_times = times[x_len - 1 - init_len] + np.arange(1, shift_time+1)*unit
     # shift_times = times[init_len - x_len] + np.arange(shift_time) * unit
     shift_x_axis = np.arange(shift_time)
@@ -143,11 +147,10 @@ def execute(start_date='', end_date=''):
         shift_fx = A * np.cos(2 * np.pi * F * shift_times + P)
         s += shift_fx
         # ax2.plot(shift_x_axis, shift_fx, label='s'+str(round(sub_time_period, 1)), linewidth=i + 1, alpha=0.8)
-
+    s = s + ffts_pows[freqs == 0] / x_len
     ax2.axvline(init_len, color='r', linewidth=1, alpha=0.5)
     ax2.axvline(init_len+30, color='y', linewidth=1, alpha=0.5)
     ax2.plot(shift_x_axis, s, linewidth=2, color='r', label='s', alpha=0.5)
-
     pow_band = pow
     s1 = [0] * shift_time
     for i in range(len(pow_band)):
@@ -165,7 +168,7 @@ def execute(start_date='', end_date=''):
         s1 += shift_fx
         # ax2.plot(shift_x_axis, shift_fx, label='s'+str(round(sub_time_period, 1)), linewidth=i + 1, alpha=0.8)
 
-    # s1 = s1 + ffts_pows[freqs == 0]/x_len
+    s1 = s1 + ffts_pows[freqs == 0]/x_len
     # print(s1[init_len - 3: init_len + 3])
     print('s1=', s1)
     today_v = s1[init_len-1]
