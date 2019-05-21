@@ -59,7 +59,7 @@ class Assembly(object):
 
     @classmethod
     def update_threshold(cls, code_id, cal_date, period=''):
-        data = DB.get_code_info(code_id=code_id, end_date=cal_date, period=period, TTB=cls.TTB)
+        data = DB.get_code_info(code_id=code_id, end_date=cal_date, period=period)
         data = data[data['vol'] != 0]
         adj_close = data['close']
 
