@@ -33,8 +33,8 @@ def execute(start_date='', end_date=''):
     # draw = False
     draw = True
     # TTB = 'daily'
-    TTB = 'weekly'
-    # TTB = 'monthly'
+    # TTB = 'weekly'
+    TTB = 'monthly'
     codes = [1481]
 
     # 213：仁和药业，1501：瑞普生物, 271：美锦能源， 1527：中金环境, 521：中钢天源
@@ -89,36 +89,13 @@ def execute(start_date='', end_date=''):
             sample_pca = pca_features
             sample_prices = prices
             sample_dailys = dailys
-        # diff_Y0 = np.where(np.diff(pca_features.col_0) > 0, 1, -1)
-        # diff_Y1 = np.where(np.diff(pca_features.col_1) > 0, 1, -1)
-        # diff_price = np.where(np.diff(prices) > 0, 1, -1)
-        # dot_price_Y0 = np.dot(diff_Y0, diff_price)
-        # dot_price_Y1 = np.dot(diff_Y1, diff_price)
-        # print('dot_price_y1=', dot_price_Y1)
-        # # diff_Y0 = np.where(np.diff(Y0) > 0, 1, -1)
-        # # diff_Y1 = np.where(np.diff(Y1) > 0, 1, -1)
-        # # diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
-        # # dot_price_Y0 = np.dot(diff_Y0, diff_price)
-        # # dot_price_Y1 = np.dot(diff_Y1, diff_price)
-        # # print('dot_price_y1=', dot_price_Y1)
-        # if dot_price_Y0 < 0:
-        #     print('转Y0')
-        #     sample_pca.col_0 = (-1) * sample_pca.col_0
-        # if dot_price_Y1 < 0:
-        #     print('转Y1')
-        #     sample_pca.col_1 = (-1) * sample_pca.col_1
-
         Y0 = sample_pca.col_0
         Y1 = sample_pca.col_1
-        # os.exit()
-        # print(Y1[-5:])
-        # print(sample_prices[-5:])
-        # os.exit()
 
         mean = np.mean(Y0)
         # mean = mean * sample_len / (sample_len - 1)
         mean = 0
-        std = np.std(Y0)
+        std = np.std(pca_features.col_0)
 
         # flags = []
         # for i in range(sample_len):
@@ -146,19 +123,23 @@ def execute(start_date='', end_date=''):
         flags = []
         for i in range(sample_len):
             flag = 0
-            if Y0.iloc[i] > Y0.iloc[i-1] and Y0.iloc[i-1] < Y0.iloc[i-2] \
+            if Y0.iloc[i-1] > mean + 2*std \
+                    and Y0.iloc[i] < Y0.iloc[i - 1] and Y1.iloc[i] < Y1.iloc[i-1]:
+                flag = -2
+            elif Y0.iloc[i] < Y0.iloc[i - 1] and Y1.iloc[i] < Y1.iloc[i-1] and Y1.iloc[-1] <= 0.2 and sample_prices.iloc[i] >= sample_prices.iloc[i-1]:
+                flag = -1
+            elif Y0.iloc[i] > Y0.iloc[i-1] and Y0.iloc[i-1] < Y0.iloc[i-2] \
+                    and mean + 2*std > Y0.iloc[i] > 0.25 \
                     and Y0.iloc[i] > Y1.iloc[i] and Y0.iloc[i-1] < Y1.iloc[i-1] \
                     and Y0.iloc[i-2] > Y1.iloc[i-2] \
                     and Y1.iloc[i] > Y1.iloc[i-1] \
                     and Y0[i - 20:i].max() > 0.5 and Y0.iloc[i-1] < -0 \
                     and sample_prices.iloc[i] > sample_prices.iloc[i-1]:
                 flag = 2
-            elif Y0.iloc[i] > Y0.iloc[i - 1] and  Y1.iloc[i] > Y1.iloc[i - 1] and Y1.iloc[i] >= 0 and sample_prices.iloc[i] < \
-                    sample_prices.iloc[i - 1]:
+            elif Y1.iloc[i] > Y1.iloc[i - 1] \
+                    and Y0.iloc[i] > Y0.iloc[i-1]\
+                    and Y1.iloc[i] >= 0 and sample_prices.iloc[i] < sample_prices.iloc[i-1]:
                 flag = 1
-            elif Y0.iloc[i] < Y0.iloc[i - 1] and Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] <= 0.2 and sample_prices.iloc[
-                i] > sample_prices.iloc[i - 1]:
-                flag = -1
             flags.append(flag)
 
         # flags = [0, 0]
@@ -172,14 +153,14 @@ def execute(start_date='', end_date=''):
         #         flag = -1
         #     flags.append(flag)
 
-        holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices)
+        holdings = get_holdings(Y=Y0, Y1=Y1, sample_prices=sample_prices, std=std, mean=mean)
 
         cum_return_rate_set = get_cum_return_rate(sample_prices, holdings)
         cum_return_rate_set_flag = get_cum_return_rate(sample_prices, flags)
 
         buy, sell = get_buy_sell_points(holdings)
         flag_buy, flag_sell = get_buy_sell_points(flags)
-        print('holdings=', holdings[-5:])
+        print('holdings=', holdings)
         print('buy=', buy[-5:])
         print('sell=', sell[-5:])
         print('len(holding)=', len(holdings), ', len(buy)=', len(buy))
@@ -224,21 +205,42 @@ def execute(start_date='', end_date=''):
         print('explained_variance_ratio_=', pca.explained_variance_ratio_)
 
         qqb = 0
-        bottom_dis = 20
+        bottom_dis = 0
+        # bottom_dis = 20
         point_args_price = np.diff(np.where(np.diff(sample_prices[-bottom_dis:]) > 0, 0, 1))
+
+        base_index = pd.DataFrame(index=sample_prices.index)
         peaks_price = sample_prices[-bottom_dis + 1:-1][point_args_price == 1]
-        bottoms_price = np.floor((sample_prices[-bottom_dis + 1:-1][point_args_price == -1]) * 100) / 100
-        point_args = np.diff(np.where(np.diff(Y[-bottom_dis:]) > 0, 0, 1))
-        peaks = np.ceil((Y[-bottom_dis + 1:-1][point_args == 1]) * 100) / 100
-        bottoms = np.floor((Y[-bottom_dis + 1:-1][point_args == -1]) * 100) / 100
-        if len(bottoms_price) >= 1 and len(peaks_price) >= 1:
-            if Y0.iloc[-1] < peaks.iloc[-1] and sample_prices.iloc[-1] > peaks_price.iloc[-1]:
+        peaks_price.name = 'adj_close'
+        peaks_price = base_index.join(peaks_price, how='left')
+        peaks_price_new = peaks_price.fillna(method='ffill')
+        bottoms_price = sample_prices[-bottom_dis + 1:-1][point_args_price == -1]
+        bottoms_price.name = 'adj_close'
+        bottoms_price = base_index.join(bottoms_price, how='left')
+        bottoms_price_new = bottoms_price.fillna(method='ffill')
+        point_args = np.diff(np.where(np.diff(Y0[-bottom_dis:]) > 0, 0, 1))
+        peaks = Y0[-bottom_dis + 1:-1][point_args == 1]
+        peaks = base_index.join(peaks, how='left')
+        peaks_new = peaks.fillna(method='ffill')
+
+        bottoms = Y0[-bottom_dis + 1:-1][point_args == -1]
+        bottoms = base_index.join(bottoms, how='left')
+        bottoms_new = bottoms.fillna(method='ffill')
+
+        qqbs_pos = []
+        qqbs_neg = []
+        for i in range(sample_len):
+            qqb_pos = np.nan
+            qqb_neg = np.nan
+            if Y0.iloc[i] < peaks_new.iloc[i]['col_0'] and sample_prices.iloc[i] > peaks_price_new.iloc[i]['adj_close']:
                 # 顶背离
-                qqb = -1
-            elif Y0.iloc[-1] > bottoms.iloc[-1] and sample_prices.iloc[-1] < bottoms_price.iloc[-1]:
+                qqb_neg = 1
+            if Y0.iloc[i] > bottoms_new.iloc[i]['col_0'] and sample_prices.iloc[i] < bottoms_price_new.iloc[i]['adj_close']:
                 # 底背离
-                qqb = 1
-        print('log', flags[-5:], 'qqb', qqb)
+                qqb_pos = 1
+            qqbs_pos.append(qqb_pos)
+            qqbs_neg.append(qqb_neg)
+
         print('Y0=', round(Y0.iloc[-1], 4), 'Y1=', round(Y1.iloc[-1], 4), 'Y0>Y1:', Y0.iloc[-1] > Y1.iloc[-1])
         # os.exit
         sample_dailys['dateTime'] = mdates.date2num(
@@ -254,34 +256,51 @@ def execute(start_date='', end_date=''):
             ax0 = fig.add_subplot(211)
             ax0.xaxis.set_major_locator(mticker.MaxNLocator(10))
             ax0.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+
+            for i in range(sample_len):
+                if ~np.isnan(flag_buy[i]):
+                    ax0.axvline(x=sample_dailys['dateTime'][i], color='r', lw=flag_buy[i]*2, alpha=0.5)
+                if ~np.isnan(flag_sell[i]):
+                    ax0.axvline(x=sample_dailys['dateTime'][i], color='g', lw=abs(flag_sell[i])*2, alpha=0.5)
+                if holdings[i] > 0:
+                    ax0.text(sample_dailys['dateTime'][i], Y0.iloc[i], holdings[i], ha='center', va='bottom',
+                         fontsize=9, color='r', bbox=dict(boxstyle='circle', alpha=0.2, fc='r'))
+                if holdings[i] < 0:
+                    ax0.text(sample_dailys['dateTime'][i], Y0.iloc[i], np.abs(holdings[i]), ha='center', va='bottom',
+                         fontsize=9, color='g', bbox=dict(boxstyle='circle', alpha=0.2, fc='g'))
+
             ax0.plot(x_axis, Y0, label='Y')
             ax0.plot(x_axis, Y1, label='Y1')
+            ax0.plot(x_axis, Y0+Y1, color='purple', label='Y0+Y1')
+
             ax0.set_ylabel('pca')
             # ax0.axhline(mean - 3 * std, color='b')
-            ax0.axhline(mean - 2 * std, color='c')
-            ax0.axhline(mean - 1.5 * std, color='r')
-            ax0.axhline(mean - 1 * std, color='k')
-            ax0.axhline(mean, color='black')
-            ax0.axhline(mean + 1 * std, color='k')
-            ax0.axhline(mean + 1.5 * std, color='r')
-            ax0.axhline(mean + 2 * std, color='c')
+            ax0.axhline(mean - 2 * std, color='red')
+            ax0.axhline(mean - 1.5 * std, color='indianred')
+            ax0.axhline(mean - 1 * std, color='black')
+            ax0.axhline(lw=2, color='gray', alpha=0.5)
+            ax0.axhline(mean + 1 * std, color='black')
+            ax0.axhline(mean + 1.5 * std, color='indianred')
+            ax0.axhline(mean + 2 * std, color='red')
             # ax0.axhline(mean + 3 * std, color='b')
             ax0.set_ylabel('pca')
+
 
             # plt.legend(loc=3)
             ax0.set_title(str(code_id) + '-图形信号')
 
-            ax1 = ax0.twinx()
-            ax1.plot(x_axis, sample_prices, 'b-', label='price', alpha=0.5)
-            ax1.plot(x_axis, np.multiply(sample_prices, buy), 'mo', label='buy')
-            ax1.plot(x_axis, np.multiply(sample_prices, sell), 'co', label='sell')
-            ax1.plot(x_axis, np.multiply(sample_prices, flag_buy), 'rv', label='flag_buy')
-            ax1.plot(x_axis, np.multiply(sample_prices, flag_sell), 'gv', label='flag_sell')
-            ax1.set_ylabel('price')
+            # ax1 = ax0.twinx()
+            # ax1.plot(x_axis, sample_prices, 'b-', label='price', alpha=0.5)
+            # ax1.plot(x_axis, np.multiply(sample_prices, buy), 'mo', label='buy')
+            # ax1.plot(x_axis, np.multiply(sample_prices, sell), 'co', label='sell')
+            # ax1.plot(x_axis, np.multiply(sample_prices, flag_buy), 'rv', label='flag_buy')
+            # ax1.plot(x_axis, np.multiply(sample_prices, flag_sell), 'gv', label='flag_sell')
+            # ax1.set_ylabel('price')
 
             ax2 = fig.add_subplot(212, facecolor='#07000d')
             ax2.xaxis.set_major_locator(mticker.MaxNLocator(10))
             ax2.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+
             # ax2.grid()
             # 支撑压力画线
             support_lines = sample_dailys[np.equal(1, flags)]
@@ -298,11 +317,21 @@ def execute(start_date='', end_date=''):
                 ax2.axhline(y2, color='w', alpha=0.23)
             data_mat = sample_dailys[['dateTime', 'open', 'high', 'low', 'close']]
             candlestick_ohlc(ax2, data_mat.values, width=.7, colorup='y', colordown='c')
+            show_dis = (np.max(sample_dailys['high']) - np.min(sample_dailys['high'])) * 0.05
+            ax2.plot(x_axis, np.multiply(sample_dailys['high'] + show_dis, flag_buy/np.abs(flag_buy)), 'rv', label='flag_buy')
+            ax2.plot(x_axis, np.multiply(sample_dailys['high'] + show_dis, np.abs(flag_sell/np.abs(flag_sell))), 'gv', label='flag_sell')
 
-            ax2.plot(x_axis, np.multiply(sample_dailys['high']*1.05, flag_buy), 'rv', label='flag_buy')
-            ax2.plot(x_axis, np.multiply(sample_dailys['high']*1.05, flag_sell), 'wv', label='flag_sell')
+            for i in range(sample_len):
+                if holdings[i] > 0:
+                    ax2.text(x_axis[i], sample_dailys.iloc[i]['low']-show_dis, holdings[i], ha='center', va='top',
+                             fontsize=9, color='red')
+                if holdings[i] < 0:
+                    ax2.text(x_axis[i], sample_dailys.iloc[i]['low']-show_dis, np.abs(holdings[i]), ha='center', va='top',
+                             fontsize=9, color='green')
 
-            ax2.set_title(str(code_id) + '-资金信号')
+            # ax2.plot(x_axis, np.multiply(sample_dailys['low']-show_dis, qqbs_pos), 'ro')
+            # ax2.plot(x_axis, np.multiply(sample_dailys['low']-show_dis, qqbs_neg), 'go')
+
             # ax2.plot(x_axis, cum_return_rate_set, label=str(code_id) + '=' + str(round(cum_return_rate_set[-1], 2))
             #                                             + ', min=' + str(min(cum_return_rate_set)))
             # ax2.plot(x_axis, cum_return_rate_set_flag, label='flag' + str(code_id) + '=' + str(round(cum_return_rate_set_flag[-1], 2))
@@ -319,11 +348,7 @@ def execute(start_date='', end_date=''):
         # new_rows.to_sql('rate_yearly', DB.engine, index=False, if_exists='append', chunksize=1000)
 
 
-def get_holdings(Y, Y1, sample_prices):
-    mean = np.mean(Y)
-    mean = mean * sample_len / (sample_len - 1)
-    mean = 0
-    std = np.std(Y)
+def get_holdings(Y, Y1, sample_prices, std, mean):
 
     print('std=', std)
     print('mean+1.328std', mean + 1.328 * std)
@@ -344,43 +369,39 @@ def get_holdings(Y, Y1, sample_prices):
     #     holdings = [0] * len(Y)
     #     return holdings
 
-    start_loc = len(Y) - len(Y) + 1
-    holdings = [0] * start_loc
-    bottom_dis = 20
-    point_args = np.diff(np.where(np.diff(Y[-bottom_dis:]) > 0, 0, 1))
-    peaks = np.ceil((Y[-bottom_dis + 1:-1][point_args == 1]) * 100) / 100
-    bottoms = np.floor((Y[-bottom_dis + 1:-1][point_args == -1]) * 100) / 100
-    bottoms_length = len(bottoms)
-    print('bottoms=', bottoms)
-    print('peaks=', peaks)
 
-    amplitude = 0
-    if Y.iloc[-2] < Y.iloc[-1] and (Y.iloc[-1] > peaks.iloc[-1] or peaks.iloc[-1] > peaks.iloc[-2]) and bottoms.iloc[-1] > bottoms.iloc[-2]:
-        # 底上升
-        amplitude = 1
-    elif Y.iloc[-2] > Y.iloc[-1] and (Y.iloc[-1] < bottoms.iloc[-1] or bottoms.iloc[-1] < bottoms.iloc[-2]) and peaks.iloc[-1] < peaks.iloc[-2]:
-        # 底上升
-        amplitude = -1
-    print('amplitude=', amplitude)
+    base_index = pd.DataFrame(index=sample_prices.index)
+    point_args = np.diff(np.where(np.diff(Y) > 0, 0, 1))
+    peaks = np.ceil((Y[1:-1][point_args == 1]) * 100) / 100
+    peaks = base_index.join(peaks, how='left')
+    peaks_new = peaks.fillna(method='ffill')
+
+    bottoms = np.floor((Y[1:-1][point_args == -1]) * 100) / 100
+    bottoms = base_index.join(bottoms, how='left')
+    bottoms_new = bottoms.fillna(method='ffill')
+    start_loc = 20
+    holdings = [0] * start_loc
 
     for i in range(start_loc, len(Y)):
 
-        if bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y[i] > Y1[i] and Y1[-3:-1].max() - Y1.iloc[-1] > 0 \
-                and Y.iloc[i] > peaks.iloc[-1] and peaks.iloc[-1] < mean + std and mean > bottoms.iloc[-1] >= bottoms.iloc[-2] and (bottoms.iloc[-2] < mean - 1 * std):
+        if std > Y[i] > Y[i-1] and Y[i] > Y1[i] and Y1[i-3:i-1].max() - Y1.iloc[i] > 0 \
+                and Y.iloc[i] > peaks_new.iloc[i].col_0 and peaks_new.iloc[i].col_0 < mean + std \
+                and (bottoms_new.iloc[i-2:i].col_0.min() < mean - 2 * std):
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 1
             # print('大双底部')
 
-        elif (Y[i - bottom_dis:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
-                and bottoms.iloc[-1] < mean + std \
-                and (Y[i] - Y[i - 5:i].min()) > 1.328 * std \
+        elif (Y[i - start_loc:i - 2].sort_values()[-2:] > (mean + 1.5 * std)).all(axis=None) \
+                and bottoms_new.iloc[i].col_0 < mean + std \
+                and (Y[i] - Y[i - 5:i].min()) > std \
                 and 2 * std > Y[i] > mean and Y[i] > Y[i - 1]:
             # 强势震荡之后的反弹,一般反弹到原来的一半，原来涨幅1倍，此次就反弹50%
             # print('强势之后的深度震荡后的强烈反弹i=', i)
             holding = 3
 
-        elif bottoms_length >= 2 and 2*std > Y[i] > Y[i-1] and Y.iloc[i] > peaks.iloc[-1] and std > bottoms.iloc[-1] > mean > bottoms.iloc[-2]:
+        elif 2*std > Y[i] > Y[i-1] and Y.iloc[i] > peaks_new.iloc[i].col_0 \
+                and std > bottoms_new.iloc[i].col_0 > mean > bottoms_new.iloc[i-1].col_0:
             # 大双底部
             # 大底部反转之前的数据都有大的价格波动，会增加std和mean，为了反转的灵敏度，std限制可以打个折扣，2std=>1.94, 1.5std=>1.328
             holding = 11
@@ -432,10 +453,10 @@ def get_buy_sell_points(holdings):
     buy, sell = [np.nan], [np.nan]
     for i in range(1, len(holdings)):
         if holdings[i] > 0:
-            buy.append(1)
+            buy.append(holdings[i])
             sell.append(np.nan)
         elif holdings[i] < 0:
-            sell.append(1)
+            sell.append(holdings[i])
             buy.append(np.nan)
         else:
             buy.append(np.nan)

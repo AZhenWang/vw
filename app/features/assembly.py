@@ -30,10 +30,6 @@ class Assembly(object):
             'Boll_ratio': '20日移动平均线的布尔比率',
             'Volume_SMA': '20日移动平均交易量',
             'Amplitude': '日实际变化幅度占当天总波动比率',
-            'BELG_SAM5': '特大单买入5日移动平均线',
-            'BLG_SAM5': '大单买入5日移动平均线',
-            'BMD_SAM5': '中单买入5日移动平均线',
-            'BSM_SAM5': '小单买入5日移动平均线',
         }
         DB.truncate_features()
         for name in features:
@@ -107,9 +103,30 @@ class Assembly(object):
         self.code_id = code_id
         data = DB.get_code_info(code_id=code_id, start_date=init_date, end_date=self.end_date, TTB=self.TTB)
         data = data[data['vol'] != 0]
+        latest_date = data.iloc[-1]['cal_date']
+        if self.TTB != 'daily':
 
-        Adj_close = data['close']*data['adj_factor']
-        Adj_open = data['open']*data['adj_factor']
+            latest_daily_info = DB.get_code_info(code_id=code_id, start_date=str(int(latest_date)+1), end_date=self.end_date)
+            if not latest_daily_info.empty:
+                if self.TTB == 'weekly':
+                    latest_vol = latest_daily_info['vol'].mean() * 5 * 100
+                    latest_amount = latest_daily_info['amount'].mean() * 5 * 1000
+                else:
+                    latest_vol = latest_daily_info['vol'].mean() * 20 * 100
+                    latest_amount = latest_daily_info['amount'].mean() * 20 * 1000
+                latest_row = pd.DataFrame(index=[latest_daily_info.index[-1]], columns=data.columns)
+                latest_row.iloc[0].vol = latest_vol
+                latest_row.iloc[0].close = latest_daily_info.iloc[-1].close
+                latest_row.iloc[0].adj_factor = latest_daily_info.iloc[-1].adj_factor
+                latest_row.iloc[0].high = latest_daily_info['high'].max()
+                latest_row.iloc[0].low = latest_daily_info['low'].min()
+                latest_row.iloc[0].open = latest_daily_info.iloc[0].open
+                latest_row.iloc[0].cal_date = latest_daily_info.iloc[-1].cal_date
+                latest_row.iloc[0].code_id = latest_daily_info.iloc[-1].code_id
+                latest_row.iloc[0].amount = latest_amount
+                data = data.append(latest_row)
+
+        Adj_close = data.close * data.adj_factor
 
         dr_window5 = Adj_close.rolling(window=5)
         dr_window10 = Adj_close.rolling(window=10)
@@ -140,12 +157,13 @@ class Assembly(object):
         RSI10 = dr_position_SMA10 / (dr_position_SMA10 - dr_nagetive_SMA10)
 
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
-        Amplitude.fillna(1, inplace=True)
+        Amplitude.fillna(0, inplace=True)
 
         feature_dict = {}
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
         X = pd.DataFrame(feature_dict).dropna()
+        print(X)
         self.date_idxs = X.index
         self.adj_close = Adj_close[self.date_idxs]
         self.data = data.loc[self.date_idxs]
