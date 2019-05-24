@@ -126,7 +126,6 @@ class Assembly(object):
                 latest_row.iloc[0].amount = latest_amount
                 latest_row.iloc[0].pct_chg = (latest_daily_info.iloc[-1].close - data.iloc[-1].close) * 100 / data.iloc[-1].close
                 data = data.append(latest_row)
-
         Adj_close = data.close * data.adj_factor
 
         dr_window5 = Adj_close.rolling(window=5)
@@ -156,7 +155,7 @@ class Assembly(object):
         dr_nagetive_SMA10 = dr_nagetive.rolling(window=10).mean()
         RSI5 = dr_position_SMA5 / (dr_position_SMA5 - dr_nagetive_SMA5)
         RSI10 = dr_position_SMA10 / (dr_position_SMA10 - dr_nagetive_SMA10)
-
+        data['high'] = data['high'] + 0.001
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         # Amplitude = Amplitude[data['pct_chg'] < 0].fillna(-1)
         # Amplitude = Amplitude[data['pct_chg'] >= 0].fillna(1)
