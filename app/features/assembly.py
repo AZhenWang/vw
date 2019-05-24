@@ -1,5 +1,5 @@
 import pandas as pd
-import numpy as np
+from app.common.exception import MyError
 from conf.myapp import init_date
 from app.saver.logic import DB
 from app.common import function as CF
@@ -103,9 +103,10 @@ class Assembly(object):
     def pack_features(self, code_id):
         self.code_id = code_id
         data = DB.get_code_info(code_id=code_id, start_date=init_date, end_date=self.end_date, TTB=self.TTB)
-        if data.empty:
-            return np.nan
         data = data[data['vol'] != 0]
+        if data.empty:
+            raise MyError(1000)
+
         latest_date = data.iloc[-1]['cal_date']
         if self.TTB != 'daily' and not data.empty:
 
@@ -167,6 +168,8 @@ class Assembly(object):
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
         X = pd.DataFrame(feature_dict).dropna()
+        if X.empty:
+            raise MyError(1001)
         self.date_idxs = X.index
         self.adj_close = Adj_close[self.date_idxs]
         self.data = data.loc[self.date_idxs]

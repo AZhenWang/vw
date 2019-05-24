@@ -3,7 +3,7 @@ from app.saver.logic import DB
 import numpy as np
 import pandas as pd
 import time
-from datetime import timedelta
+from app.common.exception import MyError
 from app.saver.tables import fields_map
 
 n_components = 2
@@ -25,14 +25,16 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'], TTB=TTB)
     code_ids = codes['code_id']
-    # code_ids = [19]
+    # code_ids = [3666]
     pca = Pca(cal_date=end_date)
     for code_id in code_ids:
         print('code_id=', code_id)
-
         new_rows = pd.DataFrame(columns=fields_map['macro_pca'])
-        pca_features, prices, Y, _ = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
-                                          n_components=n_components, return_y=True, TTB=TTB)
+        try:
+            pca_features, prices, Y, _ = pca.run(code_id=code_id, pre_predict_interval=pre_predict_interval,
+                                              n_components=n_components, return_y=True, TTB=TTB)
+        except MyError as e:
+            continue
 
         sample_pca = pca_features[-period-2:].reset_index(drop=True)
         sample_prices = prices[-period-2:].reset_index(drop=True)
