@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from conf.myapp import init_date
 from app.saver.logic import DB
 from app.common import function as CF
@@ -102,9 +103,11 @@ class Assembly(object):
     def pack_features(self, code_id):
         self.code_id = code_id
         data = DB.get_code_info(code_id=code_id, start_date=init_date, end_date=self.end_date, TTB=self.TTB)
+        if data.empty:
+            return np.nan
         data = data[data['vol'] != 0]
         latest_date = data.iloc[-1]['cal_date']
-        if self.TTB != 'daily':
+        if self.TTB != 'daily' and not data.empty:
 
             latest_daily_info = DB.get_code_info(code_id=code_id, start_date=str(int(latest_date)+1), end_date=self.end_date)
             if not latest_daily_info.empty:

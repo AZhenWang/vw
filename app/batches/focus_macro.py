@@ -23,9 +23,9 @@ def execute(start_date='', end_date=''):
     end_time = time.strptime(end_date, "%Y%m%d")
     period = (end_time.tm_year - start_time.tm_year)*12 + (end_time.tm_mon - start_time.tm_mon) + 1
     codes = DB.get_latestopendays_code_list(
-        latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
+        latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'], TTB=TTB)
     code_ids = codes['code_id']
-    # code_ids = [1501]
+    # code_ids = [19]
     pca = Pca(cal_date=end_date)
     for code_id in code_ids:
         print('code_id=', code_id)

@@ -176,10 +176,10 @@ class DB(object):
         return index_list
 
     @classmethod
-    def get_latestopendays_code_list(cls, latest_open_days='', date_id=''):
+    def get_latestopendays_code_list(cls, latest_open_days='', date_id='', TTB='daily'):
         if date_id == '':
             code_list = pd.read_sql(
-                sa.text(' select d.code_id FROM daily d '
+                sa.text(' select d.code_id FROM '+ TTB +' d '
                         ' left join stock_basic sb on sb.id = d.code_id'
                         ' where sb.list_status=:ls'
                         ' group by d.code_id'
@@ -190,7 +190,7 @@ class DB(object):
             )
         else:
             code_list = pd.read_sql(
-                sa.text(' select d.code_id FROM daily d '
+                sa.text(' select d.code_id FROM '+ TTB +' d '
                         ' left join stock_basic sb on sb.id = d.code_id'
                         ' where d.date_id <= :di and sb.list_status=:ls'
                         ' group by d.code_id'

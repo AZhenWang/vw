@@ -18,10 +18,8 @@ class Pca(object):
     def run(self, code_id, n_components=1, pre_predict_interval=5, return_y=False, TTB='daily'):
         feature_assembly = Assembly(end_date=self.cal_date, pre_predict_interval=pre_predict_interval, TTB=TTB)
         X = feature_assembly.pack_features(code_id)
-
         sample_prices = feature_assembly.adj_close
         X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(X), columns=X.columns, index=X.index)
-
         pca = PCA(n_components=n_components)
         pca.fit(X)
         self.explained_variance_ratio_ = pca.explained_variance_ratio_
