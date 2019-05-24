@@ -83,4 +83,8 @@ fields_map = {
     'pool': [
         'code_id',
     ],
+    'macro_pca': [
+        'date_id', 'code_id', 'TTB', 'flag', 'std0', 'std1',
+        'Y0', 'Y1', 'Y0_chg', 'Y1_chg', 'Y0_line', 'Y0_pre_line', 'Y1_line', 'Y1_pre_line'
+    ],
 }

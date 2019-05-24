@@ -124,6 +124,7 @@ class Assembly(object):
                 latest_row.iloc[0].cal_date = latest_daily_info.iloc[-1].cal_date
                 latest_row.iloc[0].code_id = latest_daily_info.iloc[-1].code_id
                 latest_row.iloc[0].amount = latest_amount
+                latest_row.iloc[0].pct_chg = (latest_daily_info.iloc[-1].close - data.iloc[-1].close) * 100 / data.iloc[-1].close
                 data = data.append(latest_row)
 
         Adj_close = data.close * data.adj_factor
@@ -157,13 +158,13 @@ class Assembly(object):
         RSI10 = dr_position_SMA10 / (dr_position_SMA10 - dr_nagetive_SMA10)
 
         Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
-        Amplitude.fillna(0, inplace=True)
-
+        # Amplitude = Amplitude[data['pct_chg'] < 0].fillna(-1)
+        # Amplitude = Amplitude[data['pct_chg'] >= 0].fillna(1)
+        Amplitude.fillna(0)
         feature_dict = {}
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
         X = pd.DataFrame(feature_dict).dropna()
-        print(X)
         self.date_idxs = X.index
         self.adj_close = Adj_close[self.date_idxs]
         self.data = data.loc[self.date_idxs]

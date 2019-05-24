@@ -34,3 +34,24 @@ create table monthly(
    CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'月线行情';
 
+create table macro_pca(
+   id INT NOT NULL AUTO_INCREMENT,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
+   TTB varchar(16) null comment'按周：weekly, 按月：monthly',
+   flag float default 0 null comment'PCA图形信号',
+   std0 float null comment'std0',
+   std1 float null comment'std1',
+   Y0 float null comment'Y0',
+   Y1 float null comment'Y1',
+   Y0_chg float null comment'Y0新增',
+   Y1_chg float null comment'Y1新增',
+   Y0_line float null comment'Y0所处车道',
+   Y0_pre_line float null comment'前一个Y0所处车道',
+   Y1_line float null comment'Y1所处车道',
+   Y1_pre_line float null comment'前一个Y1所处车道',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`code_id`),
+   index `code_date_idx`(`date_id`, `code_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'pca宏观数据表';

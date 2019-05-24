@@ -623,6 +623,27 @@ class DB(object):
         pd.io.sql.execute('delete from recommend_stocks where date_id=%s and code_id = %s and recommend_type=%s',
                           cls.engine,
                           params=[str(date_id), str(code_id), recommend_type])
+
+    @classmethod
+    def delete_recommend_logs(cls, start_date_id, end_date_id, code_id, recommend_type=''):
+        pd.io.sql.execute('delete from recommend_stocks where date_id >= %s and date_id <= %s and code_id = %s and recommend_type=%s',
+                          cls.engine,
+                          params=[str(start_date_id), str(end_date_id), str(code_id), recommend_type])
+
+    @classmethod
+    def delete_macro_logs(cls, start_date_id, end_date_id, code_id, TTB):
+        pd.io.sql.execute(
+            'delete from macro_pca where date_id >= %s and date_id <= %s and code_id = %s and TTB=%s',
+            cls.engine,
+            params=[str(start_date_id), str(end_date_id), str(code_id), TTB])
+
+    @classmethod
+    def delete_macro_log(cls, date_id, code_id, TTB):
+        pd.io.sql.execute(
+            'delete from macro_pca where date_id = %s and code_id = %s and TTB=%s',
+            cls.engine,
+            params=[str(date_id), str(code_id), TTB])
+
     @classmethod
     def delete_focus_stocks(cls):
         pd.io.sql.execute('delete from focus_stocks',
