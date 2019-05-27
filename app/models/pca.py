@@ -22,6 +22,8 @@ class Pca(object):
             X = feature_assembly.pack_features(code_id)
         except MyError as e:
             raise e
+        if len(X) < 10:
+            raise MyError(1002)
         sample_prices = feature_assembly.adj_close
         X = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(X), columns=X.columns, index=X.index)
         pca = PCA(n_components=n_components)

@@ -24,7 +24,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [25]
+    # code_ids = [1350]
     TTBS = ['monthly', 'weekly']
     for TTB in TTBS:
         for i in range(len(trade_cal)):
