@@ -118,6 +118,20 @@ def get_buy_sell_points(holdings):
     return buy, sell
 
 
+def pack_daily_return(prices):
+    """
+    组装自定义每日收益率
+    :param prices:
+    :return:
+    """
+    import numpy as np
+    pre_prices = prices.shift(1)
+    diff = prices - pre_prices
+    daily_return = diff / np.min([prices, pre_prices], axis=0) * 100
+
+    return daily_return
+
+
 def send_sms(text):
     """
     发送短信

@@ -40,6 +40,7 @@ create table macro_pca(
    code_id INT NOT NULL,
    TTB varchar(16) null comment'按周：weekly, 按月：monthly',
    flag float default 0 null comment'PCA图形信号',
+   qqb float null comment'形态',
    std0 float null comment'std0',
    std1 float null comment'std1',
    Y0 float null comment'Y0',

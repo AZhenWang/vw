@@ -154,7 +154,7 @@ class DB(object):
     def get_index_daily(cls, ts_code='', start_date_id='', end_date_id=''):
         if ts_code != '':
             index_list = pd.read_sql(
-                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol, id.date_id, id.pct_chg FROM index_daily id '
+                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.index_id, id.close, id.vol, id.date_id, id.pct_chg FROM index_daily id '
                         ' left join index_basic ib on ib.id = id.index_id'
                         ' left join trade_cal tc on tc.id = id.date_id'
                         ' where ib.ts_code=:ts_code'
@@ -164,7 +164,7 @@ class DB(object):
             )
         else:
             index_list = pd.read_sql(
-                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.close, id.vol, id.date_id, id.pct_chg  FROM index_daily id '
+                sa.text(' SELECT tc.cal_date, ib.ts_code, ib.name, id.index_id, id.close, id.vol, id.date_id, id.pct_chg  FROM index_daily id '
                         ' left join index_basic ib on ib.id = id.index_id'
                         ' left join trade_cal tc on tc.id = id.date_id'
                         ' where id.date_id between :sdi and :edi'),
