@@ -24,7 +24,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [25]
     TTBS = ['monthly', 'weekly']
     for TTB in TTBS:
         for i in range(len(trade_cal)):
@@ -39,7 +39,8 @@ def execute(start_date='', end_date=''):
                                                       n_components=n_components, return_y=True, TTB=TTB)
                 except MyError as e:
                     continue
-
+                if Y.index[Y.index >= date_id].empty:
+                    continue
                 bottom_dis = 30
                 start_loc = Y.index.get_loc(Y.index[Y.index >= date_id][0])
 
