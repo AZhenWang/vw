@@ -80,8 +80,9 @@ def execute(start_date='', end_date=''):
                         flag = -2
                     elif Y0.iloc[i] > Y0.iloc[i - 1] and Y1.iloc[i] < Y1.iloc[i - 1] and Y1.iloc[i] - Y1.iloc[i - 1] <= -0.1:
                         flag = -1
-                    elif Y0.iloc[i] < mean0 - 1.328 * std0 and Y1.iloc[i] > Y1.iloc[i - 1] \
+                    elif Y0.iloc[i] < mean0 - 1 * std0 and Y1.iloc[i] > Y1.iloc[i - 1] \
                             and Y1.iloc[i] - Y1.iloc[i - 1] > Y1.iloc[i - 1] - Y1.iloc[i - 2] \
+                            and Y0.iloc[i - 1] - Y0.iloc[i] < 0.2 \
                             and ((Y0.iloc[i - 2] - Y0.iloc[i - 1] > Y0.iloc[i - 1] - Y0.iloc[i] + 0.1) or (
                             Y0.iloc[i - 1] > Y0.iloc[i - 2])) \
                             and Y0.iloc[i] <= Y0.iloc[i - 1]:
