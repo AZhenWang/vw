@@ -1,0 +1,27 @@
+create table ab_test(
+   id INT NOT NULL AUTO_INCREMENT,
+   sql_title string null comment'sql说明',
+   sql_content text null comment'获取数据sql',
+   sql_params text null comment'sql参数',
+   is_open boolean default 0 comment'是否开启',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'ab test, 假设sql';
+
+create table ab_test_logs(
+   id INT NOT NULL AUTO_INCREMENT,
+   numbers int null comment'总推荐记录条数',
+   codes int null comment'推荐股票数',
+   shot_ratio float null comment '推荐后的一个月内涨幅超过30的比率',
+   m_mean float null comment'未来一个月的每日收益率平均值',
+   m_std float null comment'未来一个月的每日收益率标准差',
+   m_max_rate float null comment'未来一个月的最大收盘价相比今天的涨幅',
+   m_min_rate float null comment'未来一个月的最小收盘价相比今天的涨幅',
+   max_rate float null comment '所有推荐中的最大收益率',
+   min_rate float null comment '所有推荐中的最小收益率',
+   note text null comment'备注',
+   sql_content text null comment'获取数据sql',
+   sql_params text null comment'sql参数',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'ab test, 假设校验结果';

@@ -303,7 +303,7 @@ class DB(object):
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
                     ' where d.code_id = :code_id and tc.cal_date >= :sd'
-                    ' order by tc.cal_date desc '
+                    ' order by tc.cal_date asc '
                     ' limit :period'),
                 cls.engine,
                 params={'code_id': str(code_id), 'sd': str(start_date), 'period': period}
@@ -753,6 +753,24 @@ class DB(object):
             )
         return logs
 
+    @classmethod
+    def get_abtest_sqls(cls):
+        abt_sqls = pd.read_sql(
+            sa.text(' select * from ab_test where is_open = 1'
+                    ),
+            cls.engine
+        )
+        return abt_sqls
+
+    @classmethod
+    def sql_execute(cls, sql_content, sql_params):
+        import json
+        data = pd.read_sql(
+            sa.text(sql_content),
+            cls.engine,
+            params=json.loads(sql_params)
+        )
+        return data
     # @staticmethod
     # def validate_field(columns, fields):
     #     valid_fields = list((set(columns).union(set(fields))) ^ (set(columns) ^ set(fields)))

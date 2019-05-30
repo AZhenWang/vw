@@ -90,4 +90,12 @@ fields_map = {
     'beta': [
         'date_id', 'code_id', 'index_id', 'mean_daily_return', 'std_daily_return', 'beta'
     ],
+    'ab_test': [
+        'sql_title', 'sql_content', 'sql_params', 'is_open'
+    ],
+    'ab_test_logs': [
+        'note', 'numbers', 'codes', 'shot_ratio',
+        'm_mean', 'm_std', 'm_max_rate', 'm_min_rate', 'max_rate', 'min_rate',
+        'sql_title', 'sql_content', 'sql_params'
+    ]
 }

@@ -56,3 +56,17 @@ create table macro_pca(
    index(`code_id`),
    index `code_date_idx`(`date_id`, `code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'pca宏观数据表';
+
+create table beta(
+   id INT NOT NULL AUTO_INCREMENT,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
+   index_id INT NOT NULL,
+   mean_daily_return float null comment'每日收益率平均值',
+   std_daily_return float null comment'每日收益率标准差',
+   beta float null comment'近一年的每日收益率code_id 与 index_id的相关性，越大相越关，系统风险性越高，以1为界限',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(`code_id`),
+   index `code_date_idx`(`date_id`, `code_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'股票系统风险beta';
