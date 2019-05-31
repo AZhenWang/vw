@@ -107,6 +107,10 @@ def execute(start_date='', end_date=''):
                     if peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
                             and bottoms.iloc[-1] < bottoms.iloc[-2] < bottoms.iloc[-3]:
                         qqb = -7
+                    elif peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] \
+                            and bottoms.iloc[-1] < bottoms.iloc[-2] \
+                            and Y0.iloc[i] < Y0.iloc[i - 1]:
+                        qqb = -5
                     elif peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
                             and bottoms.iloc[-2] < bottoms.iloc[-3] < bottoms.iloc[-4]\
                             and Y0.iloc[i] > Y0.iloc[i-1]:
