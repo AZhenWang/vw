@@ -27,9 +27,10 @@ def execute(start_date='', end_date=''):
     # code_ids = [583, 1436, 1551, 1591, 1605, 1711, 2423, 2551, 2597]
     # code_ids = [1750, 1680, 751, 270, 2822, 648]
     # code_ids = [213, 583, 432, 1605, 1711]
-    # code_ids = [2772]
+    # code_ids = [633]
     # 583:康强电子,  1551：天晟新材， 1436:欧比特, 1591:森远股份, 1605:正海磁材, 1711:华虹计通, 2291：有研新材， 2261：上海贝岭
     # 2423:华微电子, 2551:交大昂立, 2597:长电科技, 216:*ST金岭， 633：智光电气
+    # TTBS = ['weekly', 'monthly']
     TTBS = ['monthly', 'weekly']
     for i in range(len(trade_cal)):
         end_date = trade_cal.iloc[i].cal_date
@@ -52,8 +53,8 @@ def execute(start_date='', end_date=''):
                 sample_pca = pca_features[start_loc-bottom_dis:].reset_index(drop=True)
                 sample_prices = prices[start_loc-bottom_dis:].reset_index(drop=True)
                 sample_Y = Y[start_loc-bottom_dis:]
-                Y0 = sample_pca.col_0
-                Y1 = sample_pca.col_1
+                Y0 = round(sample_pca.col_0, 3)
+                Y1 = round(sample_pca.col_1, 3)
 
                 DB.delete_macro_logs(code_id=code_id, start_date_id=date_id, end_date_id=date_id, TTB=TTB)
 
@@ -104,15 +105,24 @@ def execute(start_date='', end_date=''):
                     point_args = np.diff(np.where(np.diff(Y0[-bottom_dis+i:i+1]) > 0, 0, 1))
                     peaks = Y0[-bottom_dis + i + 1: i][point_args == 1]
                     bottoms = Y0[-bottom_dis + i + 1: i][point_args == -1]
+
                     qqb = 0
                     if peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
                             and bottoms.iloc[-1] < bottoms.iloc[-2] < bottoms.iloc[-3]:
                         qqb = -7
+                    elif Y0.iloc[i - 1] < Y0.iloc[i] < peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] \
+                            and Y0.iloc[i] < bottoms.iloc[-1] < bottoms.iloc[-2] < bottoms.iloc[-3]:
+                        qqb = -6
                     elif peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] \
                             and bottoms.iloc[-1] < bottoms.iloc[-2] \
                             and Y0.iloc[i] < Y0.iloc[i - 1]:
                         qqb = -5
-                    elif peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
+                    elif peaks.iloc[-1] < peaks.iloc[-2] \
+                            and bottoms.iloc[-1] < bottoms.iloc[-2] \
+                            and Y0.iloc[i - 1] < Y0.iloc[i] < bottoms.iloc[-2]:
+                        qqb = -4
+                    elif peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
+                            and bottoms.iloc[-1] > bottoms.iloc[-2]\
                             and bottoms.iloc[-2] < bottoms.iloc[-3] < bottoms.iloc[-4]\
                             and Y0.iloc[i] > Y0.iloc[i-1]:
                         qqb = 3
@@ -120,22 +130,28 @@ def execute(start_date='', end_date=''):
                             and bottoms.iloc[-1] > bottoms.iloc[-2] > bottoms.iloc[-3] \
                             and Y0.iloc[i] < Y0.iloc[i-1]:
                         qqb = 6
+                    elif peaks.iloc[-3] > peaks.iloc[-4]\
+                            and peaks.iloc[-1] < peaks.iloc[-2]\
+                            and bottoms.iloc[-2] > bottoms.iloc[-3] > bottoms.iloc[-4] \
+                            and Y0.iloc[i] > Y0.iloc[i-1]:
+                        qqb = 7
                     elif peaks.iloc[-1] > peaks.iloc[-2] \
                             and bottoms.iloc[-1] > bottoms.iloc[-2] > bottoms.iloc[-3]\
                             and Y0.iloc[i] > Y0.iloc[i-1]:
                         qqb = 5
                     elif peaks.iloc[-1] > peaks.iloc[-2] \
-                            and bottoms.iloc[-1] > bottoms.iloc[-2] \
-                            and bottoms.iloc[-2] < bottoms.iloc[-3] \
-                            and Y0.iloc[i] < Y0.iloc[i - 1]:
+                            and Y0.iloc[i - 1] > Y0.iloc[i] > bottoms.iloc[-1] > bottoms.iloc[-2] \
+                            and bottoms.iloc[-2] < bottoms.iloc[-3]:
                         qqb = 4
-                    elif (peaks.iloc[-1] > peaks.iloc[-2] or
-                            (Y0.iloc[i] > Y0.iloc[i-1] and Y0.iloc[i] > peaks.iloc[-1])) \
-                            and Y0.iloc[i] > bottoms.iloc[-1] > bottoms.iloc[-2]:
+                    elif Y0.iloc[i] > Y0.iloc[i-1] \
+                        and Y0.iloc[i] > peaks.iloc[-1] \
+                            and bottoms.iloc[-1] > bottoms.iloc[-2]:
                         qqb = 1
-                    elif (peaks.iloc[-1] < peaks.iloc[-2] or
-                            (Y0.iloc[i] < Y0.iloc[i-1] and Y0.iloc[i] < peaks.iloc[-1])) \
+                    elif peaks.iloc[-1] < peaks.iloc[-2] \
                             and Y0.iloc[i] < bottoms.iloc[-1]:
+                        qqb = -3
+                    elif Y0.iloc[i] < Y0.iloc[i-1] \
+                            and Y0.iloc[i] < peaks.iloc[-1]:
                         qqb = -1
 
                     # plt.plot(Y0)

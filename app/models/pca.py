@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn import preprocessing
 import numpy as np
 from app.common.exception import MyError
+from app.common.function import remove_noise
 
 
 class Pca(object):
@@ -34,6 +35,9 @@ class Pca(object):
         sample_pca = pd.DataFrame(pca.transform(X),
                                   columns=['col_' + str(i) for i in range(n_components)])
 
+        pca_std = sample_pca.std()
+        sample_pca.col_0 = remove_noise(Y=sample_pca.col_0, unit=pca_std.col_0 * 0.3)
+        sample_pca.col_1 = remove_noise(Y=sample_pca.col_1, unit=pca_std.col_1 * 0.3)
         diff_Y0 = np.where(np.diff(sample_pca.col_0) > 0, 1, -1)
         diff_Y1 = np.where(np.diff(sample_pca.col_1) > 0, 1, -1)
         diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)

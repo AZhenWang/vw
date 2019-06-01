@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from app.common.exception import MyError
 from conf.myapp import init_date
 from app.saver.logic import DB
@@ -148,7 +149,7 @@ class Assembly(object):
 
         pre_adj_close = Adj_close.shift(1)
         fm = pd.concat([Adj_close, pre_adj_close], axis=1).min(axis=1)
-        daily_return = (Adj_close - pre_adj_close) / fm
+        daily_return = (Adj_close - pre_adj_close) * 100 / fm
         dr_positive = daily_return.copy()
         dr_positive[dr_positive < 0] = 0
         dr_nagetive = daily_return.copy()
@@ -159,11 +160,11 @@ class Assembly(object):
         dr_nagetive_SMA10 = dr_nagetive.rolling(window=10).mean()
         RSI5 = dr_position_SMA5 / (dr_position_SMA5 - dr_nagetive_SMA5)
         RSI10 = dr_position_SMA10 / (dr_position_SMA10 - dr_nagetive_SMA10)
-        data['high'] = data['high'] + 0.001
-        Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
+        # data['high'] = data['high'] + 0.001
+        # Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
         # Amplitude = Amplitude[data['pct_chg'] < 0].fillna(-1)
         # Amplitude = Amplitude[data['pct_chg'] >= 0].fillna(1)
-        Amplitude.fillna(0)
+        # Amplitude.fillna(0)
         feature_dict = {}
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)

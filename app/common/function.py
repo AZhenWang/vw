@@ -222,3 +222,22 @@ def knn_predict(X, Y, k, sample_interval, pre_predict_interval, predict_idx):
     predicted_Y = knn.predict([testing_x])
     y_hat = predicted_Y[0]
     return y_hat
+
+
+def remove_noise(Y, unit=0.05):
+    """
+    去除噪音
+    :param Y: series
+    :param unit:
+    :return:
+    """
+    import numpy as np
+    if len(Y) < 3:
+        return Y
+    w = np.argwhere(abs(np.diff(Y)) < unit)
+    max_key = Y.keys()[-1]
+    for n in w:
+        n = n[0]
+        if n < max_key - 1:
+            Y.iloc[n + 1] = (Y.iloc[n] + Y.iloc[n + 2]) / 2
+    return Y

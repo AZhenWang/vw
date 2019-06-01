@@ -41,6 +41,8 @@ def execute(start_date='', end_date=''):
         for fun_name, note in Policy.items():
             code_rows, recommend_code_ids = eval(fun_name)(data)
             recommend_number = len(recommend_code_ids)
+            if recommend_number < 1:
+                continue
             log_means = code_rows.mean()
             log_min = np.min(code_rows.s_min_rate)
             log_max = np.max(code_rows.s_max_rate)
