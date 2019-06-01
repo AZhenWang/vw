@@ -1,3 +1,5 @@
+import numpy as np
+
 def str2hump(text):
     """下划线转驼峰法
 
@@ -100,8 +102,6 @@ def get_cum_return_rate(prices, holdings=[]):
 
 
 def get_buy_sell_points(holdings):
-    import numpy as np
-
     buy, sell = [np.nan], [np.nan]
     for i in range(1, len(holdings)):
         if holdings[i] != holdings[i - 1]:
@@ -124,7 +124,6 @@ def pack_daily_return(prices):
     :param prices:
     :return:
     """
-    import numpy as np
     pre_prices = prices.shift(1)
     diff = prices - pre_prices
     daily_return = diff / np.min([prices, pre_prices], axis=0) * 100
@@ -231,13 +230,75 @@ def remove_noise(Y, unit=0.05):
     :param unit:
     :return:
     """
-    import numpy as np
+
     if len(Y) < 3:
         return Y
-    w = np.argwhere(abs(np.diff(Y)) < unit)
+    Y_hat = Y.copy()
+    Y_diff = np.diff(Y)
+    w = np.argwhere(abs(Y_diff) < unit)
     max_key = Y.keys()[-1]
     for n in w:
         n = n[0]
-        if n < max_key - 1:
-            Y.iloc[n + 1] = (Y.iloc[n] + Y.iloc[n + 2]) / 2
-    return Y
+        if n < max_key - 1 and (Y_diff[n] * Y_diff[n+1] < 0):
+            Y_hat.iloc[n] = (Y.iloc[n-1] + Y.iloc[n + 1]) / 2
+    return Y_hat
+
+
+def get_wave_segment(Y):
+    """
+    获取波浪阶段
+    :param Y: Series
+    :return:
+    """
+    point_args = np.diff(np.where(np.diff(Y) > 0, 0, 1))
+    peaks = Y[1:-1][point_args == 1]
+    bottoms = Y[1:-1][point_args == -1]
+    qqb = 0
+    if peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
+            and bottoms.iloc[-1] < bottoms.iloc[-2] < bottoms.iloc[-3]:
+        qqb = -7
+    elif Y.iloc[-2] < Y.iloc[-1] < peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] \
+            and Y.iloc[-1] < bottoms.iloc[-1] < bottoms.iloc[-2] < bottoms.iloc[-3]:
+        qqb = -6
+    elif peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] \
+            and bottoms.iloc[-1] < bottoms.iloc[-2] \
+            and Y.iloc[-1] < Y.iloc[-2]:
+        qqb = -5
+    elif peaks.iloc[-1] < peaks.iloc[-2] \
+            and bottoms.iloc[-1] < bottoms.iloc[-2] \
+            and Y.iloc[-2] < Y.iloc[-1] < bottoms.iloc[-2]:
+        qqb = -4
+    elif peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
+            and bottoms.iloc[-1] > bottoms.iloc[-2] \
+            and bottoms.iloc[-2] < bottoms.iloc[-3] < bottoms.iloc[-4] \
+            and Y.iloc[-1] > Y.iloc[-2]:
+        qqb = 3
+    elif peaks.iloc[-2] > peaks.iloc[-3] \
+            and bottoms.iloc[-1] > bottoms.iloc[-2] > bottoms.iloc[-3] \
+            and Y.iloc[-1] < Y.iloc[-2]:
+        qqb = 6
+    elif peaks.iloc[-3] > peaks.iloc[-4] \
+            and peaks.iloc[-1] < peaks.iloc[-2] \
+            and bottoms.iloc[-2] > bottoms.iloc[-3] > bottoms.iloc[-4] \
+            and Y.iloc[-1] > Y.iloc[-2]:
+        qqb = 7
+    elif peaks.iloc[-1] > peaks.iloc[-2] \
+            and bottoms.iloc[-1] > bottoms.iloc[-2] > bottoms.iloc[-3] \
+            and Y.iloc[-1] > Y.iloc[-2]:
+        qqb = 5
+    elif peaks.iloc[-1] > peaks.iloc[-2] \
+            and Y.iloc[-2] > Y.iloc[-1] > bottoms.iloc[-1] > bottoms.iloc[-2] \
+            and bottoms.iloc[-2] < bottoms.iloc[-3]:
+        qqb = 4
+    elif Y.iloc[-1] > Y.iloc[-2] \
+            and Y.iloc[-1] > peaks.iloc[-1] \
+            and bottoms.iloc[-1] > bottoms.iloc[-2]:
+        qqb = 1
+    elif peaks.iloc[-1] < peaks.iloc[-2] \
+            and Y.iloc[-1] < bottoms.iloc[-1]:
+        qqb = -3
+    elif Y.iloc[-1] < Y.iloc[-2] \
+            and Y.iloc[-1] < peaks.iloc[-1]:
+        qqb = -1
+
+    return qqb

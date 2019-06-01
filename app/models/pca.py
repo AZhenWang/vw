@@ -36,8 +36,8 @@ class Pca(object):
                                   columns=['col_' + str(i) for i in range(n_components)])
 
         pca_std = sample_pca.std()
-        sample_pca.col_0 = remove_noise(Y=sample_pca.col_0, unit=pca_std.col_0 * 0.3)
-        sample_pca.col_1 = remove_noise(Y=sample_pca.col_1, unit=pca_std.col_1 * 0.3)
+        sample_pca.col_0 = remove_noise(Y=sample_pca.col_0, unit=pca_std.col_0 * 0.2)
+        sample_pca.col_1 = remove_noise(Y=sample_pca.col_1, unit=pca_std.col_1 * 0.2)
         diff_Y0 = np.where(np.diff(sample_pca.col_0) > 0, 1, -1)
         diff_Y1 = np.where(np.diff(sample_pca.col_1) > 0, 1, -1)
         diff_price = np.where(np.diff(sample_prices) > 0, 1, -1)
