@@ -294,14 +294,13 @@ def get_wave_segment(Y):
             and bottoms.iloc[-2] < bottoms.iloc[-3]:
         qqb = 4
     elif Y.iloc[-1] > Y.iloc[-2] \
-            and Y.iloc[-1] > peaks.iloc[-1] \
-            and bottoms.iloc[-1] > bottoms.iloc[-2]:
+            and Y.iloc[-1] > peaks.iloc[-1]:
         qqb = 1
     elif peaks.iloc[-1] < peaks.iloc[-2] \
             and Y.iloc[-1] < bottoms.iloc[-1]:
         qqb = -3
     elif Y.iloc[-1] < Y.iloc[-2] \
-            and Y.iloc[-1] < peaks.iloc[-1]:
+            and Y.iloc[-1] < bottoms.iloc[-1]:
         qqb = -1
 
     return qqb
