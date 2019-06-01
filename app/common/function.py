@@ -254,6 +254,9 @@ def get_wave_segment(Y):
     peaks = Y[1:-1][point_args == 1]
     bottoms = Y[1:-1][point_args == -1]
     qqb = 0
+    if len(peaks) < 4 or len(bottoms) < 4:
+        return qqb
+
     if peaks.iloc[-1] < peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
             and bottoms.iloc[-1] < bottoms.iloc[-2] < bottoms.iloc[-3]:
         qqb = -7
