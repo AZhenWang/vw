@@ -160,11 +160,12 @@ class Assembly(object):
         dr_nagetive_SMA10 = dr_nagetive.rolling(window=10).mean()
         RSI5 = dr_position_SMA5 / (dr_position_SMA5 - dr_nagetive_SMA5)
         RSI10 = dr_position_SMA10 / (dr_position_SMA10 - dr_nagetive_SMA10)
-        # data['high'] = data['high'] + 0.001
-        # Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
-        # Amplitude = Amplitude[data['pct_chg'] < 0].fillna(-1)
-        # Amplitude = Amplitude[data['pct_chg'] >= 0].fillna(1)
-        # Amplitude.fillna(0)
+        data['high'] = data['high']
+        Amplitude = (data['close'] - data['open']) / (data['high'] - data['low'])
+        Amplitude[data['pct_chg'] < 0].fillna(-1)
+        Amplitude[data['pct_chg'] >= 0].fillna(1)
+        Amplitude.fillna(0)
+
         feature_dict = {}
         for feature in self.features['name']:
             feature_dict[feature] = eval(feature)
