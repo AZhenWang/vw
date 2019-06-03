@@ -271,8 +271,9 @@ def get_wave_segment(Y):
             and bottoms.iloc[-1] < bottoms.iloc[-2] \
             and Y.iloc[-2] < Y.iloc[-1] < bottoms.iloc[-2]:
         qqb = -4
-    elif peaks.iloc[-1] > peaks.iloc[-2]\
-            and bottoms.iloc[-2] < bottoms.iloc[-3] < bottoms.iloc[-1] \
+    elif Y.iloc[-1] > peaks.iloc[-1]\
+            and bottoms.iloc[-2] < bottoms.iloc[-1]\
+            and bottoms.iloc[-2] < bottoms.iloc[-3] < bottoms.iloc[-4]\
             and Y.iloc[-1] > Y.iloc[-2]:
         qqb = 3
     elif peaks.iloc[-1] > peaks.iloc[-2] > peaks.iloc[-3]  \
@@ -284,7 +285,7 @@ def get_wave_segment(Y):
             and bottoms.iloc[-2] > bottoms.iloc[-3] > bottoms.iloc[-4] \
             and Y.iloc[-1] > Y.iloc[-2]:
         qqb = 7
-    elif peaks.iloc[-1] > peaks.iloc[-2] > peaks.iloc[-3] \
+    elif peaks.iloc[-1] > peaks.iloc[-2] \
             and bottoms.iloc[-1] > bottoms.iloc[-2] > bottoms.iloc[-3] \
             and Y.iloc[-1] > Y.iloc[-2]:
         qqb = 5
