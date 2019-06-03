@@ -233,7 +233,7 @@ def remove_noise(Y, unit=0.05):
 
     if len(Y) < 3:
         return Y
-    Y_hat = Y.copy()
+    return Y
     Y_diff = np.diff(Y)
     w = np.argwhere(abs(Y_diff) < unit)
     max_key = Y.keys()[-1]
@@ -271,12 +271,11 @@ def get_wave_segment(Y):
             and bottoms.iloc[-1] < bottoms.iloc[-2] \
             and Y.iloc[-2] < Y.iloc[-1] < bottoms.iloc[-2]:
         qqb = -4
-    elif peaks.iloc[-2] < peaks.iloc[-3] < peaks.iloc[-4] \
-            and bottoms.iloc[-1] > bottoms.iloc[-2] \
-            and bottoms.iloc[-2] < bottoms.iloc[-3] < bottoms.iloc[-4] \
+    elif peaks.iloc[-1] > peaks.iloc[-2]\
+            and bottoms.iloc[-2] < bottoms.iloc[-3] < bottoms.iloc[-1] \
             and Y.iloc[-1] > Y.iloc[-2]:
         qqb = 3
-    elif peaks.iloc[-2] > peaks.iloc[-3] \
+    elif peaks.iloc[-1] > peaks.iloc[-2] > peaks.iloc[-3]  \
             and bottoms.iloc[-1] > bottoms.iloc[-2] > bottoms.iloc[-3] \
             and Y.iloc[-1] < Y.iloc[-2]:
         qqb = 6
@@ -285,7 +284,7 @@ def get_wave_segment(Y):
             and bottoms.iloc[-2] > bottoms.iloc[-3] > bottoms.iloc[-4] \
             and Y.iloc[-1] > Y.iloc[-2]:
         qqb = 7
-    elif peaks.iloc[-1] > peaks.iloc[-2] \
+    elif peaks.iloc[-1] > peaks.iloc[-2] > peaks.iloc[-3] \
             and bottoms.iloc[-1] > bottoms.iloc[-2] > bottoms.iloc[-3] \
             and Y.iloc[-1] > Y.iloc[-2]:
         qqb = 5
