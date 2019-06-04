@@ -35,8 +35,8 @@ def execute(start_date='', end_date=''):
     # 583:康强电子,  1551：天晟新材， 1436:欧比特, 1591:森远股份, 1605:正海磁材, 1711:华虹计通, 2291：有研新材， 2261：上海贝岭
     # 2423:华微电子, 2551:交大昂立, 2597:长电科技, 216:*ST金岭， 633：智光电气
     # TTBS = ['daily', 'weekly', 'monthly']
-    # TTBS = ['monthly', 'weekly']
-    TTBS = ['daily']
+    TTBS = ['monthly', 'weekly']
+    # TTBS = ['daily']
     for i in range(len(trade_cal)):
         end_date = trade_cal.iloc[i].cal_date
         date_id = trade_cal.iloc[i].date_id
