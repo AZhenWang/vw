@@ -22,17 +22,21 @@ def execute(start_date='', end_date=''):
     :return:
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=244*5, date_id=trade_cal.iloc[0]['date_id'])
-    code_ids = codes['code_id']
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=244*5, date_id=trade_cal.iloc[0]['date_id'])
+    # code_ids = codes['code_id']
     # code_ids = [583, 1436, 1551, 1591, 1605, 1711, 2423, 2551, 2597]
     # code_ids = [1750, 1680, 751, 270, 2822, 648]
     # code_ids = [213, 583, 432, 1605, 1711]
-    # code_ids = [76]
+    # code_ids = [2597, 2551,  344]
+    # code_ids = [1605, 1711, 633]
+    # code_ids = [2772]
+    # 2433, 万向德农， 2418：敦煌种业
     # 583:康强电子,  1551：天晟新材， 1436:欧比特, 1591:森远股份, 1605:正海磁材, 1711:华虹计通, 2291：有研新材， 2261：上海贝岭
     # 2423:华微电子, 2551:交大昂立, 2597:长电科技, 216:*ST金岭， 633：智光电气
-    # TTBS = ['weekly', 'monthly']
-    TTBS = ['monthly', 'weekly']
+    TTBS = ['daily', 'weekly', 'monthly']
+    # TTBS = ['monthly', 'weekly']
+    # TTBS = ['daily']
     for i in range(len(trade_cal)):
         end_date = trade_cal.iloc[i].cal_date
         date_id = trade_cal.iloc[i].date_id
@@ -104,7 +108,7 @@ def execute(start_date='', end_date=''):
 
                     qqb = CF.get_wave_segment(Y=Y0[-bottom_dis+i:i+1])
 
-                    # print('qqb=', qqb, 'Y0=', Y0.iloc[i])
+                    # print('qqb=', qqb, 'Y0=', Y0.iloc[i-3: i+1],  Y0.iloc[i], Y0.iloc[i-1] , Y0.iloc[i-2], 'Y0_chg=', Y0_chg, 'Y1_chg=', Y1_chg)
                     # plt.plot(Y0)
                     # plt.title(code_id)
                     # plt.show()
