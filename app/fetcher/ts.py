@@ -102,7 +102,6 @@ class Ts(Interface):
             '2664': '399005.SZ',
             '2665': '399006.SZ',
             '2252': '000905.SH',
-            '2971': '399905.SZ'
         }
 
         for index_id in index_ts_code:
