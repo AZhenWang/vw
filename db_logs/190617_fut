@@ -24,7 +24,7 @@ create table fut_basic (
 create table fut_daily (
    id int not null auto_increment,
    date_id INT NOT NULL,
-   code_id INT NOT NULL,
+   fut_id INT NOT NULL,
    pre_close float	default null comment'昨收盘价',
    pre_settle float	default null comment'昨结算价',
    open float	default null comment'开盘价',
