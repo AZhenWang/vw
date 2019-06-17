@@ -16,6 +16,7 @@ class Ts(Interface):
         self.code_list = []
         self.index_list = []
         self.trade_dates = []
+        self.fut_list = []
 
     def set_trade_dates(self):
         api = 'trade_cal'
@@ -90,8 +91,33 @@ class Ts(Interface):
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def set_fut_list(self):
-        index_list = DB.get_fut_list()
-        self.index_list = index_list
+        fut_list = DB.get_fut_list()
+        self.fut_list = fut_list
+
+    def query_fut(self, api):
+        # 按trade_date依次拉取所有股票信息
+        for date_id, cal_date in self.trade_dates[['date_id', 'cal_date']].values:
+            flag = True
+            while flag:
+                try:
+                    self.update_fut_by_trade_date(api, date_id, cal_date)
+                    flag = False
+                    time.sleep(1)
+                except BaseException as e:
+                    # print(e)
+                    time.sleep(10)
+                    self.update_fut_by_trade_date(api, date_id, cal_date)
+
+    def update_fut_by_trade_date(self, api, date_id, cal_date):
+        new_rows = self.pro.query(api, trade_date=cal_date)
+        if not new_rows.empty:
+            existed_codes = DB.get_existed_codes(table_name=api, date_id=date_id)
+            if not existed_codes.empty:
+                new_rows = new_rows[~new_rows['ts_code'].isin(existed_codes['ts_code'])]
+            new_rows = new_rows.merge(self.trade_dates, left_on='trade_date', right_on='cal_date')
+            new_rows = self.fut_list.merge(new_rows, on='ts_code')
+            avail_recorders = new_rows[fields_map[api]]
+            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def update_index_basic(self):
         """
