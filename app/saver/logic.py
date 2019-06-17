@@ -771,6 +771,19 @@ class DB(object):
             params=json.loads(sql_params)
         )
         return data
+
+    @classmethod
+    def get_fut_list(cls, exchange=''):
+        if exchange != '':
+            fut_list = pd.read_sql(
+                sa.text('SELECT id as fut_id, ts_code FROM fut_basic where exchange=:exchange'),
+                cls.engine,
+                params={'exchange': exchange}
+            )
+        else:
+            fut_list = pd.read_sql(sa.text('SELECT id as fut_id, ts_code, exchange FROM fut_basic'), cls.engine)
+        return fut_list
+
     # @staticmethod
     # def validate_field(columns, fields):
     #     valid_fields = list((set(columns).union(set(fields))) ^ (set(columns) ^ set(fields)))

@@ -36,21 +36,6 @@ fields_map = {
         'cal_date', 'is_open', 'pretrade_date',
     ],
 
-    # 股票预测信息表
-    'features': [
-        'name', 'remark',
-    ],
-    'features_groups': [
-        'feature_id', 'group_number'
-    ],
-    'classifiers': [
-        'class_name', 'params',
-    ],
-    'classified_v': [
-        'date_id', 'code_id', 'classifier_id', 'classifier_v', 'feature_group_number',
-        'r2_score', 'cum_return', 'holding'
-    ],
-
 
     # 指数
     'index_basic': [
@@ -65,6 +50,31 @@ fields_map = {
         'turnover_rate', 'turnover_rate_f', 'pe', 'pe_ttm', 'pb'
     ],
 
+    # 期货表
+    'fut_basic': [
+        'ts_code', 'symbol', 'exchange', 'name', 'fut_code', 'multiplier', 'trade_unit', 'quote_unit', 'quote_unit_desc',
+        'd_mode_desc', 'list_date', 'delist_date', 'd_month', 'last_ddate', 'trade_time_desc'
+    ],
+
+    'fut_daily': [
+        'fut_id', 'date_id', 'pre_close', 'pre_settle', 'open', 'high', 'low', 'close', 'settle', 'change1', 'change2',
+        'vol', 'amount', 'oi', 'oi_chg', 'delv_settle'
+    ],
+
+    # 股票预测信息表
+    'features': [
+        'name', 'remark',
+    ],
+    'features_groups': [
+        'feature_id', 'group_number'
+    ],
+    'classifiers': [
+        'class_name', 'params',
+    ],
+    'classified_v': [
+        'date_id', 'code_id', 'classifier_id', 'classifier_v', 'feature_group_number',
+        'r2_score', 'cum_return', 'holding'
+    ],
 
     # 股票预测
     'recommend_stocks': [

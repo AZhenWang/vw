@@ -66,6 +66,33 @@ class Ts(Interface):
                 for delist_date, ts_code in avail_disappear_recorders.values:
                     DB.update_delist_date(delist_date, ts_code)
 
+    def update_fut_basic(self):
+        """
+        期货基本信息
+        :return:
+        """
+        api = 'fut_basic'
+        exchange_list = {
+            'CFFEX': '中金所',
+            'DCE': '大商所',
+            'CZCE': '郑商所',
+            'SHFE': '上期所',
+            'INE': '上海国际能源交易中心'
+        }
+        existed_index_list = DB.get_fut_list()
+        for exchange in exchange_list.keys():
+            new_rows = self.pro.query(api, exchange=exchange, fields=fields_map[api])
+            if not new_rows.empty:
+                existed_index = existed_index_list[existed_index_list['exchange'] == exchange]
+                new_rows = new_rows[~new_rows['ts_code'].isin(existed_index['ts_code'])]
+            if not new_rows.empty:
+                avail_recorders = new_rows[fields_map[api]]
+                avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+
+    def set_fut_list(self):
+        index_list = DB.get_fut_list()
+        self.index_list = index_list
+
     def update_index_basic(self):
         """
         指数基本信息
