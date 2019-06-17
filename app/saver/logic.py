@@ -225,6 +225,17 @@ class DB(object):
         return existed_codes
 
     @classmethod
+    def get_existed_fut(cls, table_name, date_id):
+        existed_codes = pd.read_sql(
+            sa.text(
+                'SELECT sb.ts_code FROM ' + table_name + ' as api left join stock_basic as sb on sb.id = api.fut_id where api.date_id=:date_id'),
+            cls.engine,
+            params={'date_id': date_id}
+        )
+        return existed_codes
+
+
+    @classmethod
     def get_existed_index(cls, table_name, index_id, start_date, end_date):
         existed_codes = pd.read_sql(
             sa.text(
