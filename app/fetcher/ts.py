@@ -102,7 +102,7 @@ class Ts(Interface):
                 try:
                     self.update_fut_by_trade_date(api, date_id, cal_date)
                     flag = False
-                    time.sleep(1)
+                    time.sleep(0.5)
                 except BaseException as e:
                     # print(e)
                     time.sleep(10)
