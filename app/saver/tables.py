@@ -57,7 +57,7 @@ fields_map = {
     ],
 
     'fut_daily': [
-        'fut_id', 'date_id', 'pre_close', 'pre_settle', 'open', 'high', 'low', 'close', 'settle', 'change1', 'change2',
+        'code_id', 'date_id', 'pre_close', 'pre_settle', 'open', 'high', 'low', 'close', 'settle', 'change1', 'change2',
         'vol', 'amount', 'oi', 'oi_chg', 'delv_settle'
     ],
 
