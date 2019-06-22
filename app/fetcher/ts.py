@@ -221,12 +221,12 @@ class Ts(Interface):
             flag = True
             while flag:
                 try:
-                    self.update_by_code(api, ts_code, self.start_date, self.end_date)
+                    self.update_by_code(api, ts_code, self.start_date, self.end_date, report_type=2)
                     flag = False
                 except BaseException as e:
                     # print(e)
                     time.sleep(10)
-                    self.update_by_code(api, ts_code, self.start_date, self.end_date)
+                    self.update_by_code(api, ts_code, self.start_date, self.end_date, report_type=2)
 
     def update_by_code(self, api, ts_code, start_date, end_date, **keyword):
         new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, **keyword)
