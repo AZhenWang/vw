@@ -70,7 +70,7 @@ class Ts(Interface):
 
         # 更新name信息
         if not existed_code_list.empty and not new_rows.empty:
-            update_rows = new_rows[new_rows['ts_code'].isin(existed_code_list['ts_code'])][~new_rows['name'].isin(existed_code_list['name'])]
+            update_rows = new_rows[new_rows['ts_code'].isin(existed_code_list['ts_code'])][~new_rows['name'].isin(existed_code_list['stock_name'])]
             for i in range(len(update_rows)):
                 ts_code = update_rows.iloc[i]['ts_code']
                 stock_name = update_rows.iloc[i]['name']
@@ -111,7 +111,6 @@ class Ts(Interface):
                 try:
                     self.update_fut_by_trade_date(api, date_id, cal_date)
                     flag = False
-                    time.sleep(0.5)
                 except BaseException as e:
                     # print(e)
                     time.sleep(10)
@@ -174,7 +173,6 @@ class Ts(Interface):
                 try:
                     self.update_index_by_trade_date(api, index_id, ts_code, start_date, end_date)
                     flag = False
-                    time.sleep(0.5)
                 except BaseException as e:
                     time.sleep(10)
                     self.update_index_by_trade_date(api, index_id, ts_code, start_date, end_date)
@@ -199,7 +197,6 @@ class Ts(Interface):
                 try:
                     self.update_by_trade_date(api, date_id, cal_date)
                     flag = False
-                    time.sleep(1)
                 except BaseException as e:
                     # print(e)
                     time.sleep(10)

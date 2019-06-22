@@ -130,12 +130,12 @@ class DB(object):
     def get_code_list(cls, list_status=''):
         if list_status != '':
             code_list = pd.read_sql(
-                sa.text('SELECT id as code_id, ts_code FROM stock_basic where list_status=:ls'),
+                sa.text('SELECT id as code_id, ts_code, name as stock_name, list_status FROM stock_basic where list_status=:ls'),
                 cls.engine,
                 params={'ls': list_status}
             )
         else:
-            code_list = pd.read_sql(sa.text('SELECT id as code_id, ts_code, list_status FROM stock_basic'),cls.engine)
+            code_list = pd.read_sql(sa.text('SELECT id as code_id, ts_code, name as stock_name, list_status FROM stock_basic'),cls.engine)
         return code_list
 
     @classmethod
