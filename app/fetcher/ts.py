@@ -50,14 +50,15 @@ class Ts(Interface):
         new_rows = self.pro.query(api, list_status='L', fields=fields_map[api])
         disappear_rows = self.pro.query(api, list_status='D', fields=fields_map[api])
         if not existed_code_list.empty:
-            new_rows = new_rows[~new_rows['ts_code'].isin(existed_code_list['ts_code'])]
+            avail_recorders = new_rows[~new_rows['ts_code'].isin(existed_code_list['ts_code'])]
         else:
-            new_rows = new_rows.append(disappear_rows)
+            avail_recorders = new_rows.append(disappear_rows)
 
-        if not new_rows.empty:
-            avail_recorders = new_rows[fields_map[api]]
+        if not avail_recorders.empty:
+            avail_recorders = avail_recorders[fields_map[api]]
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
+        # 更新退市股信息
         if not existed_code_list.empty and not disappear_rows.empty:
             new_disappear_rows = existed_code_list[existed_code_list['ts_code'].isin(disappear_rows['ts_code'])]
             new_disappear_rows = new_disappear_rows[new_disappear_rows['list_status'] == 'L']
@@ -66,6 +67,14 @@ class Ts(Interface):
                 avail_disappear_recorders = avail_disappear_recorders[avail_disappear_recorders['ts_code'].isin(new_disappear_rows['ts_code'])]
                 for delist_date, ts_code in avail_disappear_recorders.values:
                     DB.update_delist_date(delist_date, ts_code)
+
+        # 更新name信息
+        if not existed_code_list.empty and not new_rows.empty:
+            update_rows = new_rows[new_rows['ts_code'].isin(existed_code_list['ts_code'])][~new_rows['name'].isin(existed_code_list['name'])]
+            for i in range(len(update_rows)):
+                ts_code = update_rows.iloc[i]['ts_code']
+                stock_name = update_rows.iloc[i]['name']
+                DB.update_stock_name(stock_name, ts_code)
 
     def update_fut_basic(self):
         """
@@ -149,12 +158,12 @@ class Ts(Interface):
         start_date = self.trade_dates.iloc[0]['cal_date']
         end_date = self.trade_dates.iloc[-1]['cal_date']
         index_ts_code = {
-            # '2054': '000001.SH',
-            # '2068': '000016.SH',
-            # '2660': '399001.SZ',
-            # '2664': '399005.SZ',
-            # '2665': '399006.SZ',
-            # '2252': '000905.SH',
+            '2054': '000001.SH',
+            '2068': '000016.SH',
+            '2660': '399001.SZ',
+            '2664': '399005.SZ',
+            '2665': '399006.SZ',
+            '2252': '000905.SH',
             '2199': '000300.SH'
         }
 

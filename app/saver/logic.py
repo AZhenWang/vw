@@ -175,6 +175,7 @@ class DB(object):
         index_list.set_index('date_id', inplace=True)
         return index_list
 
+
     @classmethod
     def get_latestopendays_code_list(cls, latest_open_days='', date_id='', TTB='daily'):
         if date_id == '':
@@ -261,6 +262,11 @@ class DB(object):
     def update_delist_date(cls, ts_code, delist_date):
         pd.io.sql.execute('update stock_basic set list_status=%s, delist_date=%s where ts_code=%s',
                           cls.engine, params=['D', delist_date, ts_code])
+
+    @classmethod
+    def update_stock_name(cls, ts_code, stock_name):
+        pd.io.sql.execute('update stock_basic set name=%s where ts_code=%s',
+                          cls.engine, params=['D', stock_name, ts_code])
 
     @classmethod
     def get_classifiers(cls, classifier_type):
@@ -682,17 +688,23 @@ class DB(object):
         return data
 
     @classmethod
-    def count_threshold_group_by_date_id(cls, start_date_id, end_date_id):
+    def count_threshold_group_by_date_id(cls, dire='', start_date_id='', end_date_id=''):
+        sql = ' select tc.cal_date, count(t.code_id) as stock_number, ' \
+                    ' sum(db.circ_mv) as circ_mv' \
+                    ' from thresholds  t' \
+                    ' left join trade_cal tc on tc.id = t.date_id' \
+                    ' left join daily_basic db on db.code_id = t.code_id and db.date_id = t.date_id' \
+
+        if dire == 'up':
+            sql += ' where t.simple_threshold_v < -0.03 and t.date_id between :start_date_id and :end_date_id'
+        elif dire == 'down':
+            sql += ' where t.simple_threshold_v > -0.05 and t.date_id between :start_date_id and :end_date_id'
+        if dire == '':
+            sql += ' where t.date_id between :start_date_id and :end_date_id'
+
+        sql += ' group by t.date_id order by t.date_id desc'
         data = pd.read_sql(
-            sa.text(' select tc.cal_date, count(t.code_id) as up_stock_number, '
-                    ' (select count(*) from stock_basic sb where sb.list_status = "L" '
-                    ' and sb.list_date < tc.cal_date) as list_stock_number'
-                    ' from thresholds  t'
-                    ' left join trade_cal tc on tc.id = t.date_id'
-                    ' where t.simple_threshold_v < -0.03 and t.date_id between :start_date_id and :end_date_id'
-                    ' group by t.date_id'
-                    ' order by date_id desc'
-                    ),
+            sa.text(sql),
             cls.engine,
             params={'start_date_id': str(start_date_id), 'end_date_id': str(end_date_id)})
         return data
@@ -794,6 +806,33 @@ class DB(object):
         else:
             fut_list = pd.read_sql(sa.text('SELECT id as fut_id, ts_code, exchange FROM fut_basic'), cls.engine)
         return fut_list
+
+    @classmethod
+    def get_fut_daily(cls, ts_code='', start_date_id='', end_date_id=''):
+        if ts_code != '':
+            data = pd.read_sql(
+                sa.text(
+                    ' SELECT tc.cal_date, ib.ts_code, ib.name, id.fut_id, id.close, id.vol, id.date_id FROM fut_daily id '
+                    ' left join index_basic ib on ib.id = id.fut_id'
+                    ' left join trade_cal tc on tc.id = id.date_id'
+                    ' where ib.ts_code=:ts_code'
+                    ' and id.date_id between :sdi and :edi'),
+                cls.engine,
+                params={'ts_code': ts_code, 'sdi': str(start_date_id), 'edi': str(end_date_id)}
+            )
+        else:
+            data = pd.read_sql(
+                sa.text(
+                    ' SELECT tc.cal_date, ib.ts_code, ib.name, id.fut_id, id.close, id.vol, id.date_id FROM fut_daily id '
+                    ' left join index_basic ib on ib.id = id.fut_id'
+                    ' left join trade_cal tc on tc.id = id.date_id'
+                    ' where id.date_id between :sdi and :edi'),
+                cls.engine,
+                params={'sdi': str(start_date_id), 'edi': str(end_date_id)}
+            )
+        data.sort_values(by='date_id', inplace=True)
+        data.set_index('date_id', inplace=True)
+        return data
 
     # @staticmethod
     # def validate_field(columns, fields):
