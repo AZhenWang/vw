@@ -27,6 +27,13 @@ def execute(start_date='', end_date=''):
         #
         # ts_apis = ['daily', 'daily_basic', 'adj_factor',
         #            'moneyflow', 'block_trade', 'weekly', 'monthly']
-        ts_apis = ['cashflow', 'balancesheet']
+        # for api in ts_apis:
+        #     worker.query_code(api)
+
+        ts_apis = ['income', 'cashflow', 'balancesheet']
         for api in ts_apis:
-            worker.query_code(api)
+            worker.query_finance(api, report_type='1')
+
+        ts_apis = ['income', 'cashflow']
+        for api in ts_apis:
+            worker.query_finance(api, report_type='2')

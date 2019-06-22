@@ -213,7 +213,7 @@ class Ts(Interface):
             avail_recorders = new_rows[fields_map[api]]
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
-    def query_code(self, api):
+    def query_finance(self, api, report_type=''):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list['ts_code']
         codes = ['600538.SH']
@@ -221,18 +221,17 @@ class Ts(Interface):
             flag = True
             while flag:
                 try:
-                    self.update_by_code(api, ts_code, self.start_date, self.end_date, report_type=2)
+                    self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
                     flag = False
                 except BaseException as e:
                     # print(e)
                     time.sleep(10)
-                    self.update_by_code(api, ts_code, self.start_date, self.end_date, report_type=2)
+                    self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
 
-    def update_by_code(self, api, ts_code, start_date, end_date, **keyword):
-        new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, **keyword)
+    def update_finance_by_code(self, api, ts_code, start_date, end_date, report_type):
+        new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, report_type=report_type)
         if not new_rows.empty:
-            existed_reports = DB.get_existed_reports(table_name=api, ts_code=ts_code, start_date=start_date, end_date=end_date)
-            print('existed_reports=', existed_reports)
+            existed_reports = DB.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
             if not existed_reports.empty:
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
             new_rows = new_rows.merge(self.trade_dates, left_on='ann_date', right_on='cal_date')

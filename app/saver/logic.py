@@ -798,16 +798,27 @@ class DB(object):
         return data
 
     @classmethod
-    def get_existed_reports(cls, table_name, ts_code, start_date, end_date):
+    def get_existed_reports(cls, table_name, ts_code, start_date, end_date, report_type=''):
+        sql = ' SELECT end_date FROM ' + table_name + ' as api ' \
+            ' left join stock_basic sb on sb.id = api.code_id' \
+            ' left join trade_cal tc on tc.id = api.date_id ' \
+            ' where sb.ts_code = :ts_code ' \
+            ' and tc.cal_date >= :start_date and tc.cal_date <= :end_date'
+
+        params = {'ts_code': ts_code, 'report_type': report_type, 'start_date': start_date, 'end_date': end_date}
+
+        if report_type != '':
+            sql += ' and api.report_type = :report_type '
+            params['report_type'] = report_type
+
+        sql += ' order by api.date_id desc'
+
         existed_reports = pd.read_sql(
-            sa.text(
-                ' SELECT end_date FROM ' + table_name + ' as api '
-                                                        ' left join stock_basic as sb on sb.id = api.code_id'
-                                                        ' left join trade_cal tc on tc.id = api.date_id '
-                                                        ' where sb.ts_code = :ts_code and tc.cal_date >= :start_date and tc.cal_date <= :end_date'),
+            sa.text(sql),
             cls.engine,
-            params={'ts_code': ts_code, 'start_date': start_date, 'end_date': end_date}
+            params=params
         )
+
         return existed_reports
 
     @classmethod
