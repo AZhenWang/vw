@@ -225,6 +225,7 @@ class DB(object):
         )
         return existed_codes
 
+
     @classmethod
     def get_existed_fut(cls, table_name, date_id):
         existed_codes = pd.read_sql(
@@ -795,6 +796,19 @@ class DB(object):
             params=json.loads(sql_params)
         )
         return data
+
+    @classmethod
+    def get_existed_reports(cls, table_name, ts_code, start_date, end_date):
+        existed_reports = pd.read_sql(
+            sa.text(
+                ' SELECT end_date FROM ' + table_name + ' as api '
+                                                        ' left join stock_basic as sb on sb.id = api.code_id'
+                                                        ' left join trade_cal tc on tc.id = api.date_id '
+                                                        ' where sb.ts_code = :ts_code and tc.cal_date >= :start_date and tc.cal_date <= :end_date'),
+            cls.engine,
+            params={'ts_code': ts_code, 'start_date': start_date, 'end_date': end_date}
+        )
+        return existed_reports
 
     @classmethod
     def get_fut_list(cls, exchange=''):
