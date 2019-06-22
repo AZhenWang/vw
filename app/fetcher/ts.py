@@ -232,6 +232,7 @@ class Ts(Interface):
         new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, **keyword)
         if not new_rows.empty:
             existed_reports = DB.get_existed_reports(table_name=api, ts_code=ts_code, start_date=start_date, end_date=end_date)
+            print('existed_reports=', existed_reports)
             if not existed_reports.empty:
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
             new_rows = new_rows.merge(self.trade_dates, left_on='ann_date', right_on='cal_date')
