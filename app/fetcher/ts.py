@@ -213,3 +213,29 @@ class Ts(Interface):
             avail_recorders = new_rows[fields_map[api]]
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
+    def query_code(self, api):
+        # 按trade_date依次拉取所有股票信息
+        # codes = self.code_list['ts_code']
+        codes = ['600538.SH']
+        for ts_code in codes:
+            flag = True
+            while flag:
+                try:
+                    self.update_by_code(api, ts_code, self.start_date, self.end_date)
+                    flag = False
+                except BaseException as e:
+                    # print(e)
+                    time.sleep(10)
+                    self.update_by_code(api, ts_code, self.start_date, self.end_date)
+
+    def update_by_code(self, api, ts_code, start_date, end_date, **keyword):
+        new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, **keyword)
+        if not new_rows.empty:
+            # existed_codes = DB.get_existed_dates(table_name=api, ts_code=ts_code, start_date=start_date, end_date=end_date)
+            # if not existed_codes.empty:
+            #     new_rows = new_rows[~new_rows['ts_code'].isin(existed_codes['ts_code'])]
+            new_rows = new_rows.merge(self.trade_dates, left_on='ann_date', right_on='cal_date')
+            new_rows = self.code_list.merge(new_rows, on='ts_code')
+            avail_recorders = new_rows[fields_map[api]]
+            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+

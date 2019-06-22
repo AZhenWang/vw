@@ -63,7 +63,7 @@ fields_map = {
 
     # 公司报表
     'income': [
-        'code_id','date_id','ann_date','f_ann_date','report_type','comp_typ','basic_eps','diluted_eps','total_revenue',
+        'code_id', 'date_id', 'f_ann_date', 'end_date', 'report_type', 'comp_typ', 'basic_eps', 'diluted_eps', 'total_revenue',
         'revenue','int_income','prem_earned','comm_income','n_commis_income','n_oth_income','n_oth_b_income',
         'prem_income','out_prem','une_prem_reser','reins_income','n_sec_tb_income','n_sec_uw_income',
         'n_asset_mg_income','oth_b_income','fv_value_chg_gain','invest_income','ass_invest_income','forex_gain',

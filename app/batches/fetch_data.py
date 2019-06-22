@@ -29,4 +29,4 @@ def execute(start_date='', end_date=''):
         #            'moneyflow', 'block_trade', 'weekly', 'monthly']
         ts_apis = ['income']
         for api in ts_apis:
-            worker.query(api)
+            worker.query_code(api)
