@@ -249,12 +249,14 @@ class DB(object):
         return existed_codes
 
     @classmethod
-    def get_trade_codes(cls, date_id):
+    def get_trade_codes(cls, date_id, min_list_date):
         trade_codes = pd.read_sql(
             sa.text(
-                'SELECT d.code_id from daily d where d.date_id=:date_id'),
+                ' SELECT d.code_id from daily d '
+                ' left join stock_basic sb on sb.id = d.code_id'
+                ' where d.date_id=:date_id and sb.list_date >= :min_list_date'),
             cls.engine,
-            params={'date_id': date_id}
+            params={'date_id': date_id, 'min_list_date': min_list_date}
         )
         return trade_codes
 
@@ -694,13 +696,12 @@ class DB(object):
                     ' from thresholds  t' \
                     ' left join trade_cal tc on tc.id = t.date_id' \
                     ' left join daily_basic db on db.code_id = t.code_id and db.date_id = t.date_id' \
+                    ' where t.date_id between :start_date_id and :end_date_id' \
 
         if dire == 'up':
-            sql += ' where t.simple_threshold_v < -0.03 and t.date_id between :start_date_id and :end_date_id'
+            sql += '  and t.simple_threshold_v < -0.03'
         elif dire == 'down':
-            sql += ' where t.simple_threshold_v > -0.05 and t.date_id between :start_date_id and :end_date_id'
-        if dire == '':
-            sql += ' where t.date_id between :start_date_id and :end_date_id'
+            sql += ' and t.simple_threshold_v > -0.05'
 
         sql += ' group by t.date_id order by t.date_id desc'
         data = pd.read_sql(

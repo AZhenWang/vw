@@ -4,6 +4,7 @@ from app.common.exception import MyError
 from conf.myapp import init_date
 from app.saver.logic import DB
 from app.common import function as CF
+from datetime import datetime, timedelta
 
 
 class Assembly(object):
@@ -97,7 +98,8 @@ class Assembly(object):
         trade_dates = DB.get_open_cal_date(start_date, end_date)
         if not trade_dates.empty:
             for date_id, cal_date in trade_dates[['date_id', 'cal_date']].values:
-                codes = DB.get_trade_codes(date_id)
+                min_list_date = (datetime.strptime(cal_date, '%Y%m%d') - timedelta(180)).strftime('%Y%m%d')
+                codes = DB.get_trade_codes(date_id, min_list_date=min_list_date)
                 for code_id in codes['code_id']:
                     cls.update_threshold(code_id=code_id, cal_date=cal_date, period=cls.year_period+1)
 
