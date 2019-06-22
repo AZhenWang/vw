@@ -259,14 +259,14 @@ class DB(object):
         return trade_codes
 
     @classmethod
-    def update_delist_date(cls, ts_code, delist_date):
+    def update_delist_date(cls, delist_date, ts_code):
         pd.io.sql.execute('update stock_basic set list_status=%s, delist_date=%s where ts_code=%s',
                           cls.engine, params=['D', delist_date, ts_code])
 
     @classmethod
-    def update_stock_name(cls, ts_code, stock_name):
+    def update_stock_name(cls, stock_name, ts_code):
         pd.io.sql.execute('update stock_basic set name=%s where ts_code=%s',
-                          cls.engine, params=['D', stock_name, ts_code])
+                          cls.engine, params=[stock_name, ts_code])
 
     @classmethod
     def get_classifiers(cls, classifier_type):
