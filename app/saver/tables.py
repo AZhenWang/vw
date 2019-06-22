@@ -78,7 +78,7 @@ fields_map = {
 
     'balancesheet': [
         'code_id', 'date_id', 'f_ann_date', 'end_date', 'report_type', 'comp_type',
-        'total_share',  'cap_rese', 'undistr_profit', 'surplus_rese', 'special_rese', 'money_cap', 'trad_asset',
+        'total_share',  'cap_rese', 'undistr_porfit', 'surplus_rese', 'special_rese', 'money_cap', 'trad_asset',
         'notes_receiv', 'accounts_receiv', 'oth_receiv', 'prepayment', 'div_receiv', 'int_receiv', 'inventories',
         'amor_exp', 'nca_within_1y', 'sett_rsrv', 'loanto_oth_bank_fi', 'premium_receiv', 'reinsur_receiv',
         'reinsur_res_receiv', 'pur_resale_fa', 'oth_cur_assets', 'total_cur_assets', 'fa_avail_for_sale',
