@@ -249,14 +249,14 @@ class DB(object):
         return existed_codes
 
     @classmethod
-    def get_trade_codes(cls, date_id, min_list_date):
+    def get_trade_codes(cls, date_id, max_list_date):
         trade_codes = pd.read_sql(
             sa.text(
                 ' SELECT d.code_id from daily d '
                 ' left join stock_basic sb on sb.id = d.code_id'
-                ' where d.date_id=:date_id and sb.list_date >= :min_list_date'),
+                ' where d.date_id=:date_id and sb.list_date <= :max_list_date'),
             cls.engine,
-            params={'date_id': date_id, 'min_list_date': min_list_date}
+            params={'date_id': date_id, 'max_list_date': max_list_date}
         )
         return trade_codes
 

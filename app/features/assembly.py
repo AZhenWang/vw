@@ -64,7 +64,7 @@ class Assembly(object):
     def update_threshold(cls, code_id, cal_date, period=''):
         data = DB.get_code_info(code_id=code_id, end_date=cal_date, period=period)
         data = data[data['vol'] != 0]
-        adj_close = data['close']
+        adj_close = data['close'] * data['adj_factor']
 
         # next_adj_close = adj_close.shift(-1)
         # fm = pd.concat([next_adj_close, adj_close], axis=1).min(axis=1)
@@ -98,8 +98,8 @@ class Assembly(object):
         trade_dates = DB.get_open_cal_date(start_date, end_date)
         if not trade_dates.empty:
             for date_id, cal_date in trade_dates[['date_id', 'cal_date']].values:
-                min_list_date = (datetime.strptime(cal_date, '%Y%m%d') - timedelta(180)).strftime('%Y%m%d')
-                codes = DB.get_trade_codes(date_id, min_list_date=min_list_date)
+                max_list_date = (datetime.strptime(cal_date, '%Y%m%d') - timedelta(180)).strftime('%Y%m%d')
+                codes = DB.get_trade_codes(date_id, max_list_date=max_list_date)
                 for code_id in codes['code_id']:
                     cls.update_threshold(code_id=code_id, cal_date=cal_date, period=cls.year_period+1)
 
