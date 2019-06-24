@@ -124,6 +124,11 @@ fields_map = {
         'end_bal_cash_equ','beg_bal_cash_equ','im_n_incr_cash_equ',
     ],
 
+    'comp_sys': [
+        'code_id', 'date_id', 'gross_profit_ratio', 'sell_profit_ratio', 'cogs_profit_rate',
+        'inventories_opercost_ratio', 'int_debt_ratio', 'capital_turnover', 'equity_return', 'asset_return'
+    ],
+
     'features': [
         'name', 'remark',
     ],

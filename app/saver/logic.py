@@ -805,7 +805,7 @@ class DB(object):
             ' where sb.ts_code = :ts_code ' \
             ' and tc.cal_date >= :start_date and tc.cal_date <= :end_date'
 
-        params = {'ts_code': ts_code, 'report_type': report_type, 'start_date': start_date, 'end_date': end_date}
+        params = {'ts_code': ts_code, 'start_date': start_date, 'end_date': end_date}
 
         if report_type != '':
             sql += ' and api.report_type = :report_type '
@@ -820,6 +820,22 @@ class DB(object):
         )
 
         return existed_reports
+
+    @classmethod
+    def get_report_info(cls, code_id, start_date='', end_date='', TTB='', report_type='1'):
+        report_info = pd.read_sql(
+            sa.text(
+                ' SELECT tc.cal_date, r.*'
+                ' FROM ' + TTB + ' r '
+                                 ' left join daily_basic db on db.date_id = r.date_id and db.code_id = r.code_id'
+                                 ' left join trade_cal tc on tc.id = r.date_id'
+                                 ' where r.code_id = :code_id and r.report_type =:report_type '
+                                 ' and tc.cal_date >= :sd and tc.cal_date <= :ed '
+                                 ' order by r.end_date desc '),
+                cls.engine,
+                params={'code_id': str(code_id),'report_type': report_type, 'sd': str(start_date), 'ed': str(end_date)}
+        )
+        return report_info
 
     @classmethod
     def get_fut_list(cls, exchange=''):

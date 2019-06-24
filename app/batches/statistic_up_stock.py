@@ -8,33 +8,51 @@ import pandas as pd
 from app.common.function import get_cum_return_rate, get_buy_sell_points
 
 ratio_lable = {
-    8: '8',
-    16: '16',
+    6: '6',
     25: '25',
-    34: '34',
-    45: '45',
-    55: '55',
-    61.8: '61.8',
-    76: '76',
-    80: '80',
+
 }
+#
+# ratio_lable = {
+#     8: '8',
+#     16: '16',
+#     25: '25',
+#     34: '34',
+#     45: '45',
+#     55: '55',
+#     61.8: '61.8',
+#     76: '76',
+#     80: '80',
+# }
 
 
 def execute(start_date='', end_date=''):
-    trade_cal = DB.get_open_cal_date(end_date=end_date, period=20)
+    trade_cal = DB.get_open_cal_date(end_date=end_date, period=22)
     start_date_id = trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
     # index_code = '000905.SH'
-    index_code = '000001.SH'
-    statistic_data = DB.count_threshold_group_by_date_id(start_date_id=start_date_id, end_date_id=end_date_id)
+    index_code = '000300.SH'
+    # index_code = '000001.SH'
+    up_data = DB.count_threshold_group_by_date_id(dire='up', start_date_id=start_date_id, end_date_id=end_date_id)
+    all_data = DB.count_threshold_group_by_date_id(start_date_id=start_date_id, end_date_id=end_date_id)
+    up_ratio = up_data['stock_number'] / all_data['stock_number'] * 100
+    up_ratio.name = 'up_ratio'
+    up_circ_ratio = up_data['circ_mv'] / all_data['circ_mv'] * 100
+    up_circ_ratio.name = 'up_circ_ratio'
 
-    statistic_data.eval('up_ratio=up_stock_number/list_stock_number*100', inplace=True)
-    statistic_data['up_ratio'] = statistic_data['up_ratio'].apply(np.round, decimals=2)
-    data = statistic_data[['cal_date', 'up_ratio']]
+    up_ratio = up_ratio.apply(np.round, decimals=2)
+    up_circ_ratio = up_circ_ratio.apply(np.round, decimals=2)
+    up_pct = round(up_ratio.pct_change(periods=-1) * 100, 1)
+    up_pct.name = 'up_pct'
+    up_circ_pct = round(up_circ_ratio.pct_change(periods=-1) * 100, 1)
+    up_circ_pct.name = 'up_circ_pct'
 
-    statistic_data.sort_values(by='cal_date', ascending=True, inplace=True)
+    data = pd.concat([up_data.cal_date, up_ratio, up_circ_ratio, up_pct, up_circ_pct], axis=1)
+
+    statistic_data = data.sort_values(by='cal_date', ascending=True)
     statistic_data.reset_index(inplace=True)
-    holdings = get_holdings(statistic_data['up_ratio'])
+    # holdings = get_holdings(statistic_data['up_ratio'])
+    holdings = get_holdings(statistic_data['up_circ_ratio'])
     buy, sell = get_buy_sell_points(holdings)
 
     fig, ax = plt.subplots(2, 1, figsize=(16, 16), sharex=True)
@@ -83,7 +101,8 @@ def execute(start_date='', end_date=''):
     # }
     color = 'tab:red'
     ax0_1 = ax[0].twinx()
-    ax0_1.plot(statistic_data['up_ratio'], 'ro-')
+    ax0_1.plot(statistic_data['up_ratio'], 'r-')
+    ax0_1.plot(statistic_data['up_circ_ratio'], 'b-')
     ax0_1.yaxis.set_ticks(list(ratio_lable.keys()))
     ax0_1.yaxis.set_ticklabels(list(ratio_lable.values()))
     ax0_1.tick_params(axis='y', labelcolor=color)
@@ -118,9 +137,9 @@ def get_holdings(Y_hat):
     holdings = [0] * 2
     holding = 0
     for i in range(2, len(Y_hat)):
-        if (Y_hat[i] > Y_hat[i - 1]) and (Y_hat[i - 1] > 8):
+        if (Y_hat[i] > 0.6) and (Y_hat[i - 1] > 6):
             holding = 1
-        elif (Y_hat[i] < Y_hat[i - 1]) and (Y_hat[i] < 8):
+        elif (Y_hat[i] < Y_hat[i - 1]) and (Y_hat[i] < 6):
             holding = 0
 
         holdings.append(holding)

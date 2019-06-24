@@ -67,7 +67,7 @@ create table income (
    distable_profit	float  NULL comment'可分配利润',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`(`end_date`, `code_id`)
+   CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`(`end_date`, `code_id`,  `report_type`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'利润表';
 
 
@@ -212,7 +212,7 @@ create table balancesheet (
    hfs_sales	float	NULL comment'	持有待售的负债',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`(`end_date`, `code_id`)
+   CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`(`end_date`, `code_id`,  `report_type`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'资产负债表';
 
 
@@ -310,5 +310,23 @@ create table cashflow (
    im_n_incr_cash_equ	float  null comment'现金及现金等价物净增加额(间接法)',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`(`end_date`, `code_id`)
+   CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`(`end_date`, `code_id`, `report_type`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'现金流量表';
+
+
+create table comp_sys (
+   id int not null auto_increment,
+   code_id INT NOT NULL,
+   date_id INT NOT NULL comment'报告日期',
+   gross_profit_ratio float null comment'毛利率',
+   sell_profit_ratio float null comment'销售利润率',
+   cogs_profit_rate float null comment'成本费用利润率',
+   inventories_opercost_ratio float null comment'存货周转率',
+   capital_turnover float null comment'资金周转率',
+   int_debt_ratio float null comment'有息负债率',
+   equity_return float null comment'净资产销售回报率',
+   asset_return float null comment'总资产报酬率',
+   created_at timestamp null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`(`end_date`, `code_id`, `report_type`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'现金流量表';
