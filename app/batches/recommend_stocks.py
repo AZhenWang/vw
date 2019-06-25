@@ -11,7 +11,7 @@ recommend_type = 'rs'
 
 
 def execute(start_date='', end_date=''):
-    trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
+    trade_cal = DB.get_open_cal_date(end_date=end_date, period=10)
     today_date_id = trade_cal.iloc[-1]['date_id']
     end_date_id = trade_cal.iloc[-4]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
@@ -35,14 +35,19 @@ def execute(start_date='', end_date=''):
         next_date_id = after_trade_cal.iloc[1]['date_id']
         big_next_date = after_trade_cal.iloc[-1]['cal_date']
         market = []
-        data = DB.count_threshold_group_by_date_id(start_date_id=grand_pre_date_id, end_date_id=next_date_id)
-        data.eval('up_stock_ratio=up_stock_number/list_stock_number*100', inplace=True)
-        data['up_stock_ratio'] = data['up_stock_ratio'].apply(np.round, decimals=2)
-        if len(data) != 4:
-            continue
-        market = np.where(np.diff(data['up_stock_ratio']) < 0, 1, 0)
-        if market[-2] < 1:
-            continue
+        # data = DB.count_threshold_group_by_date_id(start_date_id=grand_pre_date_id, end_date_id=next_date_id)
+        # data.eval('up_stock_ratio=up_stock_number/list_stock_number*100', inplace=True)
+        # data['up_stock_ratio'] = data['up_stock_ratio'].apply(np.round, decimals=2)
+        up_data = DB.count_threshold_group_by_date_id(dire='up', start_date_id=grand_pre_date_id, end_date_id=next_date_id)
+        all_data = DB.count_threshold_group_by_date_id(start_date_id=grand_pre_date_id, end_date_id=next_date_id)
+        up_circ_ratio = up_data['circ_mv'] / all_data['circ_mv'] * 100
+        up_circ_ratio.name = 'up_circ_ratio'
+
+        # if len(up_circ_ratio) != 4:
+        #     continue
+        market = np.where(np.diff(up_circ_ratio) < 0, 1, 0)
+        # if market[-2] < 1:
+        #     continue
 
         recommended_daily = DB.get_code_daily(code_id=code_id, date_id=recommended_date_id)
         focus_log = DB.get_focus_stock_log(code_id=code_id, recommended_date_id=recommended_date_id)
