@@ -299,16 +299,45 @@ class DB(object):
         return daily
 
     @classmethod
-    def get_code_info(cls, code_id, start_date='', end_date='', period='', TTB='daily'):
+    def get_moneyflows(cls, code_id='', start_date='', end_date=''):
+        init_cond = ''
+        if code_id != '':
+            init_cond = 'd.code_id = :code_id and '
+
+        data = pd.read_sql(
+            sa.text(
+                ' SELECT tc.cal_date, m.*, d.open, d.high, d.close, d.low, d.pct_chg,'
+                ' af.adj_factor, db.turnover_rate_f, db.float_share'
+                ' FROM moneyflow m '
+                ' left join daily d on d.code_id = m.code_id and d.date_id = m.date_id'
+                ' left join daily_basic db on db.date_id = d.date_id and db.code_id = m.code_id'
+                ' left join adj_factor af on af.date_id = d.date_id and af.code_id = m.code_id'
+                ' left join trade_cal tc on tc.id = d.date_id'
+                ' where ' + init_cond + ' tc.cal_date >= :sd and tc.cal_date <= :ed '
+                                        ' order by tc.cal_date desc '),
+            cls.engine,
+            params={'code_id': str(code_id), 'sd': str(start_date), 'ed': str(end_date)}
+        )
+        data.sort_values(by='date_id', inplace=True)
+        data.set_index('date_id', inplace=True)
+
+        return data
+
+    @classmethod
+    def get_code_info(cls, code_id='', start_date='', end_date='', period='', TTB='daily'):
+        init_cond = ''
+        if code_id != '':
+            init_cond = 'd.code_id = :code_id and '
+
         if start_date == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, af.adj_factor'
+                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share'
                     ' FROM  ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' where d.code_id = :code_id and tc.cal_date <= :ed'
+                    ' where ' + init_cond + ' tc.cal_date <= :ed'
                     ' order by tc.cal_date desc '
                     ' limit :period'),
                 cls.engine,
@@ -317,12 +346,12 @@ class DB(object):
         elif end_date == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, af.adj_factor '
+                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share '
                     ' FROM  ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' where d.code_id = :code_id and tc.cal_date >= :sd'
+                    ' where ' + init_cond + ' tc.cal_date >= :sd'
                     ' order by tc.cal_date asc '
                     ' limit :period'),
                 cls.engine,
@@ -331,12 +360,12 @@ class DB(object):
         else:
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, af.adj_factor'
+                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share'
                     ' FROM ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
                     ' left join trade_cal tc on tc.id = d.date_id'
-                    ' where d.code_id = :code_id and tc.cal_date >= :sd and tc.cal_date <= :ed '
+                    ' where ' + init_cond + ' tc.cal_date >= :sd and tc.cal_date <= :ed '
                     ' order by tc.cal_date desc '),
                 cls.engine,
                 params={'code_id': str(code_id), 'sd': str(start_date), 'ed': str(end_date)}
@@ -364,6 +393,10 @@ class DB(object):
     @classmethod
     def truncate_features_groups(cls):
         pd.io.sql.execute('truncate features_groups', cls.engine)
+
+    @classmethod
+    def truncate_mv_moneyflow(cls):
+        pd.io.sql.execute('truncate mv_moneyflow', cls.engine)
 
     @classmethod
     def insert_features_groups(cls, feature_id, group_number):

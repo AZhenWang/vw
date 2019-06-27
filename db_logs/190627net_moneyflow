@@ -1,0 +1,23 @@
+create table mv_moneyflow (
+   id int not null auto_increment,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
+   net_mf float null comment'净流入资金移动平均值',
+   net_elg float null comment'特大净流入资金移动平均值',
+   net_lg float null comment'大净流入资金移动平均值',
+   net_md float null comment'中净流入资金移动平均值',
+   net_sm float null comment'小净流入资金移动平均值',
+   mv_buy_elg float null comment'特大流入资金移动平均值',
+   mv_sell_elg float null comment'特大流出资金移动平均值',
+   turnover_rate_f float null comment'换手率',
+   mv_turnover_rate_f float null comment'换手率5天移动平均值',
+   turnover_rate_f2 float null comment'加权换手率',
+   mv_turnover_rate_f2 float null comment'加权换手率5天移动平均值',
+   mv_tr_f2_pct_chg float null comment'加权换手率5天移动平均值的变换值',
+   mv_mv_tr_f2 float null comment'加权换手率5天移动平均值的移动平均值',
+   mv_mv_tr_f2_pct_chg float null comment'加权换手率5天移动平均值的移动平均值的变换值',
+
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`code_id`, `date_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'资金流入移动平均值';
