@@ -25,7 +25,8 @@ def execute(start_date='', end_date=''):
     pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window)
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
 
-    flow = DB.get_moneyflows(code_id=2772, end_date=end_date, start_date=pre_trade_cal.iloc[0]['cal_date'])
+    code_id = ''
+    flow = DB.get_moneyflows(code_id=code_id, end_date=end_date, start_date=pre_trade_cal.iloc[0]['cal_date'])
     gp = flow.groupby(by='code_id')
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     i = 0
