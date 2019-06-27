@@ -299,7 +299,7 @@ class DB(object):
         return daily
 
     @classmethod
-    def get_moneyflows(cls, code_id='', start_date='', end_date=''):
+    def get_moneyflows(cls, code_id='', start_date_id='', end_date_id=''):
         init_cond = ''
         if code_id != '':
             init_cond = 'd.code_id = :code_id and '
@@ -311,13 +311,14 @@ class DB(object):
                 ' FROM moneyflow m '
                 ' left join daily d on d.code_id = m.code_id and d.date_id = m.date_id'
                 ' left join daily_basic db on db.date_id = d.date_id and db.code_id = m.code_id'
+                ' left join trade_cal tc on tc.id = m.date_id'
                 ' left join adj_factor af on af.date_id = d.date_id and af.code_id = m.code_id'
-                ' left join trade_cal tc on tc.id = d.date_id'
-                ' where ' + init_cond + ' tc.cal_date >= :sd and tc.cal_date <= :ed '
+                ' where ' + init_cond + ' m.date_id >= :sdi and  m.date_id <= :edi '
                                         ' order by tc.cal_date desc '),
             cls.engine,
-            params={'code_id': str(code_id), 'sd': str(start_date), 'ed': str(end_date)}
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id)}
         )
+        print(data)
         data.sort_values(by='date_id', inplace=True)
         data.set_index('date_id', inplace=True)
 
