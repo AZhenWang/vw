@@ -1,13 +1,6 @@
 from app.saver.logic import DB
 from app.saver.tables import fields_map
-import numpy as np
-import matplotlib.pylab as plt
 import pandas as pd
-from mpl_finance import candlestick_ohlc
-from matplotlib import dates as mdates
-from matplotlib import ticker as mticker
-from datetime import datetime as dt
-import matplotlib
 
 
 def execute(start_date='', end_date=''):
