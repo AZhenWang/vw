@@ -23,7 +23,6 @@ def execute(start_date='', end_date=''):
 
     window = 20*6
     pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window)
-    trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
 
     code_id = ''
     flow = DB.get_moneyflows(code_id=code_id, end_date=end_date, start_date=pre_trade_cal.iloc[0]['cal_date'])
@@ -71,7 +70,7 @@ def execute(start_date='', end_date=''):
         mv_tr_f2_pct_chg = mv_turnover_rate_f2 - mv_turnover_rate_f2.shift()
         mv_tr_f2_pct_chg.name = 'mv_tr_f2_pct_chg'
 
-        mv_mv_tr_f2 = mv_turnover_rate_f2.rolling(window=5).mean()
+        mv_mv_tr_f2 = mv_tr_f2_pct_chg.rolling(window=5).mean()
         mv_mv_tr_f2.name = 'mv_mv_tr_f2'
         mv_mv_tr_f2_pct_chg = mv_mv_tr_f2 - mv_mv_tr_f2.shift()
         mv_mv_tr_f2_pct_chg.name = 'mv_mv_tr_f2_pct_chg'
@@ -101,6 +100,5 @@ def execute(start_date='', end_date=''):
 
             }
             i += 1
-
     if not new_rows.empty:
         new_rows.to_sql('mv_moneyflow', DB.engine, index=False, if_exists='append', chunksize=1000)
