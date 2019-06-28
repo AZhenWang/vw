@@ -26,14 +26,16 @@ def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(end_date=end_date, start_date=start_date)
     start_date_id = pre_trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
-
+    #
     codes = DB.get_latestopendays_code_list(
         latest_open_days=window, date_id=trade_cal.iloc[0]['date_id'])
-    DB.truncate_mv_moneyflow()
+    #
     code_ids = codes['code_id']
+    # code_ids = [2772]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     i = 0
-    for code_id in code_ids.values:
+    for code_id in code_ids:
+        DB.delete_mv_moneyflow_by_code(code_id=code_id)
         flow = DB.get_moneyflows(code_id=code_id, end_date_id=end_date_id, start_date_id=start_date_id)
         flow_mean = flow[
             ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol',
@@ -79,9 +81,19 @@ def execute(start_date='', end_date=''):
         mv_mv_tr_f2_pct_chg = mv_mv_tr_f2 - mv_mv_tr_f2.shift()
         mv_mv_tr_f2_pct_chg.name = 'mv_mv_tr_f2_pct_chg'
 
+        elg_base_diff = (net_elg - net_elg.shift()) * 100
+        mv_elg_base_diff10 = elg_base_diff.rolling(window=10).mean()
+        mv_elg_base_diff10.name = 'mv_elg_base_diff10'
+        mv_elg_base_diff5 = elg_base_diff.rolling(window=5).mean()
+        mv_elg_base_diff5.name = 'mv_elg_base_diff5'
+
+        weight = mv_elg_base_diff5 - mv_elg_base_diff5.shift() + mv_elg_base_diff10 - mv_elg_base_diff10.shift()
+        weight.name = 'weight'
+
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
                           turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2,
-                          mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg], axis=1).dropna()
+                          mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg,
+                          mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1).dropna()
 
         for j in range(len(data)):
             new_rows.loc[i] = {
@@ -101,7 +113,9 @@ def execute(start_date='', end_date=''):
                 'mv_tr_f2_pct_chg': round(data.iloc[j]['mv_tr_f2_pct_chg'], 2),
                 'mv_mv_tr_f2': round(data.iloc[j]['mv_mv_tr_f2'], 2),
                 'mv_mv_tr_f2_pct_chg': round(data.iloc[j]['mv_mv_tr_f2_pct_chg'], 2),
-
+                'mv_elg_base_diff5': round(data.iloc[j]['mv_elg_base_diff5'], 2),
+                'mv_elg_base_diff10': round(data.iloc[j]['mv_elg_base_diff10'], 2),
+                'weight': round(data.iloc[j]['weight'], 2),
             }
             i += 1
         if not new_rows.empty:

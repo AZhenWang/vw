@@ -318,7 +318,6 @@ class DB(object):
             cls.engine,
             params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id)}
         )
-        print(data)
         data.sort_values(by='date_id', inplace=True)
         data.set_index('date_id', inplace=True)
 
@@ -396,8 +395,8 @@ class DB(object):
         pd.io.sql.execute('truncate features_groups', cls.engine)
 
     @classmethod
-    def truncate_mv_moneyflow(cls):
-        pd.io.sql.execute('truncate mv_moneyflow', cls.engine)
+    def delete_mv_moneyflow_by_code(cls, code_id):
+        pd.io.sql.execute('delete from mv_moneyflow where code_id = %s', cls.engine, params=[code_id])
 
     @classmethod
     def insert_features_groups(cls, feature_id, group_number):
