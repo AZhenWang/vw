@@ -16,8 +16,11 @@ create table mv_moneyflow (
    mv_tr_f2_pct_chg float null comment'加权换手率5天移动平均值的变换值',
    mv_mv_tr_f2 float null comment'加权换手率5天移动平均值的移动平均值',
    mv_mv_tr_f2_pct_chg float null comment'加权换手率5天移动平均值的移动平均值的变换值',
-
+   mv_elg_base_diff5 float null comment'特大资金净流入基差5天移动平均值',
+   mv_elg_base_diff10 float null comment'特大资金净流入基差10天移动平均值',
+   weight float null comment' ',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`code_id`, `date_id`)
+   index(code_id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `date_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'资金流入移动平均值';
