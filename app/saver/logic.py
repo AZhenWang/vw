@@ -314,7 +314,30 @@ class DB(object):
                 ' left join trade_cal tc on tc.id = m.date_id'
                 ' left join adj_factor af on af.date_id = d.date_id and af.code_id = m.code_id'
                 ' where ' + init_cond + ' m.date_id >= :sdi and  m.date_id <= :edi '
-                                        ' order by tc.cal_date desc '),
+                                        ' order by m.date_id desc '),
+            cls.engine,
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id)}
+        )
+        data.sort_values(by='date_id', inplace=True)
+        data.set_index('date_id', inplace=True)
+
+        return data
+
+    @classmethod
+    def get_mv_moneyflows(cls, code_id='', start_date_id='', end_date_id=''):
+        init_cond = ''
+        if code_id != '':
+            init_cond = 'd.code_id = :code_id and '
+
+        data = pd.read_sql(
+            sa.text(
+                ' SELECT tc.cal_date, sb.name, sb.ts_code, m.*, d.open, d.high, d.close, d.low, d.pct_chg'
+                ' FROM mv_moneyflow m '
+                ' left join daily d on d.code_id = m.code_id and d.date_id = m.date_id'
+                ' left join stock_basic sb on sb.id = m.code_id'
+                ' left join trade_cal tc on tc.id = m.date_id'
+                ' where ' + init_cond + ' m.date_id >= :sdi and  m.date_id <= :edi '
+                                        ' order by m.date_id desc '),
             cls.engine,
             params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id)}
         )

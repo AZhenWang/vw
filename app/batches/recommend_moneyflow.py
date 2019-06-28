@@ -14,19 +14,19 @@ def execute(start_date='', end_date=''):
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     end_date_id = trade_cal.iloc[-1]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
-    logs = DB.get_mv_moneyflow(start_date_id=start_date_id, end_date_id=end_date_id)
+    logs = DB.get_mv_moneyflows(start_date_id=start_date_id, end_date_id=end_date_id)
     msgs = []
-    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name',  'market',
-                                             'predict_rose', 'pct_chg', 'moods', 'qqb',
-                                             'code_id', 'type', 'recommend_at', 'holding_at', 'holding_pct_chg',
+    recommend_stocks = pd.DataFrame(columns=['ts_code', 'code_name', 'code_id', 'date',  'mv_mv_tr_f2_pct_chg',
                                              ])
     for i in range(len(logs)):
-        code_id = logs.iloc[i]['code_id']
-        recommended_date_id = logs.iloc[i]['date_id']
         log = logs.iloc[i]
+        code_id = logs.iloc[i]['code_id']
+        recommended_date_id = logs.index[i]
+
         if log['net_elg'] > 0.1 and log['turnover_rate_f2'] < 25 and log['mv_turnover_rate_f2'] < 20 and \
             log['mv_elg_base_diff5'] > log['mv_elg_base_diff10'] and log['mv_elg_base_diff5'] > 0.1 and \
             log['mv_mv_tr_f2_pct_chg'] > 0.3 and log['mv_mv_tr_f2'] > 0:
+
             predict_rose = 0
             DB.insert_focus_stocks(code_id=code_id,
                                    star_idx=1,
