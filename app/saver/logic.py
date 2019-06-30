@@ -33,6 +33,16 @@ class DB(object):
                           cls.engine, params=[str(pct_chg), str(date_id), str(code_id)])
 
     @classmethod
+    def get_date_id(cls, cal_date):
+        data = pd.read_sql(
+            sa.text('SELECT id as date_id FROM trade_cal where cal_date = :cal_date'),
+            cls.engine,
+            params={'cal_date': cal_date}
+        )
+        date_id = data.iloc[0]['date_id']
+        return date_id
+
+    @classmethod
     def get_cal_date(cls, start_date='', end_date='', limit=''):
         if start_date =='':
             trade_cal = pd.read_sql(
@@ -418,8 +428,13 @@ class DB(object):
         pd.io.sql.execute('truncate features_groups', cls.engine)
 
     @classmethod
-    def delete_mv_moneyflow_by_code(cls, code_id):
-        pd.io.sql.execute('delete from mv_moneyflow where code_id = %s', cls.engine, params=[code_id])
+    def delete_logs(cls, code_id, start_date_id, end_date_id, tablename=''):
+        pd.io.sql.execute('delete from '+ tablename +' where code_id = %s and date_id >= %s and date_id <= %s', cls.engine, params=[str(code_id), str(start_date_id), str(end_date_id)])
+
+    @classmethod
+    def delete_comp_sys_logs(cls, code_id, start_date, end_date):
+        pd.io.sql.execute('delete from comp_sys where code_id = %s and end_date >= %s and end_date <= %s',
+                          cls.engine, params=[str(code_id), str(start_date), str(end_date)])
 
     @classmethod
     def insert_features_groups(cls, feature_id, group_number):
@@ -881,15 +896,14 @@ class DB(object):
     def get_report_info(cls, code_id, start_date='', end_date='', TTB='', report_type='1'):
         report_info = pd.read_sql(
             sa.text(
-                ' SELECT tc.cal_date, r.*'
+                ' SELECT r.*'
                 ' FROM ' + TTB + ' r '
                                  ' left join daily_basic db on db.date_id = r.date_id and db.code_id = r.code_id'
-                                 ' left join trade_cal tc on tc.id = r.date_id'
                                  ' where r.code_id = :code_id and r.report_type =:report_type '
-                                 ' and tc.cal_date >= :sd and tc.cal_date <= :ed '
-                                 ' order by r.end_date desc '),
+                                 ' and r.end_date >= :sdi and r.end_date <= :edi'
+                                 ' order by r.end_date asc '),
                 cls.engine,
-                params={'code_id': str(code_id),'report_type': report_type, 'sd': str(start_date), 'ed': str(end_date)}
+                params={'code_id': str(code_id), 'report_type': report_type, 'sdi': str(start_date), 'edi': str(end_date)}
         )
         return report_info
 

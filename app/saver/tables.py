@@ -130,8 +130,8 @@ fields_map = {
     ],
 
     'comp_sys': [
-        'code_id', 'date_id', 'gross_profit_ratio', 'sell_profit_ratio', 'cogs_profit_rate',
-        'inventories_opercost_ratio', 'int_debt_ratio', 'capital_turnover', 'equity_return', 'asset_return'
+        'code_id', 'gross_profit_ratio', 'sell_profit_ratio', 'cogs_profit_rate', 'cashflow_ratio',
+        'inventories_opercost_ratio', 'capital_turnover', 'equity_return', 'asset_return','ratio_sum'
     ],
 
     'features': [
