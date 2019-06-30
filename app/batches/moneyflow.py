@@ -117,5 +117,5 @@ def execute(start_date='', end_date=''):
                 'weight': round(data.iloc[j]['weight'], 2),
             }
             i += 1
-        if not new_rows.empty:
-            new_rows.to_sql('mv_moneyflow', DB.engine, index=False, if_exists='append', chunksize=1000)
+    if not new_rows.empty:
+        new_rows.to_sql('mv_moneyflow', DB.engine, index=False, if_exists='append', chunksize=1000)
