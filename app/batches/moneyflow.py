@@ -31,7 +31,7 @@ def execute(start_date='', end_date=''):
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     #
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [1,2]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     i = 0
     for code_id in code_ids:
