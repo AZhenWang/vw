@@ -22,7 +22,7 @@ def execute(start_date='', end_date=''):
     """
 
     window = 20*6
-    pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window)
+    pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window+11)
     trade_cal = DB.get_open_cal_date(end_date=end_date, start_date=start_date)
     start_date_id = pre_trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
@@ -40,6 +40,8 @@ def execute(start_date='', end_date=''):
         flow_mean = flow[
             ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol',
              'buy_md_vol', 'sell_sm_vol', 'buy_sm_vol']].rolling(window=window).mean()
+        print('flow',flow)
+        print('flow_mean=', flow_mean)
 
         net_mf = (flow_mean['net_mf_vol']) * 100 /flow['float_share']
         net_mf.name = 'net_mf'
@@ -94,7 +96,7 @@ def execute(start_date='', end_date=''):
                           turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2,
                           mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg,
                           mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1).dropna()
-
+        print(data)
         for j in range(len(data)):
             new_rows.loc[i] = {
                 'code_id': code_id,
@@ -118,5 +120,6 @@ def execute(start_date='', end_date=''):
                 'weight': round(data.iloc[j]['weight'], 2),
             }
             i += 1
+        print(new_rows)
         if not new_rows.empty:
             new_rows.to_sql('mv_moneyflow', DB.engine, index=False, if_exists='append', chunksize=1000)
