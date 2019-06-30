@@ -223,7 +223,6 @@ class Ts(Interface):
             while flag:
                 try:
                     self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
-                    time.sleep(0.5)
                     flag = False
                 except BaseException as e:
                     # print(e)
