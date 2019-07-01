@@ -239,5 +239,5 @@ class Ts(Interface):
             new_rows = new_rows.merge(self.trade_dates, left_on='ann_date', right_on='cal_date')
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
-            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=2000)
 
