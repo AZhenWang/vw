@@ -224,7 +224,7 @@ class Ts(Interface):
                 try:
                     self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
                     flag = False
-                    time.sleep(5)
+                    time.sleep(10)
                 except BaseException as e:
                     # print(e)
                     time.sleep(10)
@@ -239,5 +239,5 @@ class Ts(Interface):
             new_rows = new_rows.merge(self.trade_dates, left_on='ann_date', right_on='cal_date')
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
-            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=2000)
+            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
 
