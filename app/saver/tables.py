@@ -39,6 +39,7 @@ fields_map = {
     'mv_moneyflow': [
         'code_id', 'date_id', 'net_mf', 'net_elg', 'net_lg', 'net_md', 'net_sm', 'mv_buy_elg',
         'mv_sell_elg', 'turnover_rate_f', 'mv_turnover_rate_f', 'turnover_rate_f2', 'mv_turnover_rate_f2',
+        'turnover_rate_f3', 'mv_turnover_rate_f3',
         'mv_tr_f2_pct_chg', 'mv_mv_tr_f2', 'mv_mv_tr_f2_pct_chg', 'mv_elg_base_diff5', 'mv_elg_base_diff10', 'weight'
     ],
 

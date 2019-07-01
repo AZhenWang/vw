@@ -24,19 +24,20 @@ def execute(start_date='', end_date=''):
     window = 20*6
     pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window+11)
     trade_cal = DB.get_open_cal_date(end_date=end_date, start_date=start_date)
-    start_date_id = pre_trade_cal.iloc[0]['date_id']
+    pre_date_id = pre_trade_cal.iloc[0]['date_id']
+    start_date_id = trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
     #
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     #
     code_ids = codes['code_id']
-    # code_ids = [1,2]
+    # code_ids = [2772]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     i = 0
     for code_id in code_ids:
-        DB.delete_mv_moneyflow_by_code(code_id=code_id)
-        flow = DB.get_moneyflows(code_id=code_id, end_date_id=end_date_id, start_date_id=start_date_id)
+        DB.delete_logs(code_id, start_date_id, end_date_id, tablename='mv_moneyflow')
+        flow = DB.get_moneyflows(code_id=code_id, end_date_id=end_date_id, start_date_id=pre_date_id)
         flow_mean = flow[
             ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol',
              'buy_md_vol', 'sell_sm_vol', 'buy_sm_vol']].rolling(window=window).mean()
@@ -81,19 +82,31 @@ def execute(start_date='', end_date=''):
         mv_mv_tr_f2_pct_chg = mv_mv_tr_f2 - mv_mv_tr_f2.shift()
         mv_mv_tr_f2_pct_chg.name = 'mv_mv_tr_f2_pct_chg'
 
+        turnover_rate_f3 = flow['turnover_rate_f'] * (flow['close'] - flow['open']) / abs(
+            flow['close'] - flow['open'] + 2 * flow['high'] - 2 * flow['low'])
+        turnover_rate_f3.fillna(value=turnover_rate_back, inplace=True)
+        turnover_rate_f3.name = 'turnover_rate_f3'
+        mv_turnover_rate_f3 = turnover_rate_f3.rolling(window=5).mean()
+        mv_turnover_rate_f3.name = 'mv_turnover_rate_f3'
+
         elg_base_diff = (net_elg - net_elg.shift()) * 100
         mv_elg_base_diff10 = elg_base_diff.rolling(window=10).mean()
         mv_elg_base_diff10.name = 'mv_elg_base_diff10'
         mv_elg_base_diff5 = elg_base_diff.rolling(window=5).mean()
         mv_elg_base_diff5.name = 'mv_elg_base_diff5'
 
-        weight = mv_elg_base_diff5 - mv_elg_base_diff5.shift() + mv_elg_base_diff10 - mv_elg_base_diff10.shift()
+        # weight = mv_elg_base_diff5 - mv_elg_base_diff5.shift() + mv_elg_base_diff10 - mv_elg_base_diff10.shift()
+        # weight.name = 'weight'
+
+        # weight = round(mv_mv_tr_f2_pct_chg * abs(mv_elg_base_diff5 - mv_elg_base_diff5.shift()), 1)
+        weight = round(turnover_rate_f * (flow['open'] - flow['close'].shift()) * 100 / flow['close'].shift(), 1)
         weight.name = 'weight'
 
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
-                          turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2,
+                          turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2, turnover_rate_f3, mv_turnover_rate_f3,
                           mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg,
                           mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1).dropna()
+        data = data[data.index >= start_date_id]
         for j in range(len(data)):
             new_rows.loc[i] = {
                 'code_id': code_id,
@@ -107,8 +120,10 @@ def execute(start_date='', end_date=''):
                 'mv_sell_elg': round(data.iloc[j]['mv_sell_elg'], 2),
                 'turnover_rate_f': round(data.iloc[j]['turnover_rate_f'], 2),
                 'turnover_rate_f2': round(data.iloc[j]['turnover_rate_f2'], 2),
+                'turnover_rate_f3': round(data.iloc[j]['turnover_rate_f3'], 2),
                 'mv_turnover_rate_f': round(data.iloc[j]['mv_turnover_rate_f'], 2),
                 'mv_turnover_rate_f2': round(data.iloc[j]['mv_turnover_rate_f2'], 2),
+                'mv_turnover_rate_f3': round(data.iloc[j]['mv_turnover_rate_f3'], 2),
                 'mv_tr_f2_pct_chg': round(data.iloc[j]['mv_tr_f2_pct_chg'], 2),
                 'mv_mv_tr_f2': round(data.iloc[j]['mv_mv_tr_f2'], 2),
                 'mv_mv_tr_f2_pct_chg': round(data.iloc[j]['mv_mv_tr_f2_pct_chg'], 2),

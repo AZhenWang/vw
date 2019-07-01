@@ -11,6 +11,8 @@ create table mv_moneyflow (
    mv_sell_elg float null comment'特大流出资金移动平均值',
    turnover_rate_f float null comment'换手率',
    mv_turnover_rate_f float null comment'换手率5天移动平均值',
+   turnover_rate_f3 float null comment'换手率',
+   mv_turnover_rate_f3 float null comment'换手率5天移动平均值',
    turnover_rate_f2 float null comment'加权换手率',
    mv_turnover_rate_f2 float null comment'加权换手率5天移动平均值',
    mv_tr_f2_pct_chg float null comment'加权换手率5天移动平均值的变换值',
