@@ -33,7 +33,7 @@ def execute(start_date='', end_date=''):
     #
     code_ids = codes['code_id']
     # code_ids = range(1, 10)
-    # code_ids = [2772]
+    # code_ids = [2020]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     i = 0
     for code_id in code_ids:
@@ -111,7 +111,7 @@ def execute(start_date='', end_date=''):
         #     weight.iloc[i] = round((flow.iloc[i]['close'] - down_limit.iloc[i]) * 100 / high_max.iloc[i], 2)
         weight.name = 'weight'
 
-        pre_trf2_max_dis = turnover_rate_f2.rolling(window=20).max() - turnover_rate_f2.rolling(window=20).min()
+        pre_trf2_max_dis = turnover_rate_f2.shift().rolling(window=20).max() - turnover_rate_f2.rolling(window=20).min()
         pre_trf2_max_dis.name = 'pre_trf2_max_dis'
 
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
