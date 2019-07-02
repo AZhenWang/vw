@@ -99,14 +99,18 @@ def execute(start_date='', end_date=''):
         # weight = mv_elg_base_diff5 - mv_elg_base_diff5.shift() + mv_elg_base_diff10 - mv_elg_base_diff10.shift()
         # weight.name = 'weight'
 
-        weight = round((mv_turnover_rate_f3 - mv_turnover_rate_f3.shift()) * abs(mv_elg_base_diff5 - mv_elg_base_diff5.shift()), 1)
+        # weight = round((mv_turnover_rate_f3 - mv_turnover_rate_f3.shift()) * abs(mv_elg_base_diff5 - mv_elg_base_diff5.shift()), 1)
         # weight = round(turnover_rate_f * (flow['open'] - flow['close'].shift()) * 100 / flow['close'].shift(), 1)
+        high_max = flow['high'].shift().rolling(window=20).max()
+        down_limit = high_max * 0.8
+        weight = round((flow['low'] - down_limit) * 100 / high_max, 2)
         weight.name = 'weight'
 
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
                           turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2, turnover_rate_f3, mv_turnover_rate_f3,
                           mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg,
                           mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1)
+
         data = data[data.index >= start_date_id]
         for j in range(len(data)):
             new_rows.loc[i] = {
