@@ -71,6 +71,7 @@ def execute(start_date='', end_date=''):
         turnover_rate_f2 = flow['turnover_rate_f'] * (2 * flow['close'] - flow['high'] - flow['low']) / abs(
             flow['high'] - flow['low'])
         turnover_rate_f2.name = 'turnover_rate_f2'
+        turnover_rate_f2.fillna(value=turnover_rate_back, inplace=True)
         mv_turnover_rate_f2 = turnover_rate_f2.rolling(window=5).mean()
         mv_turnover_rate_f2.name = 'mv_turnover_rate_f2'
 
@@ -98,14 +99,14 @@ def execute(start_date='', end_date=''):
         # weight = mv_elg_base_diff5 - mv_elg_base_diff5.shift() + mv_elg_base_diff10 - mv_elg_base_diff10.shift()
         # weight.name = 'weight'
 
-        # weight = round(mv_mv_tr_f2_pct_chg * abs(mv_elg_base_diff5 - mv_elg_base_diff5.shift()), 1)
-        weight = round(turnover_rate_f * (flow['open'] - flow['close'].shift()) * 100 / flow['close'].shift(), 1)
+        weight = round((mv_turnover_rate_f3 - mv_turnover_rate_f3.shift()) * abs(mv_elg_base_diff5 - mv_elg_base_diff5.shift()), 1)
+        # weight = round(turnover_rate_f * (flow['open'] - flow['close'].shift()) * 100 / flow['close'].shift(), 1)
         weight.name = 'weight'
 
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
                           turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2, turnover_rate_f3, mv_turnover_rate_f3,
                           mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg,
-                          mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1).dropna()
+                          mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1)
         data = data[data.index >= start_date_id]
         for j in range(len(data)):
             new_rows.loc[i] = {
