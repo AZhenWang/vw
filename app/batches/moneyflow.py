@@ -32,7 +32,7 @@ def execute(start_date='', end_date=''):
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     #
     code_ids = codes['code_id']
-    # code_ids = [2020]
+    # code_ids = [1]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     i = 0
     for code_id in code_ids:
@@ -101,11 +101,6 @@ def execute(start_date='', end_date=''):
         mv_elg_base_diff5 = elg_base_diff.rolling(window=5).mean()
         mv_elg_base_diff5.name = 'mv_elg_base_diff5'
 
-        # weight = mv_elg_base_diff5 - mv_elg_base_diff5.shift() + mv_elg_base_diff10 - mv_elg_base_diff10.shift()
-        # weight.name = 'weight'
-
-        # weight = round((mv_turnover_rate_f3 - mv_turnover_rate_f3.shift()) * abs(mv_elg_base_diff5 - mv_elg_base_diff5.shift()), 1)
-        # weight = round(turnover_rate_f * (flow['open'] - flow['close'].shift()) * 100 / flow['close'].shift(), 1)
         high_max = flow['high'].rolling(window=30).max()
         down_limit = high_max * 0.8
         weight = pd.Series(index=down_limit.index)
@@ -116,7 +111,7 @@ def execute(start_date='', end_date=''):
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
                           turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2, turnover_rate_f3, mv_turnover_rate_f3,
                           mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg,
-                          mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1)
+                          mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1).dropna()
 
         data = data[data.index >= start_date_id]
         for j in range(len(data)):
