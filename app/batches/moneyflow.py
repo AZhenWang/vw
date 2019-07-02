@@ -32,12 +32,17 @@ def execute(start_date='', end_date=''):
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     #
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [2020]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     i = 0
     for code_id in code_ids:
         DB.delete_logs(code_id, start_date_id, end_date_id, tablename='mv_moneyflow')
         flow = DB.get_moneyflows(code_id=code_id, end_date_id=end_date_id, start_date_id=pre_date_id)
+        flow['close'] = flow['close'] * flow['adj_factor']
+        flow['open'] = flow['open'] * flow['adj_factor']
+        flow['high'] = flow['high'] * flow['adj_factor']
+        flow['low'] = flow['low'] * flow['adj_factor']
+
         flow_mean = flow[
             ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol',
              'buy_md_vol', 'sell_sm_vol', 'buy_sm_vol']].rolling(window=window).mean()
@@ -101,9 +106,11 @@ def execute(start_date='', end_date=''):
 
         # weight = round((mv_turnover_rate_f3 - mv_turnover_rate_f3.shift()) * abs(mv_elg_base_diff5 - mv_elg_base_diff5.shift()), 1)
         # weight = round(turnover_rate_f * (flow['open'] - flow['close'].shift()) * 100 / flow['close'].shift(), 1)
-        high_max = flow['high'].shift().rolling(window=20).max()
+        high_max = flow['high'].rolling(window=30).max()
         down_limit = high_max * 0.8
-        weight = round((flow['low'] - down_limit) * 100 / high_max, 2)
+        weight = pd.Series(index=down_limit.index)
+        for i in range(len(flow)):
+            weight.iloc[i] = round((flow.iloc[i]['close'] - down_limit.iloc[i]) * 100 / high_max.iloc[i], 2)
         weight.name = 'weight'
 
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
