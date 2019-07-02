@@ -32,7 +32,8 @@ def execute(start_date='', end_date=''):
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     #
     code_ids = codes['code_id']
-    # code_ids = [1]
+    # code_ids = range(1, 10)
+    # code_ids = [2772]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     i = 0
     for code_id in code_ids:
@@ -102,16 +103,21 @@ def execute(start_date='', end_date=''):
         mv_elg_base_diff5.name = 'mv_elg_base_diff5'
 
         high_max = flow['high'].rolling(window=30).max()
+
         down_limit = high_max * 0.8
-        weight = pd.Series(index=down_limit.index)
-        for i in range(len(flow)):
-            weight.iloc[i] = round((flow.iloc[i]['close'] - down_limit.iloc[i]) * 100 / high_max.iloc[i], 2)
+        weight = round((flow['close'] - down_limit) * 100 / high_max, 2)
+        # weight = pd.Series(index=down_limit.index)
+        # for i in range(len(flow)):
+        #     weight.iloc[i] = round((flow.iloc[i]['close'] - down_limit.iloc[i]) * 100 / high_max.iloc[i], 2)
         weight.name = 'weight'
+
+        pre_trf2_max_dis = turnover_rate_f2.rolling(window=20).max() - turnover_rate_f2.rolling(window=20).min()
+        pre_trf2_max_dis.name = 'pre_trf2_max_dis'
 
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
                           turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2, turnover_rate_f3, mv_turnover_rate_f3,
                           mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg,
-                          mv_elg_base_diff5, mv_elg_base_diff10, weight], axis=1).dropna()
+                          mv_elg_base_diff5, mv_elg_base_diff10, weight, pre_trf2_max_dis], axis=1).dropna()
 
         data = data[data.index >= start_date_id]
         for j in range(len(data)):
@@ -137,6 +143,7 @@ def execute(start_date='', end_date=''):
                 'mv_elg_base_diff5': round(data.iloc[j]['mv_elg_base_diff5'], 2),
                 'mv_elg_base_diff10': round(data.iloc[j]['mv_elg_base_diff10'], 2),
                 'weight': round(data.iloc[j]['weight'], 2),
+                'pre_trf2_max_dis': round(data.iloc[j]['pre_trf2_max_dis'], 2),
             }
             i += 1
     if not new_rows.empty:

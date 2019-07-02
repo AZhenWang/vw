@@ -21,6 +21,7 @@ create table mv_moneyflow (
    mv_elg_base_diff5 float null comment'特大资金净流入基差5天移动平均值',
    mv_elg_base_diff10 float null comment'特大资金净流入基差10天移动平均值',
    weight float null comment' ',
+   pre_trf2_max_dis float null comment'过去20天最大加权换手率与最小加权换手率之间的差',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
