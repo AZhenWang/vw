@@ -1,6 +1,7 @@
 from app.saver.logic import DB
 from app.saver.tables import fields_map
 import pandas as pd
+import numpy as np
 
 
 def execute(start_date='', end_date=''):
@@ -22,7 +23,7 @@ def execute(start_date='', end_date=''):
     """
 
     window = 20*6
-    pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window+11)
+    pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window+41)
     trade_cal = DB.get_open_cal_date(end_date=end_date, start_date=start_date)
     pre_date_id = pre_trade_cal.iloc[0]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
@@ -30,15 +31,13 @@ def execute(start_date='', end_date=''):
     #
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
-    #
     code_ids = codes['code_id']
-    # code_ids = range(1, 10)
-    # code_ids = [2020]
+    # code_ids = [2020, 1423]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
-    i = 0
     for code_id in code_ids:
         DB.delete_logs(code_id, start_date_id, end_date_id, tablename='mv_moneyflow')
         flow = DB.get_moneyflows(code_id=code_id, end_date_id=end_date_id, start_date_id=pre_date_id)
+
         flow['close'] = flow['close'] * flow['adj_factor']
         flow['open'] = flow['open'] * flow['adj_factor']
         flow['high'] = flow['high'] * flow['adj_factor']
@@ -48,7 +47,7 @@ def execute(start_date='', end_date=''):
             ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol',
              'buy_md_vol', 'sell_sm_vol', 'buy_sm_vol']].rolling(window=window).mean()
 
-        net_mf = (flow_mean['net_mf_vol']) * 100 /flow['float_share']
+        net_mf = (flow_mean['net_mf_vol']) * 100 / flow['float_share']
         net_mf.name = 'net_mf'
 
         mv_buy_elg = (flow_mean['buy_elg_vol']) * 100 / flow['float_share']
@@ -66,85 +65,59 @@ def execute(start_date='', end_date=''):
         net_lg = (flow_mean['buy_lg_vol'] - flow_mean['sell_lg_vol']) * 100 / flow['float_share']
         net_lg.name = 'net_lg'
 
-        turnover_rate_f = flow['turnover_rate_f'] * (flow['close'] - flow['open']) / abs(
-            flow['close'] - flow['open'])
-        turnover_rate_back = flow['turnover_rate_f'] * flow['pct_chg'] / abs(
+        tr_back = flow['turnover_rate_f'] * flow['pct_chg'] / abs(
             flow['pct_chg'])
-        turnover_rate_f.fillna(value=turnover_rate_back, inplace=True)
-        turnover_rate_f.name = 'turnover_rate_f'
-        mv_turnover_rate_f = turnover_rate_f.rolling(window=5).mean()
-        mv_turnover_rate_f.name = 'mv_turnover_rate_f'
-        turnover_rate_f2 = flow['turnover_rate_f'] * (2 * flow['close'] - flow['high'] - flow['low']) / abs(
-            flow['high'] - flow['low'])
-        turnover_rate_f2.name = 'turnover_rate_f2'
-        turnover_rate_f2.fillna(value=turnover_rate_back, inplace=True)
-        mv_turnover_rate_f2 = turnover_rate_f2.rolling(window=5).mean()
-        mv_turnover_rate_f2.name = 'mv_turnover_rate_f2'
 
-        mv_tr_f2_pct_chg = mv_turnover_rate_f2 - mv_turnover_rate_f2.shift()
-        mv_tr_f2_pct_chg.name = 'mv_tr_f2_pct_chg'
+        trf2 = flow['turnover_rate_f'] * (2 * flow['close'] - flow['high'] - flow['low']) / (
+                -abs(flow['close'] - flow['open']) + 2 * flow['high'] - 2 * flow['low'])
 
-        mv_mv_tr_f2 = mv_tr_f2_pct_chg.rolling(window=5).mean()
-        mv_mv_tr_f2.name = 'mv_mv_tr_f2'
-        mv_mv_tr_f2_pct_chg = mv_mv_tr_f2 - mv_mv_tr_f2.shift()
-        mv_mv_tr_f2_pct_chg.name = 'mv_mv_tr_f2_pct_chg'
+        trf2.name = 'trf2'
+        trf2.fillna(value=tr_back, inplace=True)
 
-        turnover_rate_f3 = flow['turnover_rate_f'] * (flow['close'] - flow['open']) / abs(
-            flow['close'] - flow['open'] + 2 * flow['high'] - 2 * flow['low'])
-        turnover_rate_f3.fillna(value=turnover_rate_back, inplace=True)
-        turnover_rate_f3.name = 'turnover_rate_f3'
-        mv_turnover_rate_f3 = turnover_rate_f3.rolling(window=5).mean()
-        mv_turnover_rate_f3.name = 'mv_turnover_rate_f3'
-
+        # 求特大资金资金流入与流出的差
         elg_base_diff = (net_elg - net_elg.shift()) * 100
         mv_elg_base_diff10 = elg_base_diff.rolling(window=10).mean()
         mv_elg_base_diff10.name = 'mv_elg_base_diff10'
         mv_elg_base_diff5 = elg_base_diff.rolling(window=5).mean()
         mv_elg_base_diff5.name = 'mv_elg_base_diff5'
 
-        high_max = flow['high'].rolling(window=30).max()
-
-        down_limit = high_max * 0.8
-        weight = round((flow['close'] - down_limit) * 100 / high_max, 2)
-        # weight = pd.Series(index=down_limit.index)
-        # for i in range(len(flow)):
-        #     weight.iloc[i] = round((flow.iloc[i]['close'] - down_limit.iloc[i]) * 100 / high_max.iloc[i], 2)
-        weight.name = 'weight'
-
-        pre_trf2_max_dis = turnover_rate_f2.shift().rolling(window=20).max() - turnover_rate_f2.rolling(window=20).min()
-        pre_trf2_max_dis.name = 'pre_trf2_max_dis'
+        max_pre_trf2 = round(trf2.shift().rolling(window=40).max(), 1)
+        max_pre_trf2.name = 'max_pre_trf2'
 
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
-                          turnover_rate_f, mv_turnover_rate_f, turnover_rate_f2, turnover_rate_f3, mv_turnover_rate_f3,
-                          mv_turnover_rate_f2, mv_tr_f2_pct_chg, mv_mv_tr_f2, mv_mv_tr_f2_pct_chg,
-                          mv_elg_base_diff5, mv_elg_base_diff10, weight, pre_trf2_max_dis], axis=1).dropna()
+                          trf2, mv_elg_base_diff5, mv_elg_base_diff10, max_pre_trf2], axis=1)
 
+        data = data.dropna()
         data = data[data.index >= start_date_id]
-        for j in range(len(data)):
-            new_rows.loc[i] = {
-                'code_id': code_id,
-                'date_id': data.index[j],
-                'net_mf': round(data.iloc[j]['net_mf'], 2),
-                'net_elg': round(data.iloc[j]['net_elg'], 2),
-                'net_lg': round(data.iloc[j]['net_lg'], 2),
-                'net_md': round(data.iloc[j]['net_md'], 2),
-                'net_sm': round(data.iloc[j]['net_sm'], 2),
-                'mv_buy_elg': round(data.iloc[j]['mv_buy_elg'], 2),
-                'mv_sell_elg': round(data.iloc[j]['mv_sell_elg'], 2),
-                'turnover_rate_f': round(data.iloc[j]['turnover_rate_f'], 2),
-                'turnover_rate_f2': round(data.iloc[j]['turnover_rate_f2'], 2),
-                'turnover_rate_f3': round(data.iloc[j]['turnover_rate_f3'], 2),
-                'mv_turnover_rate_f': round(data.iloc[j]['mv_turnover_rate_f'], 2),
-                'mv_turnover_rate_f2': round(data.iloc[j]['mv_turnover_rate_f2'], 2),
-                'mv_turnover_rate_f3': round(data.iloc[j]['mv_turnover_rate_f3'], 2),
-                'mv_tr_f2_pct_chg': round(data.iloc[j]['mv_tr_f2_pct_chg'], 2),
-                'mv_mv_tr_f2': round(data.iloc[j]['mv_mv_tr_f2'], 2),
-                'mv_mv_tr_f2_pct_chg': round(data.iloc[j]['mv_mv_tr_f2_pct_chg'], 2),
-                'mv_elg_base_diff5': round(data.iloc[j]['mv_elg_base_diff5'], 2),
-                'mv_elg_base_diff10': round(data.iloc[j]['mv_elg_base_diff10'], 2),
-                'weight': round(data.iloc[j]['weight'], 2),
-                'pre_trf2_max_dis': round(data.iloc[j]['pre_trf2_max_dis'], 2),
-            }
-            i += 1
+
+        # 求beta_trf2
+        first_logs = DB.get_mv_moneyflows(code_id=code_id, start_date_id=start_date_id, end_date_id=start_date_id)
+        if not first_logs.empty:
+            init_beta_mv_trf2 = first_logs.iloc[0]['beta_mv_trf2']
+        else:
+            init_beta_mv_trf2 = data['trf2'].iloc[0]
+
+        beta_trf2 = pd.Series(index=data.index)
+        beta = 0.5
+        beta_trf2.iloc[0] = init_beta_mv_trf2
+        for i in range(1, len(data)):
+            beta_trf2.iloc[i] = beta * data['trf2'].iloc[i] + (1 - beta) * beta_trf2.iloc[i - 1]
+        data['beta_trf2'] = beta_trf2
+
+        # 求trf2改变的速度v、加速度a
+        trf2_v = beta_trf2 - beta_trf2.shift()
+        trf2_v.name = 'trf2_v'
+        data['trf2_v'] = trf2_v
+
+        trf2_a = trf2_v - trf2_v.shift()
+        trf2_a.name = 'trf2_a'
+        data['trf2_a'] = trf2_a
+
+        data = data.apply(np.round, decimals=2)
+
+        data['code_id'] = code_id
+        data.reset_index(inplace=True)
+        new_rows = pd.concat([new_rows, data])
+
     if not new_rows.empty:
         new_rows.to_sql('mv_moneyflow', DB.engine, index=False, if_exists='append', chunksize=1000)

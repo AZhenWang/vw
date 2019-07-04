@@ -37,10 +37,12 @@ fields_map = {
     ],
 
     'mv_moneyflow': [
-        'code_id', 'date_id', 'net_mf', 'net_elg', 'net_lg', 'net_md', 'net_sm', 'mv_buy_elg',
-        'mv_sell_elg', 'turnover_rate_f', 'mv_turnover_rate_f', 'turnover_rate_f2', 'mv_turnover_rate_f2',
-        'turnover_rate_f3', 'mv_turnover_rate_f3', 'pre_trf2_max_dis',
-        'mv_tr_f2_pct_chg', 'mv_mv_tr_f2', 'mv_mv_tr_f2_pct_chg', 'mv_elg_base_diff5', 'mv_elg_base_diff10', 'weight'
+        'code_id', 'date_id', 'net_mf', 'net_elg', 'net_lg', 'net_md', 'net_sm', 'mv_buy_elg', 'mv_sell_elg',
+        'trf2', 'trf2_v', 'trf2_a', 'max_pre_trf2', 'beta_trf2', 'mv_elg_base_diff5', 'mv_elg_base_diff10',
+    ],
+
+    '2line': [
+        'code_id', 'date_id', 'sm_l1', 'sm_l2', 'lg_l1', 'lg_l2', 'top', 'bot', 'from_top', 'from_bot'
     ],
 
     # 指数

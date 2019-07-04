@@ -316,7 +316,7 @@ class DB(object):
 
         data = pd.read_sql(
             sa.text(
-                ' SELECT tc.cal_date, m.*, d.open, d.high, d.close, d.low, d.pct_chg,'
+                ' SELECT tc.cal_date, m.*, d.open, d.high, d.close, d.low, d.pct_chg, d.vol,'
                 ' af.adj_factor, db.turnover_rate_f, db.float_share'
                 ' FROM moneyflow m '
                 ' left join daily d on d.code_id = m.code_id and d.date_id = m.date_id'
