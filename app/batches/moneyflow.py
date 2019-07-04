@@ -89,7 +89,6 @@ def execute(start_date='', end_date=''):
                           trf2, mv_elg_base_diff5, mv_elg_base_diff10, max_pre_trf2], axis=1)
 
         data = data.dropna()
-        data = data[data.index >= start_date_id]
         if len(data) < 3:
             continue
 
@@ -119,6 +118,7 @@ def execute(start_date='', end_date=''):
         data = data.apply(np.round, decimals=2)
 
         data['code_id'] = code_id
+        data = data[data.index >= start_date_id]
         data.reset_index(inplace=True)
         new_rows = pd.concat([new_rows, data])
 
