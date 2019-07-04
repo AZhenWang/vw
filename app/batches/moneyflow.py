@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     """
 
     window = 20*6
-    pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window+41)
+    pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window+45)
     trade_cal = DB.get_open_cal_date(end_date=end_date, start_date=start_date)
     pre_date_id = pre_trade_cal.iloc[0]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
@@ -90,6 +90,8 @@ def execute(start_date='', end_date=''):
 
         data = data.dropna()
         data = data[data.index >= start_date_id]
+        if len(data) < 3:
+            continue
 
         # 求beta_trf2
         first_logs = DB.get_mv_moneyflows(code_id=code_id, start_date_id=start_date_id, end_date_id=start_date_id)
