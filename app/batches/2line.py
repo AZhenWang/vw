@@ -33,7 +33,7 @@ def execute(start_date='', end_date=''):
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     #
     code_ids = codes['code_id']
-    # code_ids = [2702]
+    # code_ids = [1895]
     new_rows = pd.DataFrame(columns=fields_map['2line'])
     i = 0
     for code_id in code_ids:
@@ -106,7 +106,7 @@ def execute(start_date='', end_date=''):
 def l1_l2(high, window):
     high_max = high.rolling(window=window).max()
     price_max = high_max
-    l1 = high_max - price_max * 0.02
+    l1 = high_max - price_max * 0.026
     l2 = high_max - price_max * 0.21
     l3 = high_max - price_max * 0.55
 
