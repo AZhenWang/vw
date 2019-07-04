@@ -35,6 +35,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [2020, 1423]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
+        print(code_id)
         DB.delete_logs(code_id, start_date_id, end_date_id, tablename='mv_moneyflow')
         flow = DB.get_moneyflows(code_id=code_id, end_date_id=end_date_id, start_date_id=pre_date_id)
 
