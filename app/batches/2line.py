@@ -33,7 +33,7 @@ def execute(start_date='', end_date=''):
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     #
     code_ids = codes['code_id']
-    # code_ids = [2772]
+    # code_ids = [2702]
     new_rows = pd.DataFrame(columns=fields_map['2line'])
     i = 0
     for code_id in code_ids:
@@ -61,7 +61,7 @@ def execute(start_date='', end_date=''):
             date_id = lg_l1.index[i]
             temp = np.sort([close.loc[date_id], sm_l1.loc[date_id], sm_l2.loc[date_id], sm_l3.loc[date_id],
                             lg_l1.loc[date_id], lg_l2.loc[date_id], lg_l3.loc[date_id]])
-            close_loc = np.argwhere(temp == close.loc[date_id])
+            close_loc = np.argwhere(temp == close.loc[date_id])[0]
             if close_loc == 6:
                 top.loc[date_id] = np.nan
                 bot.loc[date_id] = temp[close_loc - 1]
