@@ -33,6 +33,7 @@ def execute(start_date='', end_date=''):
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
     # code_ids = [1949, 1895, 376]
+    # code_ids = [2020, 1423]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -43,27 +44,36 @@ def execute(start_date='', end_date=''):
         flow['open'] = flow['open'] * flow['adj_factor']
         flow['high'] = flow['high'] * flow['adj_factor']
         flow['low'] = flow['low'] * flow['adj_factor']
+        #
+        # flow_mean = flow[
+        #     ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol',
+        #      'buy_md_vol', 'sell_sm_vol', 'buy_sm_vol']].rolling(window=window).mean()
+        #
+        # net_mf = (flow_mean['net_mf_vol']) * 100 / flow['float_share']
+        # net_mf.name = 'net_mf'
+        #
+        # mv_buy_elg = (flow_mean['buy_elg_vol']) * 100 / flow['float_share']
+        # mv_buy_elg.name = 'mv_buy_elg'
+        #
+        # mv_sell_elg = (flow_mean['sell_elg_vol']) * 100 / flow['float_share']
+        # mv_sell_elg.name = 'mv_sell_elg'
+        #
+        # net_elg = (flow_mean['buy_elg_vol'] - flow_mean['sell_elg_vol']) * 100 / flow['float_share']
+        # net_elg.name = 'net_elg'
+        # net_sm = (flow_mean['buy_sm_vol'] - flow_mean['sell_sm_vol']) * 100 / flow['float_share']
+        # net_sm.name = 'net_sm'
+        # net_md = (flow_mean['buy_md_vol'] - flow_mean['sell_md_vol']) * 100 / flow['float_share']
+        # net_md.name = 'net_md'
+        # net_lg = (flow_mean['buy_lg_vol'] - flow_mean['sell_lg_vol']) * 100 / flow['float_share']
+        # net_lg.name = 'net_lg'
 
-        flow_mean = flow[
-            ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol',
-             'buy_md_vol', 'sell_sm_vol', 'buy_sm_vol']].rolling(window=window).mean()
-
-        net_mf = (flow_mean['net_mf_vol']) * 100 / flow['float_share']
-        net_mf.name = 'net_mf'
-
-        mv_buy_elg = (flow_mean['buy_elg_vol']) * 100 / flow['float_share']
-        mv_buy_elg.name = 'mv_buy_elg'
-
-        mv_sell_elg = (flow_mean['sell_elg_vol']) * 100 / flow['float_share']
-        mv_sell_elg.name = 'mv_sell_elg'
-
-        net_elg = (flow_mean['buy_elg_vol'] - flow_mean['sell_elg_vol']) * 100 / flow['float_share']
+        net_elg = (flow['buy_elg_vol'] - flow['sell_elg_vol']) * 100 / flow['float_share']
         net_elg.name = 'net_elg'
-        net_sm = (flow_mean['buy_sm_vol'] - flow_mean['sell_sm_vol']) * 100 / flow['float_share']
+        net_sm = (flow['buy_sm_vol'] - flow['sell_sm_vol']) * 100 / flow['float_share']
         net_sm.name = 'net_sm'
-        net_md = (flow_mean['buy_md_vol'] - flow_mean['sell_md_vol']) * 100 / flow['float_share']
+        net_md = (flow['buy_md_vol'] - flow['sell_md_vol']) * 100 / flow['float_share']
         net_md.name = 'net_md'
-        net_lg = (flow_mean['buy_lg_vol'] - flow_mean['sell_lg_vol']) * 100 / flow['float_share']
+        net_lg = (flow['buy_lg_vol'] - flow['sell_lg_vol']) * 100 / flow['float_share']
         net_lg.name = 'net_lg'
 
         tr_back = flow['turnover_rate_f'] * flow['pct_chg'] / abs(
@@ -74,71 +84,61 @@ def execute(start_date='', end_date=''):
 
         trf2.name = 'trf2'
         trf2.fillna(value=tr_back, inplace=True)
+        # trf2 = trf2[flow_mean.dropna().index]
+        data_len = len(trf2)
+        first_id = trf2.index[0]
 
-        data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
-                          trf2], axis=1)
-
-        first_logs = DB.get_mv_moneyflows(code_id=code_id, start_date_id=start_date_id, end_date_id=start_date_id)
-
-        data = data.dropna()
-        if len(data) < 3:
+        if data_len < 3:
             continue
 
-        # 求特大资金资金流入与流出的差
-        elg_base_diff = (net_elg - net_elg.shift() + net_lg - net_lg.shift()) * 100
-        mv_elg_base_diff10 = elg_base_diff.rolling(window=10).mean()
-        mv_elg_base_diff10.name = 'mv_elg_base_diff10'
+        first_logs = DB.get_mv_moneyflows(code_id=code_id, start_date_id=pre_date_id, end_date_id=start_date_id)
 
-        mv_elg_base_diff5 = elg_base_diff.rolling(window=5).mean()
-        mv_elg_base_diff5.name = 'mv_elg_base_diff5'
-        data['mv_elg_base_diff5'] = mv_elg_base_diff5
-        data['mv_elg_base_diff10'] = mv_elg_base_diff10
+        # 求
+        net1 = pd.Series(index=trf2.index, name='net1')
+        net34 = pd.Series(index=trf2.index, name='net34')
+        beta_trf2 = pd.Series(index=trf2.index, name='beta_trf2')
 
-        # 求 beta_net_elg
         if not first_logs.empty:
-            init_beta_net_elg = first_logs.iloc[0]['beta_net_elg']
+            init_net1 = first_logs.iloc[0]['net1']
+            init_net34 = first_logs.iloc[0]['net34']
+            init_beta_trf2 = first_logs.iloc[0]['beta_trf2']
         else:
-            init_beta_net_elg = data['net_elg'].iloc[0] + data['net_lg'].iloc[0]
 
-        beta_net_lg = pd.Series(index=data.index)
+            init_net1 = net_elg.loc[first_id] + net_lg.loc[first_id]
+            init_net34 = net_md.loc[first_id] + net_sm.loc[first_id]
+            init_beta_trf2 = trf2.loc[first_id]
+
         beta = 0.5
-        beta_net_lg.iloc[0] = init_beta_net_elg
-        for i in range(1, len(data)):
-            beta_net_lg.iloc[i] = beta * (data['net_elg'].iloc[i] + data['net_lg'].iloc[i]) + (1 - beta) * beta_net_lg.iloc[i - 1]
-        data['beta_net_lg'] = beta_net_lg
+        net1.iloc[0] = init_net1
+        net34.iloc[0] = init_net34
+        beta_trf2.iloc[0] = init_beta_trf2
+        for i, date_id in enumerate(trf2.index[1:], start=1):
+            net1.iloc[i] = beta * net_elg.loc[date_id] + (1 - beta) * net1.iloc[i - 1]
+            net34.iloc[i] = beta * (net_md.loc[date_id] + net_sm.loc[date_id]) + (1 - beta) * net34.iloc[i - 1]
 
-        # 求beta_trf2
-        if not first_logs.empty:
-            init_beta_mv_trf2 = first_logs.iloc[0]['beta_mv_trf2']
-        else:
-            init_beta_mv_trf2 = data['trf2'].iloc[0]
+            # net1.iloc[i] = beta * (net_elg.loc[date_id] + net_lg.loc[date_id]) + (1 - beta) * net1.iloc[i - 1]
+            # net34.iloc[i] = beta * (net_md.loc[date_id] + net_sm.loc[date_id]) + (1 - beta) * net34.iloc[i - 1]
+            beta_trf2.iloc[i] = beta * trf2.loc[date_id] + (1 - beta) * beta_trf2.iloc[i - 1]
 
-        beta_trf2 = pd.Series(index=data.index)
-        beta = 0.5
-        beta_trf2.iloc[0] = init_beta_mv_trf2
-        for i in range(1, len(data)):
-            beta_trf2.iloc[i] = beta * data['trf2'].iloc[i] + (1 - beta) * beta_trf2.iloc[i - 1]
-        data['beta_trf2'] = beta_trf2
+        pv1 = (net1 - net1.shift(10))
+        pv1.name = 'pv1'
+        pv34 = (net34 - net34.shift(10))
+        pv34.name = 'pv34'
 
-        max2_trf2 = round(trf2.shift().rolling(window=40).max(), 2)
+        max2_trf2 = beta_trf2.shift().rolling(window=20).max()
         max2_trf2.name = 'max2_trf2'
-        data['max2_trf2'] = max2_trf2
-
-        max6_trf2 = round(trf2.shift().rolling(window=20*6).max(), 2)
+        max6_trf2 = beta_trf2.shift().rolling(window=20*6).max()
         max6_trf2.name = 'max6_trf2'
-        data['max6_trf2'] = max6_trf2
 
         # 求trf2改变的速度v、加速度a
         trf2_v = beta_trf2 - beta_trf2.shift()
         trf2_v.name = 'trf2_v'
-        data['trf2_v'] = trf2_v
-
         trf2_a = trf2_v - trf2_v.shift()
         trf2_a.name = 'trf2_a'
-        data['trf2_a'] = trf2_a
+
+        data = pd.concat([trf2, max2_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, net1, net34, pv1, pv34], axis=1)
 
         data = data.apply(np.round, decimals=2)
-
         data['code_id'] = code_id
         data = data[data.index >= start_date_id]
         data.reset_index(inplace=True)
