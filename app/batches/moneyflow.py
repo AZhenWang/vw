@@ -32,7 +32,7 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [1949]
+    # code_ids = [1949, 1895, 376]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -75,22 +75,39 @@ def execute(start_date='', end_date=''):
         trf2.name = 'trf2'
         trf2.fillna(value=tr_back, inplace=True)
 
-        # 求特大资金资金流入与流出的差
-        elg_base_diff = (net_elg - net_elg.shift()) * 100
-        mv_elg_base_diff10 = elg_base_diff.rolling(window=10).mean()
-        mv_elg_base_diff10.name = 'mv_elg_base_diff10'
-        mv_elg_base_diff5 = elg_base_diff.rolling(window=5).mean()
-        mv_elg_base_diff5.name = 'mv_elg_base_diff5'
-
         data = pd.concat([net_mf, net_elg, net_lg, net_md, net_sm, mv_buy_elg, mv_sell_elg,
-                          trf2, mv_elg_base_diff5, mv_elg_base_diff10], axis=1)
+                          trf2], axis=1)
+
+        first_logs = DB.get_mv_moneyflows(code_id=code_id, start_date_id=start_date_id, end_date_id=start_date_id)
 
         data = data.dropna()
         if len(data) < 3:
             continue
 
+        # 求特大资金资金流入与流出的差
+        elg_base_diff = (net_elg - net_elg.shift() + net_lg - net_lg.shift()) * 100
+        mv_elg_base_diff10 = elg_base_diff.rolling(window=10).mean()
+        mv_elg_base_diff10.name = 'mv_elg_base_diff10'
+
+        mv_elg_base_diff5 = elg_base_diff.rolling(window=5).mean()
+        mv_elg_base_diff5.name = 'mv_elg_base_diff5'
+        data['mv_elg_base_diff5'] = mv_elg_base_diff5
+        data['mv_elg_base_diff10'] = mv_elg_base_diff10
+
+        # 求 beta_net_elg
+        if not first_logs.empty:
+            init_beta_net_elg = first_logs.iloc[0]['beta_net_elg']
+        else:
+            init_beta_net_elg = data['net_elg'].iloc[0] + data['net_lg'].iloc[0]
+
+        beta_net_lg = pd.Series(index=data.index)
+        beta = 0.5
+        beta_net_lg.iloc[0] = init_beta_net_elg
+        for i in range(1, len(data)):
+            beta_net_lg.iloc[i] = beta * (data['net_elg'].iloc[i] + data['net_lg'].iloc[i]) + (1 - beta) * beta_net_lg.iloc[i - 1]
+        data['beta_net_lg'] = beta_net_lg
+
         # 求beta_trf2
-        first_logs = DB.get_mv_moneyflows(code_id=code_id, start_date_id=start_date_id, end_date_id=start_date_id)
         if not first_logs.empty:
             init_beta_mv_trf2 = first_logs.iloc[0]['beta_mv_trf2']
         else:

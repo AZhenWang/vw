@@ -16,6 +16,7 @@ create table mv_moneyflow (
    trf2_v float null comment'',
    trf2_a float null comment'',
    beta_trf2 float null comment'',
+   beta_net_lg float null comment'',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),

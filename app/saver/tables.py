@@ -38,7 +38,8 @@ fields_map = {
 
     'mv_moneyflow': [
         'code_id', 'date_id', 'net_mf', 'net_elg', 'net_lg', 'net_md', 'net_sm', 'mv_buy_elg', 'mv_sell_elg',
-        'trf2', 'trf2_v', 'trf2_a', 'max2_trf2', 'max6_trf2', 'beta_trf2', 'mv_elg_base_diff5', 'mv_elg_base_diff10',
+        'trf2', 'trf2_v', 'trf2_a', 'max2_trf2', 'max6_trf2', 'beta_trf2', 'beta_net_lg',
+        'mv_elg_base_diff5', 'mv_elg_base_diff10',
     ],
 
     '2line': [
