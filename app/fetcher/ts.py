@@ -93,8 +93,8 @@ class Ts(Interface):
         for exchange in exchange_list.keys():
             new_rows = self.pro.query(api, exchange=exchange, fields=fields_map[api])
             if not new_rows.empty:
-                existed_index = existed_index_list[existed_index_list['exchange'] == exchange]
-                new_rows = new_rows[~new_rows['ts_code'].isin(existed_index['ts_code'])]
+                # existed_index = existed_index_list[existed_index_list['exchange'] == exchange]
+                new_rows = new_rows[~new_rows['ts_code'].isin(existed_index_list['ts_code'])]
             if not new_rows.empty:
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)

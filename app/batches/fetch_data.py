@@ -17,6 +17,12 @@ def execute(start_date='', end_date=''):
     worker.set_trade_dates()
 
     if not worker.trade_dates.empty:
+
+        ts_apis = ['daily', 'daily_basic', 'adj_factor',
+                   'moneyflow', 'block_trade', 'weekly', 'monthly']
+        for api in ts_apis:
+            worker.query(api)
+
         idx_apis = ['index_daily', 'index_dailybasic']
         for idx_api in idx_apis:
             worker.query_index(idx_api)
@@ -25,10 +31,6 @@ def execute(start_date='', end_date=''):
         for fut_api in fut_apis:
             worker.query_fut(fut_api)
 
-        ts_apis = ['daily', 'daily_basic', 'adj_factor',
-                   'moneyflow', 'block_trade', 'weekly', 'monthly']
-        for api in ts_apis:
-            worker.query(api)
 
         # ts_apis = ['income', 'cashflow', 'balancesheet']
         # for api in ts_apis:
