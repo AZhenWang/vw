@@ -240,7 +240,7 @@ class DB(object):
     def get_existed_fut(cls, table_name, date_id):
         existed_codes = pd.read_sql(
             sa.text(
-                'SELECT sb.ts_code FROM ' + table_name + ' as api left join stock_basic as sb on sb.id = api.fut_id where api.date_id=:date_id'),
+                'SELECT sb.ts_code FROM ' + table_name + ' as api left join fun_basic as sb on sb.id = api.fut_id where api.date_id=:date_id'),
             cls.engine,
             params={'date_id': date_id}
         )
