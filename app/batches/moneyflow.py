@@ -32,17 +32,18 @@ def execute(start_date='', end_date=''):
     #
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
-    code_ids = codes['code_id']
+    # code_ids = codes['code_id']
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
     # code_ids = [2975]
-    # code_ids = [3]
+    # code_ids = [19]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
         DB.delete_logs(code_id, start_date_id, end_date_id, tablename='mv_moneyflow')
         flow = DB.get_moneyflows(code_id=code_id, end_date_id=end_date_id, start_date_id=pre_date_id)
-
+        if len(flow) < 20:
+            continue
         flow['close'] = flow['close'] * flow['adj_factor']
         flow['open'] = flow['open'] * flow['adj_factor']
         flow['high'] = flow['high'] * flow['adj_factor']
