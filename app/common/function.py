@@ -267,6 +267,8 @@ def get_section_max(peaks, bottoms):
 def qqbs(Y, peaks, bottoms):
     peaks.dropna(inplace=True)
     bottoms.dropna(inplace=True)
+    if len(peaks) < 2 or len(bottoms) < 2:
+        return
     start_key = max(bottoms.index[1], peaks.index[1])
     keys = Y.index[Y.index >= start_key]
     qqbs = pd.Series(index=Y.index, name='qqb')

@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
     # code_ids = [2975]
-    # code_ids = [1]
+    # code_ids = [5]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -119,18 +119,28 @@ def execute(start_date='', end_date=''):
         peaks = peaks[peaks > 0.6]
         bottoms = bottoms[bottoms < -0.6]
         if len(peaks) < 2 or len(bottoms) < 2:
-            continue
-        re_peaks, re_bottoms = FC.get_section_max(peaks, bottoms)
+            qqb = pd.Series(index=beta_trf2, name='qqb')
+            peak = pd.Series(index=beta_trf2, name='peak')
+            bottom = pd.Series(index=beta_trf2, name='bottom')
+        else:
+            re_peaks, re_bottoms = FC.get_section_max(peaks, bottoms)
+            qqbs = FC.qqbs(Y=beta_trf2, peaks=re_peaks, bottoms=re_bottoms)
 
-        qqbs = FC.qqbs(Y=beta_trf2, peaks=re_peaks, bottoms=re_bottoms)
-        re_peaks.name = 'peak'
-        re_bottoms.name = 'bottom'
-        qqbs.name = 'qqb'
-        base = pd.DataFrame(index=beta_trf2.index)
-        wave = base.join(re_peaks)
-        wave = wave.join(re_bottoms)
-        wave = wave.join(qqbs)
-        wave.fillna(method='ffill', inplace=True)
+            if pd.isnull(qqbs):
+                qqbs = pd.Series(index=beta_trf2, name='qqb')
+            else:
+                qqbs.name = 'qqb'
+
+            re_peaks.name = 'peak'
+            re_bottoms.name = 'bottom'
+            base = pd.DataFrame(index=beta_trf2.index)
+            wave = base.join(re_peaks)
+            wave = wave.join(re_bottoms)
+            wave = wave.join(qqbs)
+            wave.fillna(method='ffill', inplace=True)
+            qqb = wave['qqb']
+            peak = wave['peak']
+            bottom = wave['bottom']
 
         # 计算大宗交易次数，近10天超过2次，就发出了非常危险的信号，往往提前股市下跌1天
         bts = DB.get_table_logs(code_id=code_id, start_date_id=pre_trade_cal.iloc[-10]['date_id'], end_date_id=end_date_id, table_name='block_trade')
@@ -144,7 +154,7 @@ def execute(start_date='', end_date=''):
         bts = bts.fillna(0)
         red_bt = bts.rolling(window=10).sum()
 
-        data = pd.concat([trf2, max1_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, wave['peak'], wave['bottom'], wave['qqb'], red_bt['bt_times'], red_bt['bt_amounts'], net1, net34, pv1, pv34], axis=1)
+        data = pd.concat([trf2, max1_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, peak, bottom, qqb, red_bt['bt_times'], red_bt['bt_amounts'], net1, net34, pv1, pv34], axis=1)
         data = data.apply(np.round, decimals=2)
         data['code_id'] = code_id
         data = data[data.index >= start_date_id]
