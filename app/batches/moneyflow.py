@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
     # code_ids = [2975]
-    # code_ids = [5]
+    # code_ids = [1]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -149,6 +149,7 @@ def execute(start_date='', end_date=''):
         bt_times.name = 'bt_times'
         bt_amounts = gp['amount'].sum()
         bt_amounts.name = 'bt_amounts'
+        base = pd.DataFrame(index=beta_trf2.index)
         bts = base.join(bt_times)
         bts = bts.join(bt_amounts)
         bts = bts.fillna(0)
