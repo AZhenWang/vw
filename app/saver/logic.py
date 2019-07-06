@@ -226,6 +226,16 @@ class DB(object):
         return code_list
 
     @classmethod
+    def get_table_logs(cls, code_id, start_date_id, end_date_id, table_name):
+        logs = pd.read_sql(
+            sa.text(
+                'SELECT api.* FROM ' + table_name + ' as api where api.code_id = :code_id and api.date_id between :sdi and :edi'),
+            cls.engine,
+            params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id)}
+        )
+        return logs
+
+    @classmethod
     def get_existed_codes(cls, table_name, date_id):
         existed_codes = pd.read_sql(
             sa.text(

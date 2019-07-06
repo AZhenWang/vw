@@ -2,6 +2,7 @@ from app.saver.logic import DB
 from app.saver.tables import fields_map
 import pandas as pd
 import numpy as np
+import app.common.function as FC
 
 
 def execute(start_date='', end_date=''):
@@ -34,6 +35,7 @@ def execute(start_date='', end_date=''):
     code_ids = codes['code_id']
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
+    # code_ids = [2975]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -44,28 +46,6 @@ def execute(start_date='', end_date=''):
         flow['open'] = flow['open'] * flow['adj_factor']
         flow['high'] = flow['high'] * flow['adj_factor']
         flow['low'] = flow['low'] * flow['adj_factor']
-        #
-        # flow_mean = flow[
-        #     ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol',
-        #      'buy_md_vol', 'sell_sm_vol', 'buy_sm_vol']].rolling(window=window).mean()
-        #
-        # net_mf = (flow_mean['net_mf_vol']) * 100 / flow['float_share']
-        # net_mf.name = 'net_mf'
-        #
-        # mv_buy_elg = (flow_mean['buy_elg_vol']) * 100 / flow['float_share']
-        # mv_buy_elg.name = 'mv_buy_elg'
-        #
-        # mv_sell_elg = (flow_mean['sell_elg_vol']) * 100 / flow['float_share']
-        # mv_sell_elg.name = 'mv_sell_elg'
-        #
-        # net_elg = (flow_mean['buy_elg_vol'] - flow_mean['sell_elg_vol']) * 100 / flow['float_share']
-        # net_elg.name = 'net_elg'
-        # net_sm = (flow_mean['buy_sm_vol'] - flow_mean['sell_sm_vol']) * 100 / flow['float_share']
-        # net_sm.name = 'net_sm'
-        # net_md = (flow_mean['buy_md_vol'] - flow_mean['sell_md_vol']) * 100 / flow['float_share']
-        # net_md.name = 'net_md'
-        # net_lg = (flow_mean['buy_lg_vol'] - flow_mean['sell_lg_vol']) * 100 / flow['float_share']
-        # net_lg.name = 'net_lg'
 
         net_elg = (flow['buy_elg_vol'] - flow['sell_elg_vol']) * 100 / flow['float_share']
         net_elg.name = 'net_elg'
@@ -80,11 +60,10 @@ def execute(start_date='', end_date=''):
             flow['pct_chg'])
 
         trf2 = flow['turnover_rate_f'] * (2 * flow['close'] - flow['high'] - flow['low']) / (
-                -abs(flow['close'] - flow['open']) + 2 * flow['high'] - 2 * flow['low'])
+                abs(flow['close'] - flow['open']) + 2 * flow['high'] - 2 * flow['low'])
 
         trf2.name = 'trf2'
         trf2.fillna(value=tr_back, inplace=True)
-        # trf2 = trf2[flow_mean.dropna().index]
         data_len = len(trf2)
         first_id = trf2.index[0]
 
@@ -115,9 +94,6 @@ def execute(start_date='', end_date=''):
         for i, date_id in enumerate(trf2.index[1:], start=1):
             net1.iloc[i] = beta * net_elg.loc[date_id] + (1 - beta) * net1.iloc[i - 1]
             net34.iloc[i] = beta * (net_md.loc[date_id] + net_sm.loc[date_id]) + (1 - beta) * net34.iloc[i - 1]
-
-            # net1.iloc[i] = beta * (net_elg.loc[date_id] + net_lg.loc[date_id]) + (1 - beta) * net1.iloc[i - 1]
-            # net34.iloc[i] = beta * (net_md.loc[date_id] + net_sm.loc[date_id]) + (1 - beta) * net34.iloc[i - 1]
             beta_trf2.iloc[i] = beta * trf2.loc[date_id] + (1 - beta) * beta_trf2.iloc[i - 1]
 
         pv1 = (net1 - net1.shift(10))
@@ -125,8 +101,8 @@ def execute(start_date='', end_date=''):
         pv34 = (net34 - net34.shift(10))
         pv34.name = 'pv34'
 
-        max2_trf2 = beta_trf2.shift().rolling(window=20).max()
-        max2_trf2.name = 'max2_trf2'
+        max1_trf2 = beta_trf2.shift().rolling(window=20).max()
+        max1_trf2.name = 'max1_trf2'
         max6_trf2 = beta_trf2.shift().rolling(window=20*6).max()
         max6_trf2.name = 'max6_trf2'
 
@@ -136,8 +112,37 @@ def execute(start_date='', end_date=''):
         trf2_a = trf2_v - trf2_v.shift()
         trf2_a.name = 'trf2_a'
 
-        data = pd.concat([trf2, max2_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, net1, net34, pv1, pv34], axis=1)
+        # 计算beta_trf2峰谷形态
+        peaks, bottoms = FC.get_peaks_bottoms(beta_trf2)
+        # 峰谷阀值0.6,  正负0.6之间都算做正常波动
+        peaks = peaks[peaks > 0.6]
+        bottoms = bottoms[bottoms < -0.6]
+        re_peaks, re_bottoms = FC.get_section_max(peaks, bottoms)
+        if len(re_peaks) < 2 or len(re_bottoms) < 2:
+            continue
+        qqbs = FC.qqbs(Y=beta_trf2, peaks=re_peaks, bottoms=re_bottoms)
+        re_peaks.name = 'peak'
+        re_bottoms.name = 'bottom'
+        qqbs.name = 'qqb'
+        base = pd.DataFrame(index=beta_trf2.index)
+        wave = base.join(re_peaks)
+        wave = wave.join(re_bottoms)
+        wave = wave.join(qqbs)
+        wave.fillna(method='ffill', inplace=True)
 
+        # 计算大宗交易次数，近10天超过2次，就发出了非常危险的信号，往往提前股市下跌1天
+        bts = DB.get_table_logs(code_id=code_id, start_date_id=pre_trade_cal.iloc[-10]['date_id'], end_date_id=end_date_id, table_name='block_trade')
+        gp = bts.groupby(by='date_id')
+        bt_times = gp['amount'].count()
+        bt_times.name = 'bt_times'
+        bt_amounts = gp['amount'].sum()
+        bt_amounts.name = 'bt_amounts'
+        bts = base.join(bt_times)
+        bts = bts.join(bt_amounts)
+        bts = bts.fillna(0)
+        red_bt = bts.rolling(window=10).sum()
+
+        data = pd.concat([trf2, max1_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, wave['peak'], wave['bottom'], wave['qqb'], red_bt['bt_times'], red_bt['bt_amounts'], net1, net34, pv1, pv34], axis=1)
         data = data.apply(np.round, decimals=2)
         data['code_id'] = code_id
         data = data[data.index >= start_date_id]
