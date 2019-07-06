@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
     # code_ids = [2975]
-    code_ids = [1]
+    # code_ids = [1]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
