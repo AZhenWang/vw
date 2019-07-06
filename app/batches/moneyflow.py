@@ -156,7 +156,7 @@ def execute(start_date='', end_date=''):
         data['code_id'] = code_id
         data = data[data.index >= start_date_id]
         data.reset_index(inplace=True)
-        new_rows = pd.concat([new_rows, data])
+        new_rows = pd.concat([new_rows, data], sort=False)
 
     if not new_rows.empty:
         new_rows.to_sql('mv_moneyflow', DB.engine, index=False, if_exists='append', chunksize=1000)
