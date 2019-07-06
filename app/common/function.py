@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 def str2hump(text):
     """下划线转驼峰法
@@ -223,6 +224,66 @@ def knn_predict(X, Y, k, sample_interval, pre_predict_interval, predict_idx):
     return y_hat
 
 
+def get_peaks_bottoms(Y):
+    point_args = np.diff(np.where(np.diff(Y) > 0, 0, 1))
+    peaks = Y[1:-1][point_args == 1]
+    bottoms = Y[1:-1][point_args == -1]
+    return peaks, bottoms
+
+
+def get_section_max(peaks, bottoms):
+    """
+    获取各区间段最大值和最小值，去除峰谷之间的噪音
+    :param peaks:
+    :param bottoms:
+    :return:
+    """
+    re_peaks = pd.Series(index=peaks.index)
+    for i in range(1, len(bottoms)):
+        d1 = bottoms.index[i - 1]
+        d2 = bottoms.index[i]
+        if not peaks.loc[d1:d2].empty:
+            max_loc = peaks.loc[d1:d2].idxmax()
+            re_peaks.loc[max_loc] = peaks.loc[max_loc]
+
+    re_bottoms = pd.Series(index=bottoms.index)
+    for i in range(1, len(peaks)):
+        d1 = peaks.index[i - 1]
+        d2 = peaks.index[i]
+        if not bottoms.loc[d1:d2].empty:
+            min_loc = bottoms.loc[d1:d2].idxmin()
+            re_bottoms.loc[min_loc] = bottoms.loc[min_loc]
+
+    if bottoms.index[-1] < peaks.index[-1]:
+        max_loc = peaks.loc[bottoms.index[-1]:].idxmax()
+        re_peaks.loc[max_loc] = peaks.loc[max_loc]
+    else:
+        min_loc = bottoms.loc[peaks.index[-1]:].idxmin()
+        re_bottoms.loc[min_loc] = bottoms.loc[min_loc]
+
+    return re_peaks, re_bottoms
+
+
+def qqbs(Y, peaks, bottoms):
+    peaks.dropna(inplace=True)
+    bottoms.dropna(inplace=True)
+    start_key = max(bottoms.index[1], peaks.index[1])
+    keys = Y.index[Y.index >= start_key]
+    qqbs = pd.Series(index=Y.index, name='qqb')
+    qqb = np.nan
+    for k in keys:
+        p = peaks[peaks.index <= k][-2:]
+        b = bottoms[bottoms.index <= k][-2:]
+        if p.iloc[-1] < p.iloc[-2] and (b.iloc[-1] < b.iloc[-2] or Y.loc[k] < b.iloc[-1]):
+            qqb = -1
+        elif b.iloc[-1] > b.iloc[-2] and (p.iloc[-1] > p.iloc[-2] or Y.loc[k] > p.iloc[-1]):
+            qqb = 1
+
+        qqbs.loc[k] = qqb
+
+    return qqbs
+
+
 def remove_noise(Y, unit=0.05):
     """
     去除噪音
@@ -233,13 +294,13 @@ def remove_noise(Y, unit=0.05):
 
     if len(Y) < 3:
         return Y
-    return Y
     Y_diff = np.diff(Y)
     w = np.argwhere(abs(Y_diff) < unit)
-    max_key = Y.keys()[-1]
+    Y_hat = Y.copy()
+    max_key = len(Y) - 1
     for n in w:
         n = n[0]
-        if n < max_key - 1 and (Y_diff[n] * Y_diff[n+1] < 0):
+        if n < max_key - 1 and (Y_diff[n] * Y_diff[n+1] < 0) and (Y_diff[n-1] < unit and Y_diff[n] < unit):
             Y_hat.iloc[n] = (Y.iloc[n-1] + Y.iloc[n + 1]) / 2
     return Y_hat
 
