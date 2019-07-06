@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
     # code_ids = [2975]
-    # code_ids = [1]
+    # code_ids = [3]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -125,12 +125,7 @@ def execute(start_date='', end_date=''):
         else:
             re_peaks, re_bottoms = FC.get_section_max(peaks, bottoms)
             qqbs = FC.qqbs(Y=beta_trf2, peaks=re_peaks, bottoms=re_bottoms)
-
-            if pd.isnull(qqbs):
-                qqbs = pd.Series(index=beta_trf2, name='qqb')
-            else:
-                qqbs.name = 'qqb'
-
+            qqbs.name = 'qqb'
             re_peaks.name = 'peak'
             re_bottoms.name = 'bottom'
             base = pd.DataFrame(index=beta_trf2.index)

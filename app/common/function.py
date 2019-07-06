@@ -267,11 +267,11 @@ def get_section_max(peaks, bottoms):
 def qqbs(Y, peaks, bottoms):
     peaks.dropna(inplace=True)
     bottoms.dropna(inplace=True)
+    qqbs = pd.Series(index=Y.index, name='qqb')
     if len(peaks) < 2 or len(bottoms) < 2:
-        return
+        return qqbs
     start_key = max(bottoms.index[1], peaks.index[1])
     keys = Y.index[Y.index >= start_key]
-    qqbs = pd.Series(index=Y.index, name='qqb')
     qqb = np.nan
     for k in keys:
         p = peaks[peaks.index <= k][-2:]
