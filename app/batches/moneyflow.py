@@ -32,7 +32,7 @@ def execute(start_date='', end_date=''):
     #
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
-    # code_ids = codes['code_id']
+    code_ids = codes['code_id']
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
     # code_ids = [2975]
