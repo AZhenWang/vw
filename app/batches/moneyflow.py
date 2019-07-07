@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
     # code_ids = [2975]
-    # code_ids = [534]
+    # code_ids = [1355]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -118,7 +118,7 @@ def execute(start_date='', end_date=''):
         peaks, bottoms = FC.get_peaks_bottoms(beta_trf2)
         # 峰谷阀值0.6,  正负0.6之间都算做正常波动
         peaks = peaks[peaks > 0.6]
-        bottoms = bottoms[bottoms < -0.6]
+        bottoms = bottoms[bottoms <= 0.6]
         if len(peaks) < 2 or len(bottoms) < 2:
             qqb = pd.Series(index=beta_trf2.index, name='qqb')
             peak = pd.Series(index=beta_trf2.index, name='peak')
@@ -149,7 +149,7 @@ def execute(start_date='', end_date=''):
         bts = base.join(bt_times)
         bts = bts.join(bt_amounts)
         bts = bts.fillna(0)
-        red_bt = bts.rolling(window=10).sum()
+        red_bt = bts.rolling(window=20).sum()
 
         data = pd.concat([trf2, max1_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, peak, bottom, qqb, red_bt['bt_times'], red_bt['bt_amounts'], net1, net34, pv1, pv34], axis=1)
         data = data.apply(np.round, decimals=2)
