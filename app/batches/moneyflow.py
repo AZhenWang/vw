@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
     # code_ids = [2975]
-    # code_ids = [1355, 1921]
+    # code_ids = [2772]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -62,7 +62,7 @@ def execute(start_date='', end_date=''):
             flow['pct_chg'])
 
         trf2 = flow['turnover_rate_f'] * (2 * flow['close'] - flow['high'] - flow['low']) / (
-                abs(flow['close'] - flow['open']) + 2 * flow['high'] - 2 * flow['low'])
+                -abs(flow['close'] - flow['open']) + 2 * flow['high'] - 2 * flow['low'])
 
         trf2.name = 'trf2'
         trf2.fillna(value=tr_back, inplace=True)
