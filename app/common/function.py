@@ -271,11 +271,11 @@ def qqbs(Y, peaks, bottoms):
     if len(peaks) < 2 or len(bottoms) < 2:
         return qqbs
     start_key = max(bottoms.index[1], peaks.index[1])
-    keys = Y.index[Y.index >= start_key]
+    keys = Y.index[Y.index > start_key]
     qqb = np.nan
     for k in keys:
-        p = peaks[peaks.index <= k][-2:]
-        b = bottoms[bottoms.index <= k][-2:]
+        p = peaks[peaks.index < k][-2:]
+        b = bottoms[bottoms.index < k][-2:]
         if p.iloc[-1] < p.iloc[-2] and (b.iloc[-1] < b.iloc[-2] or Y.loc[k] < b.iloc[-1]):
             qqb = -1
         elif b.iloc[-1] > b.iloc[-2] and (p.iloc[-1] > p.iloc[-2] or Y.loc[k] > p.iloc[-1]):
