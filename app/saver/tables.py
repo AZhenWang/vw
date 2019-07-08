@@ -38,7 +38,7 @@ fields_map = {
 
     'mv_moneyflow': [
         'code_id', 'date_id', 'trf2', 'max1_trf2', 'max6_trf2', 'trf2_a', 'trf2_v',
-        'beta_trf2',  'peak', 'bottom', 'qqb','bt_times', 'bt_amounts', 'net1', 'net34', 'pv1', 'pv34'
+        'beta_trf2',  'peak', 'bottom', 'qqb','bt_times', 'bt_amounts', 'net1', 'net2', 'net34', 'pv1', 'pv2', 'pv34'
     ],
 
     '2line': [

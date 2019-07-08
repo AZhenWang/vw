@@ -35,8 +35,8 @@ def execute(start_date='', end_date=''):
     code_ids = codes['code_id']
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423]
-    # code_ids = [2975]
-    # code_ids = [2772]
+    # code_ids = [1988, 2422, 1979]
+    # code_ids = [1423]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -76,31 +76,38 @@ def execute(start_date='', end_date=''):
 
         # 求
         net1 = pd.Series(index=trf2.index, name='net1')
+        net2 = pd.Series(index=trf2.index, name='net2')
         net34 = pd.Series(index=trf2.index, name='net34')
         beta_trf2 = pd.Series(index=trf2.index, name='beta_trf2')
 
         if not first_logs.empty:
             init_net1 = first_logs.iloc[0]['net1']
+            init_net2 = first_logs.iloc[0]['net2']
             init_net34 = first_logs.iloc[0]['net34']
             init_beta_trf2 = first_logs.iloc[0]['beta_trf2']
         else:
 
-            init_net1 = net_elg.loc[first_id] + net_lg.loc[first_id]
+            init_net1 = net_elg.loc[first_id]
+            init_net2 = net_lg.loc[first_id]
             init_net34 = net_md.loc[first_id] + net_sm.loc[first_id]
             init_beta_trf2 = trf2.loc[first_id]
 
         beta = 0.5
         net1.iloc[0] = init_net1
+        net2.iloc[0] = init_net2
         net34.iloc[0] = init_net34
         beta_trf2.iloc[0] = init_beta_trf2
         for i, date_id in enumerate(trf2.index[1:], start=1):
             net1.iloc[i] = beta * net_elg.loc[date_id] + (1 - beta) * net1.iloc[i - 1]
+            net2.iloc[i] = beta * net_lg.loc[date_id] + (1 - beta) * net2.iloc[i - 1]
             net34.iloc[i] = beta * (net_md.loc[date_id] + net_sm.loc[date_id]) + (1 - beta) * net34.iloc[i - 1]
             beta_trf2.iloc[i] = beta * trf2.loc[date_id] + (1 - beta) * beta_trf2.iloc[i - 1]
 
-        pv1 = (net1 - net1.shift(10))
+        pv1 = (net1 - net1.shift(5))
         pv1.name = 'pv1'
-        pv34 = (net34 - net34.shift(10))
+        pv2 = (net2 - net2.shift(5))
+        pv2.name = 'pv2'
+        pv34 = (net34 - net34.shift(5))
         pv34.name = 'pv34'
 
         max1_trf2 = beta_trf2.shift().rolling(window=20).max()
@@ -151,7 +158,7 @@ def execute(start_date='', end_date=''):
         bts = bts.fillna(0)
         red_bt = bts.rolling(window=20).sum()
 
-        data = pd.concat([trf2, max1_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, peak, bottom, qqb, red_bt['bt_times'], red_bt['bt_amounts'], net1, net34, pv1, pv34], axis=1)
+        data = pd.concat([trf2, max1_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, peak, bottom, qqb, red_bt['bt_times'], red_bt['bt_amounts'], net1,net2, net34, pv1,pv2, pv34], axis=1)
         data = data.apply(np.round, decimals=2)
         data['code_id'] = code_id
         data = data[data.index >= start_date_id]
