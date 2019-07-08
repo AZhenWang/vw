@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     """
     trade_cal = DB.get_open_cal_date(start_date=start_date, end_date=end_date)
     codes = DB.get_latestopendays_code_list(
-        latest_open_days=244*5, date_id=trade_cal.iloc[0]['date_id'])
+        latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
     # code_ids = [583, 1436, 1551, 1591, 1605, 1711, 2423, 2551, 2597]
     # code_ids = [1750, 1680, 751, 270, 2822, 648]
@@ -31,11 +31,13 @@ def execute(start_date='', end_date=''):
     # code_ids = [2597, 2551,  344]
     # code_ids = [1605, 1711, 633]
     # code_ids = [2772]
+    # code_ids = [1988, 2422, 1979, 2020, 1423, 1949, 1895, 376]
     # 2433, 万向德农， 2418：敦煌种业
     # 583:康强电子,  1551：天晟新材， 1436:欧比特, 1591:森远股份, 1605:正海磁材, 1711:华虹计通, 2291：有研新材， 2261：上海贝岭
     # 2423:华微电子, 2551:交大昂立, 2597:长电科技, 216:*ST金岭， 633：智光电气
     # TTBS = ['daily', 'weekly', 'monthly']
-    TTBS = ['monthly', 'weekly']
+    # TTBS = ['monthly', 'weekly']
+    TTBS = ['weekly']
     # TTBS = ['daily']
     for i in range(len(trade_cal)):
         end_date = trade_cal.iloc[i].cal_date
