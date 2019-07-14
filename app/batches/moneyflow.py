@@ -36,7 +36,8 @@ def execute(start_date='', end_date=''):
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423,378, 530]
     # code_ids = [1988, 2422, 1979, 2020, 1423, 1949, 1895, 376, 378, 530]
-    # code_ids = [2772]
+    # code_ids = [1988]
+     # code_ids = [2772]
     # code_ids = [2115]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
@@ -71,11 +72,11 @@ def execute(start_date='', end_date=''):
         tr_back = flow['turnover_rate_f'] * flow['pct_chg'] / abs(
             flow['pct_chg'])
 
-        # trf2 = flow['turnover_rate_f'] * (2 * flow['close'] - flow['high'] - flow['low']) / (
-        #         -abs(flow['close'] - flow['open']) + 2 * flow['high'] - 2 * flow['low'])
-
         trf2 = flow['turnover_rate_f'] * (2 * flow['close'] - flow['high'] - flow['low']) / (
-                (flow['open'] - flow.shift()['close']) + 2 * flow['high'] - 2 * flow['low'])
+                -abs(flow['close'] - flow['open']) + 2 * flow['high'] - 2 * flow['low'])
+        #
+        # trf2 = flow['turnover_rate_f'] * (2 * flow['close'] - flow['high'] - flow['low']) / (
+        #         (flow['open'] - flow.shift()['close']) + 2 * flow['high'] - 2 * flow['low'])
 
         trf2.name = 'trf2'
         trf2.fillna(value=tr_back, inplace=True)
@@ -87,20 +88,17 @@ def execute(start_date='', end_date=''):
         first_logs = DB.get_mv_moneyflows(code_id=code_id, start_date_id=pre_date_id, end_date_id=start_date_id)
 
         # 求
-        net1 = pd.Series(index=trf2.index, name='net1')
         net2 = pd.Series(index=trf2.index, name='net2')
         net12 = pd.Series(index=trf2.index, name='net12')
         net34 = pd.Series(index=trf2.index, name='net34')
         beta_trf2 = pd.Series(index=trf2.index, name='beta_trf2')
 
         if not first_logs.empty:
-            init_net1 = first_logs.iloc[0]['net1']
             init_net2 = first_logs.iloc[0]['net2']
             init_net12 = first_logs.iloc[0]['net12']
             init_net34 = first_logs.iloc[0]['net34']
             init_beta_trf2 = first_logs.iloc[0]['beta_trf2']
         else:
-            init_net1 = net_elg.iloc[0]
             init_net2 = net_lg.iloc[0]
             init_net12 = net_elg.iloc[0] + net_lg.iloc[0]
             init_net34 = net_md.iloc[0] + net_sm.iloc[0]
@@ -111,18 +109,14 @@ def execute(start_date='', end_date=''):
         for i, date_id in enumerate(trf2.index[1:], start=1):
             beta_trf2.iloc[i] = trf2.loc[date_id] + beta * beta_trf2.iloc[i - 1]
 
-        net1.iloc[0] = init_net1
         net2.iloc[0] = init_net2
         net12.iloc[0] = init_net12
         net34.iloc[0] = init_net34
         for i, date_id in enumerate(trf2.index[1:], start=1):
-            net1.iloc[i] = net_elg.loc[date_id] + beta * net1.iloc[i - 1]
             net2.iloc[i] = net_lg.loc[date_id] + beta * net2.iloc[i - 1]
             net12.iloc[i] = net_elg.loc[date_id] + net_lg.loc[date_id] + beta * net12.iloc[i - 1]
             net34.iloc[i] = net_md.loc[date_id] + net_sm.loc[date_id] + beta * net34.iloc[i - 1]
 
-        pv1 = (net1 - net1.shift(5))
-        pv1.name = 'pv1'
         pv12 = (net12 - net12.shift(5))
         pv12.name = 'pv12'
         pv2 = (net2 - net2.shift(5))
