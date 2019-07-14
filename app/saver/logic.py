@@ -352,12 +352,13 @@ class DB(object):
         data = pd.read_sql(
             sa.text(
                 ' SELECT tc.cal_date, sb.name, sb.ts_code, m.*, d.open, d.high, d.close, d.low, d.pct_chg, '
-                ' 2l.top, 2l.bot, 2l.from_bot, 2l.from_top'
+                ' 2l.top, 2l.bot, 2l.from_bot, 2l.from_top, mp.Y0_line, mp.Y0, mp.Y1'
                 ' FROM mv_moneyflow m '
                 ' left join daily d on d.code_id = m.code_id and d.date_id = m.date_id'
                 ' left join stock_basic sb on sb.id = m.code_id'
                 ' left join trade_cal tc on tc.id = m.date_id'
                 ' left join 2line 2l on 2l.code_id= m.code_id and 2l.date_id=m.date_id'
+                ' left join macro_pca mp on mp.code_id = m.code_id and mp.date_id = m.date_id and mp.TTB="weekly"'
                 ' where ' + init_cond + ' m.date_id >= :sdi and  m.date_id <= :edi '
                                         ' order by m.date_id desc '),
             cls.engine,

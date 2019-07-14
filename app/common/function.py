@@ -276,9 +276,11 @@ def qqbs(Y, peaks, bottoms):
         p = peaks[peaks.index < k][-2:]
         b = bottoms[bottoms.index < k][-2:]
         qqb = 0
-        if p.iloc[-1] < p.iloc[-2] and (b.iloc[-1] < b.iloc[-2] or Y.loc[k] < b.iloc[-1]):
+        if Y.loc[k] < p.iloc[-1] < p.iloc[-2] and (b.iloc[-1] < b.iloc[-2] or Y.loc[k] < b.iloc[-1]):
             qqb = -1
-        elif b.iloc[-1] > b.iloc[-2] and (p.iloc[-1] > p.iloc[-2] or Y.loc[k] > p.iloc[-1]):
+        elif Y.loc[k] > b.iloc[-1] > b.iloc[-2] and (p.iloc[-1] > p.iloc[-2] or Y.loc[k] > p.iloc[-1]):
+            qqb = 1
+        elif Y.loc[k] > p.iloc[-2:].max():
             qqb = 1
 
         qqbs.loc[k] = qqb
