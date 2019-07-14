@@ -24,7 +24,7 @@ def execute(start_date='', end_date=''):
     """
 
     window = 20*6
-    pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=2*window)
+    pre_trade_cal = DB.get_open_cal_date(end_date=start_date, period=window+130)
     trade_cal = DB.get_open_cal_date(end_date=end_date, start_date=start_date)
     pre_date_id = pre_trade_cal.iloc[0]['date_id']
     start_date_id = trade_cal.iloc[0]['date_id']
@@ -36,7 +36,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423,378, 530]
     # code_ids = [1988, 2422, 1979, 2020, 1423, 1949, 1895, 376, 378, 530]
-    # code_ids = [1988]
+    # code_ids = [6, 7]
      # code_ids = [2772]
     # code_ids = [2115]
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
@@ -53,7 +53,7 @@ def execute(start_date='', end_date=''):
         flow = flow.join(flow_mean)
         flow.dropna(inplace=True)
         if flow.empty:
-            return
+            continue
 
         flow['close'] = flow['close'] * flow['adj_factor']
         flow['open'] = flow['open'] * flow['adj_factor']
@@ -137,14 +137,14 @@ def execute(start_date='', end_date=''):
 
         # 监控大资金动向
         diff_12 = pd.Series(np.where(np.diff(net12) > 0, 1, -1), index=net12.index[1:], name='diff_12')
+        diff_2 = pd.Series(np.where(np.diff(net2) > 0, 1, -1), index=net2.index[1:], name='diff_2')
+
         net12_sum2 = diff_12.rolling(window=20 * 2).sum()
         net12_sum6 = diff_12.rolling(window=20 * 6).sum()
-        net12_sum2.name = 'net12_sum2'
-        net12_sum6.name = 'net12_sum6'
-
-        diff_2 = pd.Series(np.where(np.diff(net2) > 0, 1, -1), index=net2.index[1:], name='diff_2')
         net2_sum2 = diff_2.rolling(window=20 * 2).sum()
         net2_sum6 = diff_2.rolling(window=20 * 6).sum()
+        net12_sum2.name = 'net12_sum2'
+        net12_sum6.name = 'net12_sum6'
         net2_sum2.name = 'net2_sum2'
         net2_sum6.name = 'net2_sum6'
 
