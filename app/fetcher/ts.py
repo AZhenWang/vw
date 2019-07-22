@@ -220,7 +220,8 @@ class Ts(Interface):
         # codes = self.code_list['ts_code']
         # codes = ['000892.SZ']
         # codes = ['600776.SH']
-        codes = ['600776.SH', '000001.SZ', '000651.SZ']
+        codes = ['300059.SZ']
+        # codes = ['600776.SH', '000001.SZ', '000651.SZ']
         for ts_code in codes:
             flag = True
             while flag:
