@@ -242,7 +242,7 @@ class Ts(Interface):
             if not existed_reports.empty:
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
             print('existed_reports=', existed_reports['end_date'])
-            print('new_rows1=')
+            print('new_rows1=', new_rows)
             new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
