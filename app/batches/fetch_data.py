@@ -32,10 +32,10 @@ def execute(start_date='', end_date=''):
             worker.query_fut(fut_api)
 
 
-        # ts_apis = ['income', 'cashflow', 'balancesheet']
-        # for api in ts_apis:
-        #     worker.query_finance(api, report_type='1')
+        ts_apis = ['income', 'cashflow', 'balancesheet']
+        for api in ts_apis:
+            worker.query_finance(api, report_type='1')
 
-        # ts_apis = ['income', 'cashflow']
-        # for api in ts_apis:
-        #     worker.query_finance(api, report_type='2')
+        ts_apis = ['income', 'cashflow']
+        for api in ts_apis:
+            worker.query_finance(api, report_type='2')
