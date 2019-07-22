@@ -28,7 +28,7 @@ class Ts(Interface):
             now_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
             if not now_rows.empty:
                 all_dates = DB.get_cal_date(self.start_date, self.end_date)
-        self.trade_dates = all_dates[all_dates['open'] == 1]
+        self.trade_dates = all_dates[all_dates['is_open'] == 1]
         self.all_dates = all_dates
 
     def update_trade_cal(self):
