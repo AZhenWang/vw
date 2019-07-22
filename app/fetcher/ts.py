@@ -219,8 +219,8 @@ class Ts(Interface):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list['ts_code']
         # codes = ['000892.SZ']
-        codes = ['600776.SH']
-        # codes = ['600776.SH', '000001.SZ', '000651.SZ']
+        # codes = ['600776.SH']
+        codes = ['600776.SH', '000001.SZ', '000651.SZ']
         for ts_code in codes:
             flag = True
             while flag:
