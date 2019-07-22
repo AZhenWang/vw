@@ -27,7 +27,7 @@ class Base:
     def get_cal_date(cls, start_date='', end_date='', limit=''):
         if start_date =='':
             trade_cal = pd.read_sql(
-                sa.text('SELECT id as date_id, cal_date FROM trade_cal where cal_date <= :ed'
+                sa.text('SELECT id as date_id, cal_date, is_open FROM trade_cal where cal_date <= :ed'
                         ' order by id desc'
                         ' limit :limit'),
                 cls.engine,
@@ -35,7 +35,7 @@ class Base:
             )
         elif end_date =='':
             trade_cal = pd.read_sql(
-                sa.text('SELECT id as date_id, cal_date FROM trade_cal where cal_date >= :sd'
+                sa.text('SELECT id as date_id, cal_date, is_open FROM trade_cal where cal_date >= :sd'
                         ' order by id asc'
                         ' limit :limit'),
                 cls.engine,
@@ -43,7 +43,7 @@ class Base:
             )
         else:
             trade_cal = pd.read_sql(
-                sa.text('SELECT id as date_id,  cal_date FROM trade_cal where cal_date >= :sd and cal_date <= :ed'),
+                sa.text('SELECT id as date_id,  cal_date, is_open FROM trade_cal where cal_date >= :sd and cal_date <= :ed'),
                 cls.engine,
                 params={'sd': start_date, 'ed': end_date}
             )
@@ -121,9 +121,13 @@ class Base:
     def get_table_logs(cls, code_id, start_date_id, end_date_id, table_name):
         logs = pd.read_sql(
             sa.text(
-                'SELECT api.* FROM ' + table_name + ' as api where api.code_id = :code_id and api.date_id between :sdi and :edi'
+                'SELECT tc.cal_date, api.* FROM ' + table_name + ' as api '
+                                                    ' left join trade_cal tc on tc.id = api.date_id'
+                                                    ' where api.code_id = :code_id and api.date_id between :sdi and :edi'
                                                     ' order by api.date_id asc'),
             cls.engine,
             params={'code_id': str(code_id), 'sdi': str(start_date_id), 'edi': str(end_date_id)}
         )
+        logs.sort_values(by='date_id', inplace=True)
+        logs.set_index('date_id', inplace=True)
         return logs
