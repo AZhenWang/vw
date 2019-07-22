@@ -16,18 +16,20 @@ class Ts(Interface):
         self.code_list = []
         self.index_list = []
         self.trade_dates = []
+        self.all_dates = []
         self.fut_list = []
 
     def set_trade_dates(self):
         api = 'trade_cal'
-        trade_cal = DB.get_open_cal_date(self.start_date, self.end_date)
-        if trade_cal.empty:
+        all_dates = DB.get_cal_date(self.start_date, self.end_date)
+        if all_dates.empty:
             now_rows = self.pro.query(api, fields=fields_map[api], start_date=self.start_date, end_date=self.end_date)
             now_rows = now_rows[fields_map[api]]
             now_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
             if not now_rows.empty:
-                trade_cal = DB.get_open_cal_date(self.start_date, self.end_date)
-        self.trade_dates = trade_cal
+                all_dates = DB.get_cal_date(self.start_date, self.end_date)
+        self.trade_dates = all_dates[all_dates['open'] == 1]
+        self.all_dates = all_dates
 
     def update_trade_cal(self):
         api = 'trade_cal'
@@ -241,7 +243,7 @@ class Ts(Interface):
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
             print('existed_reports=', existed_reports['end_date'])
             print('new_rows1=', new_rows)
-            new_rows = new_rows.merge(self.trade_dates, left_on='ann_date', right_on='cal_date')
+            new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
