@@ -225,10 +225,17 @@ def knn_predict(X, Y, k, sample_interval, pre_predict_interval, predict_idx):
 
 
 def get_peaks_bottoms(Y):
+    base = pd.DataFrame(index=Y.index)
     point_args = np.diff(np.where(np.diff(Y) > 0, 0, 1))
     peaks = Y[1:-1][point_args == 1]
     bottoms = Y[1:-1][point_args == -1]
-    return peaks, bottoms
+    peaks.name = 'peak'
+    bottoms.name = 'bottom'
+    base = base.join(peaks)
+    base = base.join(bottoms)
+    base = base.shift()
+
+    return base['peak'], base['bottom']
 
 
 def get_section_max(peaks, bottoms):
@@ -239,21 +246,23 @@ def get_section_max(peaks, bottoms):
     :return:
     """
     re_peaks = pd.Series(index=peaks.index)
-    for i in range(1, len(bottoms)):
+    re_bottoms = pd.Series(index=bottoms.index)
+    bottoms.dropna(inplace=True)
+    peaks.dropna(inplace=True)
+    if len(bottoms) < 2 or len(peaks) < 2:
+        return re_peaks, re_bottoms
+    for i in range(2, len(bottoms)):
         d1 = bottoms.index[i - 1]
         d2 = bottoms.index[i]
-        if not peaks.loc[d1:d2].empty:
+        if peaks.index[0] <= d1 and not peaks.loc[d1:d2].empty:
             max_loc = peaks.loc[d1:d2].idxmax()
             re_peaks.loc[max_loc] = peaks.loc[max_loc]
-
-    re_bottoms = pd.Series(index=bottoms.index)
-    for i in range(1, len(peaks)):
+    for i in range(2, len(peaks)):
         d1 = peaks.index[i - 1]
         d2 = peaks.index[i]
-        if not bottoms.loc[d1:d2].empty:
+        if bottoms.index[0] <= d1 and not bottoms.loc[d1:d2].empty:
             min_loc = bottoms.loc[d1:d2].idxmin()
             re_bottoms.loc[min_loc] = bottoms.loc[min_loc]
-
     if bottoms.index[-1] < peaks.index[-1]:
         max_loc = peaks.loc[bottoms.index[-1]:].idxmax()
         re_peaks.loc[max_loc] = peaks.loc[max_loc]
@@ -273,12 +282,13 @@ def qqbs(Y, peaks, bottoms):
     start_key = max(bottoms.index[1], peaks.index[1])
     keys = Y.index[Y.index > start_key]
     for k in keys:
-        p = peaks[peaks.index < k][-2:]
-        b = bottoms[bottoms.index < k][-2:]
+        p = peaks[peaks.index <= k][-2:]
+        b = bottoms[bottoms.index <= k][-2:]
+
         qqb = 0
-        if Y.loc[k] < p.iloc[-1] < p.iloc[-2] and (b.iloc[-1] < b.iloc[-2] or Y.loc[k] < b.iloc[-1]):
+        if Y.loc[k] < p.iloc[-1] < p.iloc[-2] and b.iloc[-1] < b.iloc[-2]:
             qqb = -1
-        elif Y.loc[k] > b.iloc[-1] > b.iloc[-2] and (p.iloc[-1] > p.iloc[-2] or Y.loc[k] > p.iloc[-1]):
+        elif Y.loc[k] > b.iloc[-1] > b.iloc[-2] and p.iloc[-1] > p.iloc[-2]:
             qqb = 1
 
         qqbs.loc[k] = qqb
@@ -305,6 +315,89 @@ def remove_noise(Y, unit=0.05):
         if n < max_key - 1 and (Y_diff[n] * Y_diff[n+1] < 0) and (Y_diff[n-1] < unit and Y_diff[n] < unit):
             Y_hat.iloc[n] = (Y.iloc[n-1] + Y.iloc[n + 1]) / 2
     return Y_hat
+
+
+def get_wave_section(Y, peaks, bottoms):
+    """
+    批量获取波浪阶段
+    三个参数都以date_id为索引
+    :param Y:
+    :param peaks:
+    :param bottoms:
+    :return:
+    """
+    sections = pd.Series(index=Y.index)
+    peaks.dropna(inplace=True)
+    bottoms.dropna(inplace=True)
+
+    if len(peaks) < 5 or len(bottoms) < 5:
+        return sections
+
+    if peaks.index[-1] > bottoms.index[-1]:
+        dates = peaks.index
+    else:
+        dates = bottoms.index
+
+    if len(dates) < 4:
+        return sections
+
+    init_index = max(peaks.index[0], bottoms.index[0])
+    dates = dates[dates >= init_index]
+
+    for date in dates[4:]:
+        p = peaks[peaks.index <= date]
+        b = bottoms[bottoms.index <= date]
+        y = Y[Y.index <= date]
+        if p.iloc[-1] < p.iloc[-2] < p.iloc[-3] < p.iloc[-4] \
+                and b.iloc[-1] < b.iloc[-2] < b.iloc[-3]:
+            qqb = -7
+        elif y.iloc[-2] < y.iloc[-1] < p.iloc[-1] < p.iloc[-2] < p.iloc[-3] \
+                and b.iloc[-1] < b.iloc[-2] < b.iloc[-3]:
+            qqb = -6
+        elif p.iloc[-1] < p.iloc[-2] < p.iloc[-3] \
+                and b.iloc[-1] < b.iloc[-2] \
+                and y.iloc[-1] < y.iloc[-2]:
+            qqb = -5
+        elif p.iloc[-1] < p.iloc[-2] \
+                and b.iloc[-1] < b.iloc[-2] \
+                and y.iloc[-2] < y.iloc[-1] < b.iloc[-2]:
+            qqb = -4
+        elif y.iloc[-1] > p.iloc[-1] \
+                and b.iloc[-2] < b.iloc[-1] \
+                and b.iloc[-2] < b.iloc[-3] < b.iloc[-4] \
+                and y.iloc[-1] > y.iloc[-2]:
+            qqb = 3
+        elif p.iloc[-1] > p.iloc[-2] > p.iloc[-3] \
+                and b.iloc[-1] > b.iloc[-2] > b.iloc[-3] \
+                and y.iloc[-1] < y.iloc[-2]:
+            qqb = 6
+        elif p.iloc[-3] > p.iloc[-4] \
+                and p.iloc[-1] < p.iloc[-2] \
+                and b.iloc[-2] > b.iloc[-3] > b.iloc[-4] \
+                and y.iloc[-1] > y.iloc[-2]:
+            qqb = 7
+        elif p.iloc[-1] > p.iloc[-2] \
+                and b.iloc[-1] > b.iloc[-2] > b.iloc[-3] \
+                and y.iloc[-1] > y.iloc[-2]:
+            qqb = 5
+        elif p.iloc[-1] > Y.iloc[-1] > p.iloc[-2] \
+                and y.iloc[-2] > y.iloc[-1] > b.iloc[-1] > b.iloc[-2] \
+                and b.iloc[-2] < b.iloc[-3]:
+            qqb = 4
+        elif y.iloc[-1] > y.iloc[-2] \
+                and y.iloc[-1] > p.iloc[-1]:
+            qqb = 1
+        elif p.iloc[-1] < p.iloc[-2] \
+                and y.iloc[-1] < b.iloc[-1]:
+            qqb = -3
+        elif y.iloc[-1] < y.iloc[-2] \
+                and y.iloc[-1] < b.iloc[-1]:
+            qqb = -1
+        else:
+            qqb = 0
+
+        sections.loc[date] = qqb
+    return sections
 
 
 def get_wave_segment(Y):

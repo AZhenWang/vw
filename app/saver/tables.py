@@ -41,7 +41,7 @@ fields_map = {
         'beta_trf2',  'peak', 'bottom', 'qqb','bt_times', 'bt_amounts',
         'net12', 'net2', 'net34', 'pv12', 'pv2', 'pv34',
         'net12_sum2', 'net12_sum6', 'net2_sum2', 'net2_sum6',
-        'diff_12', 'diff_2'
+        'diff_12', 'diff_2', 'fluctuate'
     ],
 
     '2line': [
@@ -136,8 +136,9 @@ fields_map = {
     ],
 
     'comp_sys': [
-        'code_id', 'gross_profit_ratio', 'sell_profit_ratio', 'cogs_profit_rate', 'cashflow_ratio',
-        'inventories_opercost_ratio', 'capital_turnover', 'equity_return', 'asset_return','ratio_sum'
+        'code_id', 'gross_profit_ratio', 'cogs_profit_rate', 'cashflow_ratio',
+        'inventories_opercost_ratio', 'capital_turnover', 'equity_return', 'asset_return',
+        'ratio_sum'
     ],
 
     'features': [
@@ -185,5 +186,10 @@ fields_map = {
         'note', 'numbers', 'codes', 'shot_ratio',
         'm_mean', 'm_std', 'm_max_rate', 'm_min_rate', 'max_rate', 'min_rate',
         'sql_title', 'sql_content', 'sql_params'
-    ]
+    ],
+
+    # 八卦
+    'YY8G': [
+       'date_id', 'code_id', 'TTB', 'qqb', 'section', 'g_number', 'diff_g', 'g_type', 'g_object', 'peak', 'bottom'
+    ],
 }

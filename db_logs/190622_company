@@ -319,7 +319,6 @@ create table comp_sys (
    code_id INT NOT NULL,
    end_date varchar(8) NOT NULL comment'报告期',
    gross_profit_ratio float null comment'毛利率',
-   sell_profit_ratio float null comment'销售利润率',
    cogs_profit_rate float null comment'成本费用利润率',
    inventories_opercost_ratio float null comment'存货周转率',
    capital_turnover float null comment'资金周转率',
