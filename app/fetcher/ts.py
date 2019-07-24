@@ -217,8 +217,8 @@ class Ts(Interface):
 
     def query_finance(self, api, report_type=''):
         # 按trade_date依次拉取所有股票信息
-        # codes = self.code_list['ts_code']
-        codes = ['000892.SZ']
+        codes = self.code_list['ts_code']
+        # codes = ['000892.SZ']
         # codes = ['600776.SH']
         # codes = ['000333.SZ']
         # codes = ['600776.SH', '000001.SZ', '000651.SZ']
