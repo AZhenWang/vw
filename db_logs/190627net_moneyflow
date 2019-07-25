@@ -13,6 +13,8 @@ create table mv_moneyflow (
    qqb float null comment'beta_trf2的波峰形态，1：上升的峰和股，-1：下降的峰和谷',
    bt_times float null comment'近10天的大宗交易次数，>=2表示熟悉公司运营的大股东发现公司危险信息，是非常危险的信号，不管后面是涨是跌，必须早盘卖出',
    bt_amounts float null comment'单位：千万，近10天的大宗交易金额，>=2表示熟悉公司运营的大股东发现公司危险信息，是非常危险的信号，不管后面是涨是跌，必须早盘卖出',
+   diff_12 float null comment'特大资金今天是流入',
+   diff_2 float null comment'大资金今天是流入',
    net12 float null comment'特大资金+大资金净流入值',
    net2 float null comment'大资金净流入值',
    net34 float null comment'小资金净流入值',
@@ -23,8 +25,7 @@ create table mv_moneyflow (
    net12_sum6 float null comment'特大资金+大资金近6个月流入日累积值',
    net2_sum2 float null comment'大资金近2个月流入日累积值',
    net2_sum6 float null comment'大资金近6个月流入日累积值',
-   diff_12 float null comment'特大资金今天是流入',
-   diff_2 float null comment'大资金今天是流入',
+   fluctuate float null comment'近6个月价格波动幅度，单位%',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
@@ -48,3 +49,22 @@ create table 2line (
    index(code_id),
    CONSTRAINT symbol UNIQUE KEY `unique_code_date`(`date_id`, `code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'支撑压力线';
+
+create table YY8G (
+   id int not null auto_increment,
+   date_id INT NOT NULL,
+   code_id INT NOT NULL,
+   TTB varchar(8) default 'daily' comment'时间尺度，daily, weekly, monthly',
+   g_number INT null comment'挂相用2进制表示转10进值',
+   g_type varchar(8) default '8' comment'八卦基础类型，比如8挂：8，64挂：64',
+   g_object varchar(16) default 'price' comment'对象，比如财报：operate，或者股价：price',
+   diff_g INT null comment'与昨天相比，挂相位置差',
+   qqb tinyint null comment'g_number波峰形态，1：上升的峰和股，-1：下降的峰和谷',
+   section tinyint null comment'g_number波峰形态，江恩波段',
+   peak float null comment'上一个峰值',
+   bottom float null comment'上一个谷值',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(code_id),
+   index(date_id)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'阴阳八卦';
