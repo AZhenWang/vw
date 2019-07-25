@@ -12,3 +12,5 @@ Base.metadata.create_all(vm_engine)
 
 Session = sessionmaker(bind=vm_engine)
 
+session = Session()
+

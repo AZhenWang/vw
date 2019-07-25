@@ -314,6 +314,102 @@ create table cashflow (
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'现金流量表';
 
 
+create table fina_indicator (
+   id int not null auto_increment,
+   code_id INT NOT NULL,
+   date_id int not null comment'公告日期',
+   end_date varchar(8) NOT NULL comment'报告期',
+   eps	float	null comment'基本每股收益',
+   dt_eps	float	null comment'稀释每股收益',
+   total_revenue_ps	float	null comment'每股营业总收入',
+   revenue_ps	float	null comment'每股营业收入',
+   interst_income	float	null comment'利息费用',
+   ebit	float	null comment'息税前利润',
+   ebitda	float	null comment'息税折旧摊销前利润',
+   bps	float	null comment'每股净资产',
+   ocfps	float	null comment'每股经营活动产生的现金流量净额',
+   rd_exp	float	null comment'研发费用',
+   current_ratio	float	null comment'流动比率',
+   quick_ratio	float	null comment'速动比率',
+   cash_ratio	float	null comment'保守速动比率',
+   assets_turn	float	null comment'总资产周转率',
+   debt_to_eqt	float	null comment'产权比率',
+
+   dt_eps_yoy	float	null comment'稀释每股收益同比增长率(%)',
+   tr_yoy	float	null comment'营业总收入同比增长率(%)',
+   or_yoy	float	null comment'营业收入同比增长率(%)',
+   q_op_yoy	float	null comment'营业利润同比增长率(%)(单季度)',
+   q_op_qoq	float	null comment'营业利润环比增长率(%)(单季度)',
+   equity_yoy	float	null comment'净资产同比增长率',
+   netprofit_margin	float	null comment'销售净利率',
+   grossprofit_margin	float	null comment'销售毛利率',
+   cogs_of_sales	float	null comment'销售成本率',
+   expense_of_sales	float	null comment'销售期间费用率',
+   ebit_of_gr	float	null comment'息税前利润/营业总收入',
+
+   created_at timestamp null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(code_id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `date_id`,`code_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'公司财务指标';
+
+create table fina_audit(
+   id int not null auto_increment,
+   code_id INT NOT NULL,
+   date_id int not null comment'公告日期',
+   end_date varchar(8) NOT NULL comment'报告期',
+   audit_result	varchar(64) null comment'审计结果',
+   audit_fees	float comment'审计总费用（元）',
+   audit_agency	varchar(64) null comment'会计事务所',
+   audit_sign	varchar(16) null comment'签字会计师',
+   created_at timestamp null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(code_id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `date_id`,`code_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'财务审计意见';
+
+
+create table fina_mainbz(
+   id int not null auto_increment,
+   code_id INT NOT NULL,
+   end_date varchar(8) NOT NULL comment'报告期',
+   bz_item	varchar(64) null comment'主营业务来源',
+   bz_sales	float  null comment'主营业务收入(元)',
+   bz_profit float null comment'主营业务利润(元)',
+   bz_cost	float null comment'主营业务成本(元)',
+   curr_type varchar(8)	 null comment'货币代码',
+   update_flag	varchar(8)	null comment'是否更新',
+   created_at timestamp null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(code_id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `end_date`,`code_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'主营业务构成';
+
+create table dividend(
+   id int not null auto_increment,
+   code_id INT NOT NULL,
+   date_id INT not null comment'预案公告日',
+   end_date varchar(8) NOT NULL comment'报告期',
+   div_proc	varchar(16) null comment'实施进度',
+   stk_div	float null comment'每股送转',
+   stk_bo_rate	float null comment'每股送股比例',
+   stk_co_rate	float null comment'每股转增比例',
+   cash_div	float null comment'每股分红（税后）',
+   cash_div_tax float null comment'每股分红（税前）',
+   record_date	varchar(8) null comment'股权登记日',
+   ex_date	varchar(8) null comment'除权除息日',
+   pay_date varchar(8) null comment'派息日',
+   div_listdate varchar(8) null comment'红股上市日',
+   imp_ann_date varchar(8) null comment'实施公告日',
+   base_date varchar(8) null comment'基准日',
+   base_share float null comment'基准股本（万）',
+   created_at timestamp null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(code_id),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `date_id`,`code_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'分红送股';
+
+
 create table comp_sys (
    id int not null auto_increment,
    code_id INT NOT NULL,
@@ -329,4 +425,6 @@ create table comp_sys (
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`( `code_id`, `end_date`)
-)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'现金流量表';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'自定义公司财务分析指标';
+
+

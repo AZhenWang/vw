@@ -135,6 +135,30 @@ fields_map = {
         'end_bal_cash_equ','beg_bal_cash_equ','im_n_incr_cash_equ',
     ],
 
+
+    'fina_indicator': [
+        'code_id', 'date_id', 'end_date', 'eps', 'dt_eps', 'total_revenue_ps',
+        'revenue_ps', 'interst_income', 'ebit', 'ebitda', 'bps', 'ocfps', 'rd_exp',
+        'current_ratio', 'quick_ratio', 'cash_ratio', 'assets_turn', 'debt_to_eqt',
+        'dt_eps_yoy', 'tr_yoy', 'or_yoy', 'q_op_yoy', 'q_op_qoq', 'equity_yoy', 'netprofit_margin',
+        'grossprofit_margin', 'cogs_of_sales', 'expense_of_sales', 'ebit_of_gr'
+
+        ],
+
+    'fina_audit': [
+        'code_id', 'date_id', 'end_date', 'audit_result', 'audit_fees', 'audit_agency', 'audit_sign',
+    ],
+
+    'fina_mainbz': [
+        'code_id', 'end_date', 'bz_item', 'bz_sales', 'bz_profit', 'bz_cost', 'curr_type', 'update_flag'
+    ],
+
+    'dividend': [
+        'code_id', 'date_id', 'end_date', 'div_proc', 'stk_div', 'stk_bo_rate', 'stk_co_rate', 'cash_div',
+        'cash_div_tax', 'record_date', 'ex_date', 'pay_date', 'div_listdate', 'imp_ann_date',
+        'base_date', 'base_share'
+    ],
+
     'comp_sys': [
         'code_id', 'gross_profit_ratio', 'cogs_profit_rate', 'cashflow_ratio',
         'inventories_opercost_ratio', 'capital_turnover', 'equity_return', 'asset_return',

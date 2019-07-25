@@ -1,4 +1,5 @@
 from app.saver.logic import DB
+from app.saver.service.fina import Fina
 from app.saver.tables import fields_map
 import numpy as np
 import pandas as pd
@@ -12,33 +13,32 @@ def execute(start_date='', end_date=''):
     :return:
     """
     date_id = DB.get_date_id(start_date)
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=244, date_id=date_id)
-    #
-    code_ids = codes['code_id']
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=244, date_id=date_id)
+
+    # code_ids = codes['code_id']
+    code_ids = [378, 214]
     for code_id in code_ids:
         DB.delete_comp_sys_logs(code_id, start_date, end_date)
 
-        incomes = DB.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income', report_type='1')
-        balancesheets = DB.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='balancesheet', report_type='1')
-        cashflows = DB.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow', report_type='1')
+        incomes = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income', report_type='1', end_date_type='%1231')
+        balancesheets = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='balancesheet', report_type='1', end_date_type='%1231')
+        cashflows = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow', report_type='1', end_date_type='%1231')
 
         balancesheets = balancesheets[balancesheets['end_date'].isin(incomes.end_date)]
         cashflows = cashflows[cashflows['end_date'].isin(incomes.end_date)]
-
+        if cashflows.empty or balancesheets.empty:
+            return
         # 一、好生意
         # 1、销售毛利率: （营业收入-营业成本）/ 营业收入
         gross_profit_ratio = round((incomes['revenue'] - incomes['oper_cost']) * 100 / incomes['revenue'], 1)
         gross_profit_ratio.name = 'gross_profit_ratio'
 
-        # 2、销售利润率：（营业总收入-营业总成本）/ 营业总收入
-        sell_profit_ratio = round((incomes['total_revenue'] - incomes['total_cogs']) * 100 / incomes['total_revenue'], 1)
-        sell_profit_ratio.name = 'sell_profit_ratio'
-
         # 二、好管理团队
         # 1、成本费用利润率： （营业总收入-营业总成本）/营业总成本
         cogs_profit_rate = round((incomes['total_revenue'] - incomes['total_cogs']) * 100 / incomes['total_cogs'], 1)
         cogs_profit_rate.name = 'cogs_profit_rate'
+        print(gross_profit_ratio, cogs_profit_rate)
 
         # 2、以销定产: 销量增速 / 存货增速 > 1
         # inventories_opercost_ratio = round((incomes['oper_cost'].diff() - balancesheets['inventories'].diff()) * 100 / incomes['oper_cost'].diff(), 1)
@@ -79,10 +79,10 @@ def execute(start_date='', end_date=''):
         cashflow_ratio.name = 'cashflow_ratio'
 
         # 五、以上比值之和
-        ratio_sum = round((gross_profit_ratio + sell_profit_ratio + cogs_profit_rate + cashflow_ratio + capital_turnover + equity_return + asset_return)/7, 1)
+        ratio_sum = round((gross_profit_ratio + cogs_profit_rate + cashflow_ratio + capital_turnover + equity_return + asset_return)/7, 1)
         ratio_sum.name = 'ratio_sum'
 
-        new_rows = pd.concat([incomes.end_date, gross_profit_ratio, sell_profit_ratio, cogs_profit_rate, cashflow_ratio,
+        new_rows = pd.concat([incomes.end_date, gross_profit_ratio, cogs_profit_rate, cashflow_ratio,
                           capital_turnover, equity_return, asset_return, ratio_sum], axis=1)
         new_rows['code_id'] = code_id
         if not new_rows.empty:
