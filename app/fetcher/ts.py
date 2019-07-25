@@ -240,15 +240,14 @@ class Ts(Interface):
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def query_fina_mainbz(self, api):
-        # codes = self.code_list['ts_code']
-        codes = ['000002.SZ']
+        codes = self.code_list['ts_code']
+        # codes = ['000002.SZ']
         for ts_code in codes:
             flag = True
             while flag:
                 try:
                     self.update_fina_mainbz(api, ts_code, self.start_date, self.end_date)
                     flag = False
-                    time.sleep(5)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
@@ -267,19 +266,14 @@ class Ts(Interface):
 
     def query_finance(self, api, report_type=''):
         # 按trade_date依次拉取所有股票信息
-        # codes = self.code_list['ts_code']
-        # codes = ['000892.SZ']
-        # codes = ['600776.SH']
-        # codes = ['000333.SZ']
-        codes = ['000002.SZ']
-        # codes = ['600776.SH', '000001.SZ', '000651.SZ']
+        codes = self.code_list['ts_code']
+        codes = codes[codes['code_id'] > 1740]
         for ts_code in codes:
             flag = True
             while flag:
                 try:
                     self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
                     flag = False
-                    time.sleep(5)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
