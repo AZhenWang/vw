@@ -217,10 +217,11 @@ class Ts(Interface):
 
     def query_finance(self, api, report_type=''):
         # 按trade_date依次拉取所有股票信息
-        codes = self.code_list['ts_code']
+        # codes = self.code_list['ts_code']
         # codes = ['000892.SZ']
         # codes = ['600776.SH']
         # codes = ['000333.SZ']
+        codes = ['000002.SZ', '000651.SZ', '300648.SZ', '600776.SH']
         # codes = ['600776.SH', '000001.SZ', '000651.SZ']
         for ts_code in codes:
             flag = True
@@ -228,10 +229,10 @@ class Ts(Interface):
                 try:
                     self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
                     flag = False
-                    time.sleep(10)
+                    time.sleep(5)
                 except BaseException as e:
                     # print(e)
-                    time.sleep(10)
+                    time.sleep(5)
                     self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
 
     def update_finance_by_code(self, api, ts_code, start_date, end_date, report_type):
