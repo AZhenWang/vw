@@ -19,7 +19,6 @@ def execute(start_date='', end_date=''):
         # ts_apis = ['income', 'cashflow']
         # for api in ts_apis:
         #     worker.query_finance(api, report_type='2')
-
         ts_apis = ['cashflow']
         for api in ts_apis:
             worker.query_finance(api, report_type='1')
@@ -43,4 +42,4 @@ def execute(start_date='', end_date=''):
         # ts_apis = ['dividend']
         # for api in ts_apis:
         #     worker.query_by_ann_date(api)
-        #
+        # #
