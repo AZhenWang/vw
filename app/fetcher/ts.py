@@ -268,11 +268,7 @@ class Ts(Interface):
     def query_fina_indicator(self, api):
         codes = self.code_list['ts_code']
         # codes = ['000002.SZ']
-        fields = fields_map[api].copy()
-        fields.remove('code_id')
-        fields.remove('date_id')
-        fields.append('ts_code')
-        fields.append('ann_date')
+
         for ts_code in codes:
             flag = True
             while flag:
@@ -297,23 +293,35 @@ class Ts(Interface):
             avail_recorders = new_rows[fields_map[api]]
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
 
-    def query_finance(self, api, report_type=''):
+    def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
         codes = self.code_list['ts_code']
+        if need_fields != '':
+            fields = fields_map[api].copy()
+            fields.remove('code_id')
+            fields.remove('date_id')
+            fields.append('ts_code')
+            fields.append('ann_date')
+        else:
+            fields = ''
         for ts_code in codes:
             flag = True
             while flag:
                 try:
-                    self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
+                    self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
                     flag = False
                     time.sleep(1)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
-                    self.update_finance_by_code(api, ts_code, self.start_date, self.end_date, report_type=report_type)
+                    self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
 
-    def update_finance_by_code(self, api, ts_code, start_date, end_date, report_type):
-        new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
+    def update_finance_by_code(self, api, ts_code, fields, start_date, end_date, report_type):
+        if fields == '':
+            new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
+        else:
+            new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
+
         if not new_rows.empty:
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
 
