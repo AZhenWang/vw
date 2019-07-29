@@ -248,6 +248,7 @@ class Ts(Interface):
                 try:
                     self.update_fina_mainbz(api, ts_code, self.start_date, self.end_date)
                     flag = False
+                    time.sleep(1)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
@@ -278,6 +279,7 @@ class Ts(Interface):
                 try:
                     self.update_fina_indicator(api, fields, ts_code, self.start_date, self.end_date)
                     flag = False
+                    time.sleep(1)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
