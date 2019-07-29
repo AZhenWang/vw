@@ -267,23 +267,21 @@ class Ts(Interface):
     def query_fina_indicator(self, api):
         codes = self.code_list['ts_code']
         # codes = ['000002.SZ']
+        fields = fields_map[api]
+        fields.remove('code_id')
+        fields.remove('date_id')
         for ts_code in codes:
             flag = True
             while flag:
                 try:
-                    self.update_fina_indicator(api, ts_code, self.start_date, self.end_date)
+                    self.update_fina_indicator(api, fields, ts_code, self.start_date, self.end_date)
                     flag = False
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
-                    self.update_fina_indicator(api, ts_code, self.start_date, self.end_date)
+                    self.update_fina_indicator(api, fields, ts_code, self.start_date, self.end_date)
 
-    def update_fina_indicator(self, api, ts_code, start_date, end_date):
-        fields = fields_map[api]
-        print(fields)
-        fields.remove('code_id')
-        print(fields)
-        fields.remove('date_id')
+    def update_fina_indicator(self, api, fields, ts_code, start_date, end_date):
         new_rows = self.pro.query(api, fields=fields, ts_code=ts_code, start_date=start_date, end_date=end_date)
         if not new_rows.empty:
             existed_finas = Fina.get_existed_fina_by_end_date(table_name=api, ts_code=ts_code, start_date=start_date, end_date=end_date)
