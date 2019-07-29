@@ -270,6 +270,8 @@ class Ts(Interface):
         fields = fields_map[api]
         fields.remove('code_id')
         fields.remove('date_id')
+        fields.append('ts_code')
+        fields.append('ann_date')
         for ts_code in codes:
             flag = True
             while flag:
