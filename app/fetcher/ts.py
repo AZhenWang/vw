@@ -267,7 +267,7 @@ class Ts(Interface):
     def query_fina_indicator(self, api):
         codes = self.code_list['ts_code']
         # codes = ['000002.SZ']
-        fields = fields_map[api]
+        fields = fields_map[api].copy()
         fields.remove('code_id')
         fields.remove('date_id')
         fields.append('ts_code')
