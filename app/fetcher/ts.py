@@ -280,8 +280,8 @@ class Ts(Interface):
 
     def update_fina_indicator(self, api, ts_code, start_date, end_date):
         fields = fields_map[api]
-        fields = fields.remove('code_id')
-        fields = fields.remove('date_id')
+        fields.remove('code_id')
+        fields.remove('date_id')
         new_rows = self.pro.query(api, fields=fields, ts_code=ts_code, start_date=start_date, end_date=end_date)
         if not new_rows.empty:
             existed_finas = Fina.get_existed_fina_by_end_date(table_name=api, ts_code=ts_code, start_date=start_date, end_date=end_date)
