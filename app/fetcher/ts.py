@@ -281,6 +281,8 @@ class Ts(Interface):
 
     def update_finance_by_code(self, api, ts_code, start_date, end_date, report_type):
         new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, report_type=report_type)
+        print(new_rows)
+        os.ex
         if not new_rows.empty:
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
 
