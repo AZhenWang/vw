@@ -28,7 +28,12 @@ def execute(start_date='', end_date=''):
         # for api in ts_apis:
         #     worker.query_finance(api, report_type='2')
         #
-        ts_apis = ['fina_indicator', 'fina_audit']
+
+        ts_apis = ['fina_indicator']
+        for api in ts_apis:
+            worker.query_fina_indicator(api)
+
+        ts_apis = ['fina_audit']
         for api in ts_apis:
             worker.query_finance(api)
 
