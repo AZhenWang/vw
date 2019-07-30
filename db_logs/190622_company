@@ -350,7 +350,7 @@ create table fina_indicator (
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `date_id`,`code_id`)
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `end_date`,`code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'公司财务指标';
 
 create table fina_audit(
@@ -365,7 +365,7 @@ create table fina_audit(
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `date_id`,`code_id`)
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `end_date`,`code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'财务审计意见';
 
 
@@ -378,7 +378,6 @@ create table fina_mainbz(
    bz_profit float null comment'主营业务利润(元)',
    bz_cost	float null comment'主营业务成本(元)',
    curr_type varchar(8)	 null comment'货币代码',
-   update_flag	varchar(8)	null comment'是否更新',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
@@ -406,7 +405,7 @@ create table dividend(
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `date_id`,`code_id`)
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `end_date`,`code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'分红送股';
 
 

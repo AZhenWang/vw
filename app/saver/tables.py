@@ -150,7 +150,7 @@ fields_map = {
     ],
 
     'fina_mainbz': [
-        'code_id', 'end_date', 'bz_item', 'bz_sales', 'bz_profit', 'bz_cost', 'curr_type', 'update_flag'
+        'code_id', 'end_date', 'bz_item', 'bz_sales', 'bz_profit', 'bz_cost', 'curr_type'
     ],
 
     'dividend': [
