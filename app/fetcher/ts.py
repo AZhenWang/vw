@@ -242,20 +242,21 @@ class Ts(Interface):
     def query_fina_mainbz(self, api):
         codes = self.code_list['ts_code']
         # codes = ['000002.SZ']
+        type = 'P'
         for ts_code in codes:
             flag = True
             while flag:
                 try:
-                    self.update_fina_mainbz(api, ts_code, self.start_date, self.end_date)
+                    self.update_fina_mainbz(api, ts_code, type, self.start_date, self.end_date)
                     flag = False
                     time.sleep(1)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
-                    self.update_fina_mainbz(api, ts_code, self.start_date, self.end_date)
+                    self.update_fina_mainbz(api, ts_code, type, self.start_date, self.end_date)
 
-    def update_fina_mainbz(self, api, ts_code, start_date, end_date):
-        new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date)
+    def update_fina_mainbz(self, api, ts_code, type, start_date, end_date):
+        new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, type=type)
         if not new_rows.empty:
             existed_finas = Fina.get_existed_fina_by_end_date(table_name=api, ts_code=ts_code, start_date=start_date, end_date=end_date)
             if not existed_finas.empty:
@@ -263,6 +264,7 @@ class Ts(Interface):
                 new_rows.drop_duplicates('end_date', inplace=True)
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
+            avail_recorders['type'] = type
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
 
     def query_fina_indicator(self, api):
