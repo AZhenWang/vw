@@ -263,8 +263,8 @@ class Ts(Interface):
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_finas['end_date'])]
                 new_rows.drop_duplicates('end_date', inplace=True)
             new_rows = self.code_list.merge(new_rows, on='ts_code')
+            new_rows['type'] = type
             avail_recorders = new_rows[fields_map[api]]
-            avail_recorders['type'] = type
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
 
     def query_fina_indicator(self, api):
