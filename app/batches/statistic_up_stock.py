@@ -101,8 +101,9 @@ def execute(start_date='', end_date=''):
     # }
     color = 'tab:red'
     ax0_1 = ax[0].twinx()
-    ax0_1.plot(statistic_data['up_ratio'], 'r-')
-    ax0_1.plot(statistic_data['up_circ_ratio'], 'b-')
+    ax0_1.plot(statistic_data['up_ratio'], 'r-', label='number')
+    ax0_1.plot(statistic_data['up_circ_ratio'], 'b-', label='money')
+    ax0_1.legend(loc=3)
     ax0_1.yaxis.set_ticks(list(ratio_lable.keys()))
     ax0_1.yaxis.set_ticklabels(list(ratio_lable.values()))
     ax0_1.tick_params(axis='y', labelcolor=color)
@@ -113,7 +114,7 @@ def execute(start_date='', end_date=''):
     ax0_1.set_ylabel('Up-stock ratio')
 
     ax1 = ax[1]
-    ax1.legend(loc=2, ncol=4)
+    ax1.legend(loc=2)
     ax1.set_title('Cum Return', fontsize=12)
     ax1.set_ylabel('Return', fontsize=10)
     ax1.set_xlabel('Time', fontsize=10)
@@ -137,9 +138,9 @@ def get_holdings(Y_hat):
     holdings = [0] * 2
     holding = 0
     for i in range(2, len(Y_hat)):
-        if (Y_hat[i] > 0.6) and (Y_hat[i - 1] > 6):
+        if (Y_hat[i] > 7) and (Y_hat[i - 1] > 7):
             holding = 1
-        elif (Y_hat[i] < Y_hat[i - 1]) and (Y_hat[i] < 6):
+        elif (Y_hat[i] < Y_hat[i - 1]) and (Y_hat[i] < 7):
             holding = 0
 
         holdings.append(holding)
