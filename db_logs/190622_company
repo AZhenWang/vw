@@ -310,6 +310,7 @@ create table cashflow (
    im_n_incr_cash_equ	float  null comment'现金及现金等价物净增加额(间接法)',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
+
    CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`(`end_date`, `code_id`, `report_type`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'现金流量表';
 
@@ -350,7 +351,8 @@ create table fina_indicator (
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `end_date`,`code_id`)
+   index(end_date),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `date_id`,`code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'公司财务指标';
 
 create table fina_audit(
@@ -373,6 +375,7 @@ create table fina_mainbz(
    id int not null auto_increment,
    code_id INT NOT NULL,
    end_date varchar(8) NOT NULL comment'报告期',
+   type char(1) not null comment'类型：P按产品 D按地区（请输入大写字母P或者D）',
    bz_item	varchar(64) null comment'主营业务来源',
    bz_sales	float  null comment'主营业务收入(元)',
    bz_profit float null comment'主营业务利润(元)',
@@ -381,7 +384,7 @@ create table fina_mainbz(
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `end_date`,`code_id`)
+   index(end_date),
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'主营业务构成';
 
 create table dividend(
@@ -405,7 +408,8 @@ create table dividend(
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `end_date`,`code_id`)
+   index(end_date),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `date_id`,`code_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'分红送股';
 
 
