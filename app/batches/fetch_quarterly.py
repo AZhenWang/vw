@@ -41,13 +41,8 @@ def execute(start_date='', end_date=''):
         for api in ts_apis:
             worker.query_fina_mainbz(api)
 
-        # 我是王海涛
-        # 我是王海涛
-        # 我是王海涛
-        # 我要上大学
 
-
-        ts_apis = ['dividend']
-        for api in ts_apis:
-            worker.query_by_ann_date(api)
+        # ts_apis = ['dividend']
+        # for api in ts_apis:
+        #     worker.query_by_ann_date(api)
         # #
