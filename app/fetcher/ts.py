@@ -258,10 +258,6 @@ class Ts(Interface):
     def update_fina_mainbz(self, api, ts_code, type, start_date, end_date):
         new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, type=type)
         if not new_rows.empty:
-            existed_finas = Fina.get_existed_fina_by_end_date(table_name=api, ts_code=ts_code, start_date=start_date, end_date=end_date)
-            if not existed_finas.empty:
-                new_rows = new_rows[~new_rows['end_date'].isin(existed_finas['end_date'])]
-                new_rows.drop_duplicates('end_date', inplace=True)
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             new_rows['type'] = type
             avail_recorders = new_rows[fields_map[api]]
