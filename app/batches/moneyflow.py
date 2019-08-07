@@ -33,12 +33,13 @@ def execute(start_date='', end_date=''):
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
     code_ids = codes['code_id']
-    # code_ids = [1949, 1895, 376]
-    # code_ids = [2020, 1423,378, 530]
+    # code_ids = [2772, 521, 2020]
+    # code_ids = [2020, 1423,378, 530, 1895, 2087]
     # code_ids = [1988, 2422, 1979, 2020, 1423, 1949, 1895, 376, 378, 530]
     # code_ids = [6, 7]
-     # code_ids = [2772]
-    # code_ids = [2115]
+    # code_ids = [2020, 2772]
+    # code_ids = [378, 530]
+    # code_ids = range(1, 10)
     new_rows = pd.DataFrame(columns=fields_map['mv_moneyflow'])
     for code_id in code_ids:
         print(code_id)
@@ -49,6 +50,9 @@ def execute(start_date='', end_date=''):
         flow_mean = data[
             ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol', 'buy_md_vol',
              'sell_sm_vol', 'buy_sm_vol']].rolling(window=window).mean()
+        # flow_mean = data[
+        #     ['net_mf_vol', 'sell_elg_vol', 'buy_elg_vol', 'sell_lg_vol', 'buy_lg_vol', 'sell_md_vol', 'buy_md_vol',
+        #      'sell_sm_vol', 'buy_sm_vol']]
 
         flow = flow.join(flow_mean)
         flow.dropna(inplace=True)
@@ -109,6 +113,7 @@ def execute(start_date='', end_date=''):
         for i, date_id in enumerate(trf2.index[1:], start=1):
             beta_trf2.iloc[i] = trf2.loc[date_id] + beta * beta_trf2.iloc[i - 1]
 
+        beta = 0.9
         net2.iloc[0] = init_net2
         net12.iloc[0] = init_net12
         net34.iloc[0] = init_net34
@@ -165,6 +170,7 @@ def execute(start_date='', end_date=''):
             wave = wave.join(re_bottoms)
             wave = wave.join(qqbs)
             wave.fillna(method='ffill', inplace=True)
+
             qqb = wave['qqb']
             peak = wave['peak']
             bottom = wave['bottom']
@@ -182,11 +188,17 @@ def execute(start_date='', end_date=''):
         bts = bts.fillna(0)
         red_bt = bts.rolling(window=20).sum()
 
+        # 计算近半年价格波动区间
+        high_prices = flow['high'].rolling(window=20 * 6).max()
+        low_prices = flow['low'].rolling(window=20 * 6).min()
+        fluctuate = np.floor((high_prices - low_prices) * 100 / low_prices)
+        fluctuate.name = 'fluctuate'
+
         data = pd.concat([trf2, max1_trf2, max6_trf2, trf2_a, trf2_v, beta_trf2, peak, bottom, qqb,
                           red_bt['bt_times'], red_bt['bt_amounts'],
                           net12, net2, net34, pv12, pv2, pv34,
-                          net12_sum2, net12_sum6, net2_sum2, net2_sum6, diff_12, diff_2
-                          ], axis=1)
+                          net12_sum2, net12_sum6, net2_sum2, net2_sum6, diff_12, diff_2, fluctuate
+                          ], axis=1).dropna()
         data = data.apply(np.round, decimals=2)
         data['code_id'] = code_id
         data = data[data.index >= start_date_id]
