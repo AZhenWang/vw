@@ -403,8 +403,6 @@ create table dividend(
    pay_date varchar(8) null comment'派息日',
    div_listdate varchar(8) null comment'红股上市日',
    imp_ann_date varchar(8) null comment'实施公告日',
-   base_date varchar(8) null comment'基准日',
-   base_share float null comment'基准股本（万）',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
