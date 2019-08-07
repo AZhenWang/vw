@@ -224,6 +224,7 @@ class Ts(Interface):
                 try:
                     self.update_by_ann_date(api, date_id, cal_date)
                     flag = False
+                    time.sleep(1)
                 except BaseException as e:
                     time.sleep(10)
                     self.update_by_ann_date(api, date_id, cal_date)
