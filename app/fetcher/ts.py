@@ -229,7 +229,7 @@ class Ts(Interface):
                     self.update_by_ann_date(api, date_id, cal_date)
 
     def update_by_ann_date(self, api, date_id, cal_date):
-        new_rows = self.pro.query(api, anna_date=cal_date)
+        new_rows = self.pro.query(api, ann_date=cal_date)
         if not new_rows.empty:
             existed_codes = DB.get_existed_codes(table_name=api, date_id=date_id)
             if not existed_codes.empty:
