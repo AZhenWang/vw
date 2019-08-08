@@ -224,7 +224,7 @@ class Ts(Interface):
                 try:
                     self.update_by_ann_date(api, date_id, cal_date)
                     flag = False
-                    time.sleep(1)
+                    time.sleep(10)
                 except BaseException as e:
                     time.sleep(10)
                     self.update_by_ann_date(api, date_id, cal_date)
@@ -281,7 +281,7 @@ class Ts(Interface):
                 try:
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
                     flag = False
-                    time.sleep(1)
+                    time.sleep(10)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
