@@ -40,9 +40,9 @@ def execute(start_date='', end_date=''):
     # code_ids = [521]
     # code_ids = [8]
     # code_ids = range(100, 200)
-    # TTBS = ['monthly', 'weekly']
+    TTBS = ['monthly', 'weekly']
     # TTBS = ['weekly']
-    TTBS = ['monthly']
+    # TTBS = ['monthly']
     # TTBS = ['daily']
     # picture = True
     picture = False
@@ -76,7 +76,7 @@ def execute(start_date='', end_date=''):
             dailys = DB.get_code_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB=TTB)
             if dailys.shape[0] < 8:
                 print('时间间隔太短！')
-                return
+                continue
             if TTB == 'monthly':
                 pct_chg = dailys['pct_chg'] * 100
             elif TTB == 'weekly':
