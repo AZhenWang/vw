@@ -30,10 +30,9 @@ def execute(start_date='', end_date=''):
     """
 
     # start_date = '19990101'
-    # end_date = end_date
+    end_date = end_date
     # start_date = '20180101'
     start_date = '20180801'
-    end_date = '20190809'
     # end_date = '20190501'
 
     # code_ids = [2772]
