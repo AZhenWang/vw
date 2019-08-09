@@ -48,7 +48,7 @@ class Fina(Base):
         return existed_reports
 
     @classmethod
-    def get_report_info(cls, code_id, start_date='', end_date='', TTB='', report_type='1', end_date_type=''):
+    def get_report_info(cls, code_id, start_date='', end_date='', TTB='', report_type='', end_date_type=''):
         """
 
         :param code_id:
@@ -61,7 +61,6 @@ class Fina(Base):
         """
         sql_str = ' SELECT r.*' \
                   ' FROM ' + TTB + ' r ' \
-                                   ' left join daily_basic db on db.date_id = r.date_id and db.code_id = r.code_id' \
                                    ' where r.code_id = :code_id ' \
                                    ' and r.end_date >= :sdi and r.end_date <= :edi'
         params = {'code_id': str(code_id), 'sdi': str(start_date), 'edi': str(end_date)}
@@ -78,3 +77,8 @@ class Fina(Base):
 
         report_info = pd.read_sql(sa.text(sql_str), cls.engine, params=params)
         return report_info
+
+    @classmethod
+    def delete_comp_sys_logs(cls, code_id, start_date, end_date):
+        pd.io.sql.execute('delete from comp_sys where code_id = %s and end_date >= %s and end_date <= %s',
+                          cls.engine, params=[str(code_id), str(start_date), str(end_date)])

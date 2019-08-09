@@ -219,7 +219,7 @@ class DB(Base):
 
         data = pd.read_sql(
             sa.text(
-                ' SELECT tc.cal_date, sb.name, sb.ts_code, m.*, d.open, d.high, d.close, d.low, d.pct_chg, af.adj_factor, '
+                ' SELECT tc.cal_date, sb.name, sb.industry, sb.ts_code, m.*, d.open, d.high, d.close, d.low, d.pct_chg, af.adj_factor, '
                 ' 2l.top, 2l.bot, 2l.from_bot, 2l.from_top, mp.Y0_line, mp.Y0, mp.Y1'
                 ' FROM mv_moneyflow m '
                 ' left join daily d on d.code_id = m.code_id and d.date_id = m.date_id'
@@ -350,10 +350,6 @@ class DB(Base):
     def delete_logs(cls, code_id, start_date_id, end_date_id, tablename=''):
         pd.io.sql.execute('delete from '+ tablename +' where code_id = %s and date_id >= %s and date_id <= %s', cls.engine, params=[str(code_id), str(start_date_id), str(end_date_id)])
 
-    @classmethod
-    def delete_comp_sys_logs(cls, code_id, start_date, end_date):
-        pd.io.sql.execute('delete from comp_sys where code_id = %s and end_date >= %s and end_date <= %s',
-                          cls.engine, params=[str(code_id), str(start_date), str(end_date)])
 
     @classmethod
     def insert_features_groups(cls, feature_id, group_number):

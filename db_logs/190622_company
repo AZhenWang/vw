@@ -81,7 +81,7 @@ create table balancesheet (
    comp_type tinyint NOT NULL comment'公司类型(1一般工商业2银行3保险4证券)',
    total_share	float	NULL comment'	期末总股本',
    cap_rese	float	NULL comment'	资本公积金',
-   undistr_porfit	float	NULL comment'	未分配利润',
+   undistr_porfit	float	NULL comment'未分配利润',
    surplus_rese	float	NULL comment'	盈余公积金',
    special_rese	float	NULL comment'	专项储备',
    money_cap	float	NULL comment'	货币资金',
