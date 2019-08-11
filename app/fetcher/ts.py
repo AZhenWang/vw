@@ -267,6 +267,7 @@ class Ts(Interface):
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
         codes = self.code_list['ts_code']
+        codes = codes[codes['code_id'] >= 210]
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
@@ -281,7 +282,7 @@ class Ts(Interface):
                 try:
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
                     flag = False
-                    time.sleep(10)
+                    time.sleep(5)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
