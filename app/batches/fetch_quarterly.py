@@ -12,22 +12,13 @@ def execute(start_date='', end_date=''):
 
     if not worker.trade_dates.empty:
 
-        # ts_apis = ['income', 'cashflow', 'balancesheet']
-        # for api in ts_apis:
-        #     worker.query_finance(api, report_type='1')
-        #
+        ts_apis = ['income', 'cashflow', 'balancesheet']
+        for api in ts_apis:
+            worker.query_finance(api, report_type='1')
+
         # ts_apis = ['income', 'cashflow']
         # for api in ts_apis:
         #     worker.query_finance(api, report_type='2')
-
-        # ts_apis = ['balancesheet']
-        # for api in ts_apis:
-        #     worker.query_finance(api, report_type='1')
-
-        ts_apis = ['cashflow']
-        for api in ts_apis:
-            worker.query_finance(api, report_type='2')
-        #
 
         # ts_apis = ['fina_indicator']
         # for api in ts_apis:
