@@ -411,21 +411,40 @@ create table dividend(
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'分红送股';
 
 
-create table comp_sys (
+create table fina_sys (
    id int not null auto_increment,
    code_id INT NOT NULL,
    end_date varchar(8) NOT NULL comment'报告期',
-   gross_profit_ratio float null comment'毛利率',
-   cogs_profit_rate float null comment'成本费用利润率',
-   inventories_opercost_ratio float null comment'存货周转率',
-   capital_turnover float null comment'资金周转率',
-   equity_return float null comment'净资产销售回报率',
-   asset_return float null comment'总资产报酬率',
-   cashflow_ratio float null comment '经营活动产生的现金流净值与全部现金流的比',
-   ratio_sum float null comment'这些比值之和',
+   adj_close float null comment'',
+   total_mv float null comment'',
+   income_rate float NULL comment'',
+   roe float NULL comment'',
+   eps_mul float NULL comment'',
+   V float NULL comment'',
+   glem_V float NULL comment'',
+   dpd_V float NULL comment'',
+   dyr float NULL comment'',
+   roe_inc float NULL comment'',
+   RR float NULL comment'',
+   glem_RR float NULL comment'',
+   dpd_RR float NULL comment'',
+   pe float NULL comment'',
+   pb float NULL comment'',
+   i_debt float NULL comment'',
+   oper_pressure float NULL comment'',
+   OPM float NULL comment'',
+   Z float NULL comment'',
+   X1 float NULL comment'',
+   X2 float NULL comment'',
+   X3 float NULL comment'',
+   X4 float NULL comment'',
+   X5 float NULL comment'',
+   free_cash_mv float NULL comment'',
+   lib_cash float NULL comment'',
+   receiv_pct float NULL comment'',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`( `code_id`, `end_date`)
-)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'自定义公司财务分析指标';
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'公司估值';
 
 

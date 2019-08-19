@@ -80,5 +80,24 @@ class Fina(Base):
 
     @classmethod
     def delete_comp_sys_logs(cls, code_id, start_date, end_date):
-        pd.io.sql.execute('delete from comp_sys where code_id = %s and end_date >= %s and end_date <= %s',
+        pd.io.sql.execute('delete from fina_sys where code_id = %s and end_date >= %s and end_date <= %s',
                           cls.engine, params=[str(code_id), str(start_date), str(end_date)])
+
+    @classmethod
+    def get_divdends(cls, code_id, start_date, end_date):
+        sql = ' SELECT api.*, b.total_share  FROM dividend as api ' \
+              ' left join trade_cal tc on tc.cal_date = api.end_date ' \
+              ' left join daily_basic b on b.code_id = api.code_id and b.date_id = tc.id' \
+              ' where api.code_id = :ci ' \
+              ' and tc.cal_date >= :start_date and tc.cal_date <= :end_date' \
+              ' order by api.end_date asc'
+
+        params = {'ci': code_id, 'start_date': start_date, 'end_date': end_date}
+
+        existed_reports = pd.read_sql(
+            sa.text(sql),
+            cls.engine,
+            params=params
+        )
+
+        return existed_reports

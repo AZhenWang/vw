@@ -158,10 +158,13 @@ fields_map = {
         'cash_div_tax', 'record_date', 'ex_date', 'pay_date', 'div_listdate', 'imp_ann_date'
     ],
 
-    'comp_sys': [
-        'code_id', 'gross_profit_ratio', 'cogs_profit_rate', 'cashflow_ratio',
-        'inventories_opercost_ratio', 'capital_turnover', 'equity_return', 'asset_return',
-        'ratio_sum'
+    'fina_sys': [
+        'code_id', 'end_date', 'adj_close', 'total_mv',
+        'income_rate', 'roe',  'eps_mul',  'V', 'glem_V', 'dpd_V', 'dyr',
+        'roe_inc', 'RR', 'glem_RR', 'dpd_RR',
+        'pe', 'pb', 'i_debt', 'oper_pressure', 'OPM',
+        'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
+        'free_cash_mv', 'lib_cash', 'receiv_pct',
     ],
 
     'features': [

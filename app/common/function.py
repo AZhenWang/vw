@@ -460,3 +460,28 @@ def get_wave_segment(Y):
         qqb = -1
 
     return qqb
+
+
+def get_ratio(close, later_price):
+    diff = later_price - close
+    fm = close[diff >= 0].add(later_price[diff < 0], fill_value=0)
+    targets = round((diff / fm * 100).fillna(value=0))
+    return targets
+
+
+def get_rolling_mean(v, window=10):
+    """
+    去掉最高最低后的移动平均值
+    :param v: Series
+    :param window:
+    :return: IR; 移动平均值
+    """
+    IR = pd.Series(index=v.index)
+    v.fillna(0, inplace=True)
+    for j in range(2, len(v)):
+        if j < window:
+            IR.iloc[j] = (v[:j+1].sum() - np.max(v[:j+1]) - np.min(v[:j+1])) / (j - 1)
+        else:
+            IR.iloc[j] = v[j-window:j+1].mean()
+
+    return IR
