@@ -13,7 +13,7 @@ def execute(start_date='', end_date=''):
     :param end_date: 公告结束日期
     :return:
     """
-    date_id = DB.get_date_id(start_date)
+    date_id = DB.get_date_id(end_date)
     codes = DB.get_latestopendays_code_list(
         latest_open_days=244, date_id=date_id)
 
