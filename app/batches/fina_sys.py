@@ -14,12 +14,12 @@ def execute(start_date='', end_date=''):
     :return:
     """
     date_id = DB.get_date_id(start_date)
-    # codes = DB.get_latestopendays_code_list(
-    #     latest_open_days=244, date_id=date_id)
+    codes = DB.get_latestopendays_code_list(
+        latest_open_days=244, date_id=date_id)
 
-    # code_ids = codes['code_id']
+    code_ids = codes['code_id']
     new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
-    code_ids = range(1, 5)
+    # code_ids = range(1, 5)
     # code_ids = [2]
     for ci in code_ids:
         Fina.delete_comp_sys_logs(ci, start_date, end_date)
