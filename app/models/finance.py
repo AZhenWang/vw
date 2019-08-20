@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 from app.saver.logic import DB
-from app.common.function import get_rolling_mean, get_ratio
+from app.common.function import get_ratio, get_mean
 
 
 def get_reports(code_id, start_date='19900101', end_date='20190801'):
@@ -92,6 +92,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
 
     # 2、净资本增长率
     equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
+    total_assets = balancesheets['total_assets']
+    mean_total_assets = (total_assets + total_assets.shift()) /2
+    mean_equity = (equity + equity.shift()) / 3
     equity_inc = round(get_ratio(equity.shift(), equity), 2)
     equity_inc.name = 'equity_inc'
 
@@ -113,11 +116,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     adv_receipts_days = 360 * balancesheets['adv_receipts'] / incomes['revenue']
     # 资金周转天数=存货周转天数+应收账款周转天数-预收账款周转天数
     capital_tdays = round(inventories_days + accounts_receiv_days - adv_receipts_days)
-    capital_turn = round(incomes['revenue'] / abs(
-        balancesheets['inventories'] + balancesheets['accounts_receiv'] - balancesheets['adv_receipts']), 2)
-    oper_pressure = round((balancesheets['accounts_receiv'] + balancesheets['prepayment'] + balancesheets['oth_receiv']
-                           - balancesheets['acct_payable'] - balancesheets['adv_receipts'] - balancesheets[
-                               'oth_payable']) * capital_turn / incomes['revenue'], 2)
+    capital_turn = round(incomes['revenue'] / (balancesheets['inventories'] + balancesheets['accounts_receiv'] +  balancesheets['notes_receiv'] - balancesheets['adv_receipts']), 2)
+    oper_pressure = round((balancesheets['accounts_receiv'] + balancesheets['prepayment']
+                           + balancesheets['oth_receiv'] + balancesheets['notes_receiv']
+                           - balancesheets['acct_payable'] - balancesheets['adv_receipts']
+                           - balancesheets['oth_payable'] - balancesheets['notes_payable'])
+                          / equity, 2)
     capital_turn.name = 'capital_turn'
     capital_tdays.name = 'capital_tdays'
     oper_fun.name = 'oper_fun'
@@ -133,7 +137,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     # 三、好结果
 
     # 1、净资产销售报酬率: 销售利润/年平均股东权益
-    equity_return = round((incomes['revenue'] - incomes['oper_cost']) * 100 * 2 / (equity.shift() + equity), 1)
+    equity_return = round((incomes['revenue'] - incomes['oper_cost']) * 100 / equity, 1)
     equity_return.name = 'equity_return'
     #     print('净资产销售报酬率: equity_return=', equity_return)
 
@@ -188,20 +192,22 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     profit_tax_ratio.name = 'profit_tax_ratio'
 
     #     4、杜邦分析
-    total_assets = balancesheets['total_assets']
-
-    receiv_inc = balancesheets['accounts_receiv'] - balancesheets['accounts_receiv'].shift()
+    # receiv_inc = balancesheets['accounts_receiv'] - balancesheets['accounts_receiv'].shift()
+    receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
+    receiv_inc = receiv - receiv.shift()
     receiv_pct = round(receiv_inc / incomes['revenue'], 2)
-    receiv_pct[receiv_pct < 0.2] = 0
+    receiv_pct[receiv_pct < 0] = 0
 
-    roe = round(incomes['n_income_attr_p'] * 100 * 2 / (equity.shift() + equity), 2)
-    ret = round(incomes['n_income_attr_p'] * 100 * 2 / (total_assets.shift() + total_assets), 2)
+    roe = round(incomes['n_income_attr_p'] * 100 / equity, 2)
+    ret = round(incomes['n_income_attr_p'] * 100 / total_assets, 2)
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
-    iocc = round((incomes['operate_profit'] - receiv_pct * receiv_inc) * 100 * 2 / (total_assets.shift() + total_assets), 2)
+    iocc = round((incomes['operate_profit'] * 0.75 - receiv_pct * receiv_inc) / incomes['revenue'], 2)
+    # iocc = round((incomes['operate_profit'] * 0.75) / total_assets, 2)
     iocc.fillna(method='backfill', inplace=True)
-    em = round(total_assets * 2 / (equity.shift() + equity), 2)
+    equity_return = incomes['operate_profit'] * 0.75 / equity
+    em = round(total_assets / equity, 2)
     income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['total_revenue'], 2)
-    total_turn = round(incomes['revenue'] * 2 / (total_assets.shift() + total_assets), 2)
+    total_turn = round(incomes['revenue'] / total_assets, 2)
     total_assets.name = 'total_assets'
     pe = round(code_info['pe'], 2)
     pb = round(code_info['pb'], 2)
@@ -226,19 +232,22 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
 
     free_cash = (cashflows['n_cashflow_inv_act'] + cashflows['n_cashflow_act'])
 
-    free_cash_mv = get_rolling_mean(free_cash, window=4)
+    free_cash_mv = get_rolling_mean(free_cash, window=4, mtype=1)
     lib_cash = round(free_cash_mv / balancesheets['total_cur_liab'], 2)
 
     dyr = round(cash_divs * 100 / total_mv, 2)
+    roe = get_rolling_mean(roe, window=10, mtype=0)
     roe_inc = get_roe_inc(total_turn, iocc, em)
-    OPM = get_rolling_mean(oper_pressure, window=4)
+    OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
     OPM = round(OPM, 2)
-    V = value_stock(roe, roe_inc, OPM)
-    glem_V = glem_value_stock(roe, OPM)
-    dpd_V = dpd_value_stock(roe, OPM)
+    opm_coef = get_opm_coef(oper_pressure)
+    V = value_stock(roe, roe_inc, OPM, opm_coef)
+    glem_V = glem_value_stock(roe, OPM, opm_coef)
+    dpd_V = dpd_value_stock(roe, OPM, opm_coef)
     RR = round(V / eps_mul, 2)
     glem_RR = round(glem_V / eps_mul, 2)
     dpd_RR = round(dpd_V / eps_mul, 2)
+    money_cap = round(balancesheets['money_cap'] / total_assets, 2)
 
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
     # X1= 营运资本/总资产
@@ -286,33 +295,99 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     dpd_V.name = 'dpd_V'
     i_debt.name = 'i_debt'
     receiv_pct.name = 'receiv_pct'
+    money_cap.name = 'money_cap'
 
     data = pd.concat(
         [code_info['adj_close'],  total_mv, income_rate, roe,  eps_mul,  V, glem_V, dpd_V, dyr,
          roe_inc, RR, glem_RR, dpd_RR,
-         pe, pb, i_debt, oper_pressure, OPM,
+         pe, pb, i_debt,capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
-         free_cash_mv, lib_cash, receiv_pct], axis=1)
+         free_cash_mv, lib_cash, receiv_pct, money_cap], axis=1)
 
     return data
 
 
+def get_rolling_mean(v, window=10, mtype=0):
+    """
+    获取运营资金压力移动平均值，为了对经营恶化保持更高灵明度，当前报告期如果是最大值，就不能减去
+    :param v:
+    :param window:
+    :param mtype: 为了保守估计而设置，如果值是越大越好，就用type=1, 值越小越好，就用type=2, 无所谓：type=0
+    :return:
+    """
+    v.fillna(method='backfill', inplace=True)
+    v.fillna(method='ffill', inplace=True)
+    v.fillna(0, inplace=True)
+    data = pd.Series(index=v.index)
+    for j in range(2, len(data)):
+
+        if mtype == 1:
+            if j <= window:
+                data.iloc[j] = (v[:j+1].sum() - np.max(v[:j+1]) - np.min(v[:j])) / (j - 1)
+            else:
+                data.iloc[j] = (v[j-window:j+1].sum() - np.max(v[j-window:j+1]) - np.min(v[j-window:j])) / (window - 1)
+
+        elif mtype == 2:
+            if j <= window:
+                data.iloc[j] = (v[:j + 1].sum() - np.max(v[:j]) - np.min(v[:j + 1])) / (j - 1)
+            else:
+                data.iloc[j] = (v[j - window:j + 1].sum() - np.max(v[j - window:j]) - np.min(v[j - window:j + 1])) / (
+                            window - 1)
+        else:
+            if j <= window:
+                data.iloc[j] = (v[:j + 1].sum() - np.max(v[:j+1]) - np.min(v[:j + 1])) / (j - 1)
+            else:
+                data.iloc[j] = (v[j - window:j + 1].sum() - np.max(v[j - window:j+1]) - np.min(v[j - window:j + 1])) / (
+                            window - 1)
+    return round(data, 3)
+
+
 def get_roe_inc(total_turn, iocc, equity_times):
-    iocc_mv = get_rolling_mean(iocc, window=10)
-    total_turn_mv = get_rolling_mean(total_turn, window=10)
+    print('total_turn=', total_turn)
+    iocc_mv = get_rolling_mean(iocc, window=10, mtype=0)
+    total_turn_mv = get_rolling_mean(total_turn, window=10, mtype=0)
 
     total_return = iocc_mv*total_turn_mv
     total_return_inc = total_return - total_return.shift()
-    roe_inc = round(total_return_inc * equity_times, 2)
+    # roe_inc = round(total_return_inc * equi1·ty_times * 100, 2)
+    roe_inc = round(get_rolling_mean(total_return * equity_times), 2)
+    total_turn_pct = get_ratio(total_turn_mv.shift(), total_turn_mv)
+    roe_inc2 = round(total_turn_pct * iocc_mv * equity_times, 2)
+    print(pd.concat([iocc, iocc_mv, equity_times, total_turn_mv, total_turn_pct, roe_inc, roe_inc2], axis=1))
+    # import matplotlib.pylab as plt
+    # plt.plot(total_return, label='total_return')
+    # plt.plot(iocc_mv, label='iocc_mv')
+    # plt.plot(total_turn_mv, label='total_turn_mv')
+    # plt.plot(equity_times, label='equity_times')
+    # plt.plot(get_rolling_mean(total_return * equity_times), label='roe_mv')
+    #
+    # plt.legend()
+    # plt.show()
+    # os.ex
+
     return roe_inc
 
 
-def value_stock(IR, IR_inc, OPM):
+def get_opm_coef(OPM):
+    """
+    0.3是个人对被占用资金的惩罚系数，如果没有资金压力，占用资金的时间价值0.15, 赚钱难，亏钱容易
+    :param OPM:
+    :return:
+    """
+    opm_coef = pd.Series(index=OPM.index)
+    opm_coef[OPM >= 0] = 0.3
+    opm_coef[OPM < 0] = 0.15
+    return opm_coef
+
+
+def value_stock(IR, IR_inc, OPM, opm_coef):
     """
     总投资10年，前5年保持现有增长率，后5年不增长，收入平稳
+
     """
     IR_inc.fillna(value=0, inplace=True)
     V = pd.Series(index=IR.index)
+
     L = 0.85
     for k in IR.index:
         v = 1
@@ -324,14 +399,16 @@ def value_stock(IR, IR_inc, OPM):
 
         for i in range(1, 11):
             # 贴现率
-            if i <= 5:
-                ir = ir + ir_inc
+            # if i <= 5:
+            #     ir = ir + ir_inc
 
             E = E * (1 + ir)
+            if ir <= 0:
+                E = 0
 
             v += L ** i * E
 
-        v = v * (1 - OPM.loc[k] * (1 - L))
+        v = v * (1 - OPM.loc[k] * opm_coef.loc[k])
 
         V.loc[k] = v
 
@@ -339,18 +416,18 @@ def value_stock(IR, IR_inc, OPM):
     return V
 
 
-def glem_value_stock(IR, OPM):
+def glem_value_stock(IR, OPM, opm_coef):
     """
     格雷厄姆的价值投资
     每股内在价值=每股收益*（1*预期未来的年增长率+8.5）
     """
     V = 2*IR+8.5
-    V = V * (1 - OPM * 0.15)
+    V = V * (1 - OPM * opm_coef)
     V = round(V, 2)
     return V
 
 
-def dpd_value_stock(IR, OPM):
+def dpd_value_stock(IR, OPM, opm_coef):
     """
     邓普顿的价值投资
     每股内在价值判断标准：当前股价/未来5年的每股收益<5
@@ -358,6 +435,7 @@ def dpd_value_stock(IR, OPM):
     IR = IR / 100
     sn = (1 - (1 + IR) ** 6) / (-IR)
     V = sn * 5
-    V = V * (1 - OPM * 0.15)
+    V = V * (1 - OPM * opm_coef)
     V = round(V, 2)
     return V
+

@@ -469,19 +469,20 @@ def get_ratio(close, later_price):
     return targets
 
 
-def get_rolling_mean(v, window=10):
+def get_mean(v):
     """
-    去掉最高最低后的移动平均值
+    去掉最高最低后的平均值
     :param v: Series
     :param window:
     :return: IR; 移动平均值
     """
-    IR = pd.Series(index=v.index)
-    v.fillna(0, inplace=True)
-    for j in range(2, len(v)):
-        if j < window:
-            IR.iloc[j] = (v[:j+1].sum() - np.max(v[:j+1]) - np.min(v[:j+1])) / (j - 1)
+    data = pd.Series(index=v.index)
+    data.fillna(0, inplace=True)
+    for j in range(2, len(data)):
+        if j <= 10:
+            data.iloc[j] = (v[:j+1].sum() - np.max(v[:j+1]) - np.min(v[:j+1])) / (j - 1)
         else:
-            IR.iloc[j] = v[j-window:j+1].mean()
+            data.iloc[j] = v[:j+1].mean()
 
-    return IR
+    return data
+

@@ -162,9 +162,12 @@ fields_map = {
         'code_id', 'end_date', 'adj_close', 'total_mv',
         'income_rate', 'roe',  'eps_mul',  'V', 'glem_V', 'dpd_V', 'dyr',
         'roe_inc', 'RR', 'glem_RR', 'dpd_RR',
-        'pe', 'pb', 'i_debt', 'oper_pressure', 'OPM',
+        'pe', 'pb', 'i_debt', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
-        'free_cash_mv', 'lib_cash', 'receiv_pct',
+        'free_cash_mv', 'lib_cash', 'receiv_pct','money_cap'
+    ],
+    'fina_recom_logs': [
+        'code_id', 'end_date', 'act', 'adj_close', 'years', 'result'
     ],
 
     'features': [

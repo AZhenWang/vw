@@ -350,6 +350,10 @@ class DB(Base):
     def delete_logs(cls, code_id, start_date_id, end_date_id, tablename=''):
         pd.io.sql.execute('delete from '+ tablename +' where code_id = %s and date_id >= %s and date_id <= %s', cls.engine, params=[str(code_id), str(start_date_id), str(end_date_id)])
 
+    @classmethod
+    def delete_code_logs(cls, code_id, tablename=''):
+        pd.io.sql.execute('delete from '+ tablename +' where code_id = %s', cls.engine, params=[str(code_id)])
+
 
     @classmethod
     def insert_features_groups(cls, feature_id, group_number):

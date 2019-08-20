@@ -431,6 +431,7 @@ create table fina_sys (
    pe float NULL comment'',
    pb float NULL comment'',
    i_debt float NULL comment'',
+   capital_turn float null comment'',
    oper_pressure float NULL comment'',
    OPM float NULL comment'',
    Z float NULL comment'',
@@ -442,6 +443,7 @@ create table fina_sys (
    free_cash_mv float NULL comment'',
    lib_cash float NULL comment'',
    receiv_pct float NULL comment'',
+   money_cap float null comment'货币资金占总资产比例',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`( `code_id`, `end_date`)
