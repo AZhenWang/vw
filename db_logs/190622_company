@@ -424,7 +424,7 @@ create table fina_sys (
    glem_V float NULL comment'',
    dpd_V float NULL comment'',
    dyr float NULL comment'',
-   roe_inc float NULL comment'',
+   sale_roe float NULL comment'',
    RR float NULL comment'',
    glem_RR float NULL comment'',
    dpd_RR float NULL comment'',

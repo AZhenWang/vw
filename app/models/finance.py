@@ -201,10 +201,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     roe = round(incomes['n_income_attr_p'] * 100 / equity, 2)
     ret = round(incomes['n_income_attr_p'] * 100 / total_assets, 2)
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
-    iocc = round((incomes['operate_profit'] * 0.75 - receiv_pct * receiv_inc) / incomes['revenue'], 2)
-    # iocc = round((incomes['operate_profit'] * 0.75) / total_assets, 2)
-    iocc.fillna(method='backfill', inplace=True)
-    equity_return = incomes['operate_profit'] * 0.75 / equity
+    sale_rate = round((incomes['operate_profit'] * 0.75) / incomes['revenue'], 2)
+    sale_rate.fillna(method='backfill', inplace=True)
     em = round(total_assets / equity, 2)
     income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['total_revenue'], 2)
     total_turn = round(incomes['revenue'] / total_assets, 2)
@@ -237,11 +235,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
 
     dyr = round(cash_divs * 100 / total_mv, 2)
     roe = get_rolling_mean(roe, window=10, mtype=0)
-    roe_inc = get_roe_inc(total_turn, iocc, em)
+    sale_roe = get_sale_roe(total_turn, sale_rate, em)
     OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
     OPM = round(OPM, 2)
     opm_coef = get_opm_coef(oper_pressure)
-    V = value_stock(roe, roe_inc, OPM, opm_coef)
+    V = value_stock(roe, OPM, opm_coef)
     glem_V = glem_value_stock(roe, OPM, opm_coef)
     dpd_V = dpd_value_stock(roe, OPM, opm_coef)
     RR = round(V / eps_mul, 2)
@@ -286,7 +284,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     dyr.name = 'dyr'
     receiv_income.name = 'receiv_income'
     V.name = 'V'
-    roe_inc.name = 'roe_inc'
+    sale_roe.name = 'sale_roe'
     OPM.name = 'OPM'
     RR.name = 'RR'
     glem_RR.name = 'glem_RR'
@@ -299,7 +297,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
 
     data = pd.concat(
         [code_info['adj_close'],  total_mv, income_rate, roe,  eps_mul,  V, glem_V, dpd_V, dyr,
-         roe_inc, RR, glem_RR, dpd_RR,
+         sale_roe, RR, glem_RR, dpd_RR,
          pe, pb, i_debt,capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
          free_cash_mv, lib_cash, receiv_pct, money_cap], axis=1)
@@ -342,18 +340,14 @@ def get_rolling_mean(v, window=10, mtype=0):
     return round(data, 3)
 
 
-def get_roe_inc(total_turn, iocc, equity_times):
+def get_sale_roe(total_turn, sale_rate, equity_times):
     print('total_turn=', total_turn)
-    iocc_mv = get_rolling_mean(iocc, window=10, mtype=0)
+    sale_rate_mv = get_rolling_mean(sale_rate, window=10, mtype=0)
     total_turn_mv = get_rolling_mean(total_turn, window=10, mtype=0)
 
-    total_return = iocc_mv*total_turn_mv
-    total_return_inc = total_return - total_return.shift()
-    # roe_inc = round(total_return_inc * equi1·ty_times * 100, 2)
-    roe_inc = round(get_rolling_mean(total_return * equity_times), 2)
-    total_turn_pct = get_ratio(total_turn_mv.shift(), total_turn_mv)
-    roe_inc2 = round(total_turn_pct * iocc_mv * equity_times, 2)
-    print(pd.concat([iocc, iocc_mv, equity_times, total_turn_mv, total_turn_pct, roe_inc, roe_inc2], axis=1))
+    total_return = sale_rate_mv*total_turn_mv
+    sale_roe = round(get_rolling_mean(total_return * equity_times), 2)
+    # print(pd.concat([iocc, iocc_mv, equity_times, total_turn_mv, total_turn_pct, sale_roe], axis=1))
     # import matplotlib.pylab as plt
     # plt.plot(total_return, label='total_return')
     # plt.plot(iocc_mv, label='iocc_mv')
@@ -365,7 +359,7 @@ def get_roe_inc(total_turn, iocc, equity_times):
     # plt.show()
     # os.ex
 
-    return roe_inc
+    return sale_roe
 
 
 def get_opm_coef(OPM):
@@ -380,12 +374,11 @@ def get_opm_coef(OPM):
     return opm_coef
 
 
-def value_stock(IR, IR_inc, OPM, opm_coef):
+def value_stock(IR, OPM, opm_coef):
     """
     总投资10年，前5年保持现有增长率，后5年不增长，收入平稳
 
     """
-    IR_inc.fillna(value=0, inplace=True)
     V = pd.Series(index=IR.index)
 
     L = 0.85
@@ -395,13 +388,9 @@ def value_stock(IR, IR_inc, OPM, opm_coef):
         if k not in OPM.index:
             continue
         ir = IR.loc[k] / 100
-        ir_inc = IR_inc.loc[k] / 100
 
         for i in range(1, 11):
             # 贴现率
-            # if i <= 5:
-            #     ir = ir + ir_inc
-
             E = E * (1 + ir)
             if ir <= 0:
                 E = 0

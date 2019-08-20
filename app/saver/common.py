@@ -131,3 +131,12 @@ class Base:
         logs.sort_values(by='date_id', inplace=True)
         logs.set_index('date_id', inplace=True)
         return logs
+
+    @classmethod
+    def get_all_recommend_data(cls, table_name=''):
+        logs = pd.read_sql(
+            sa.text(
+                'SELECT tc.cal_date, api.* FROM ' + table_name + ' as api '),
+            cls.engine,
+        )
+        return logs
