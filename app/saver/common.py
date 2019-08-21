@@ -136,7 +136,7 @@ class Base:
     def get_all_recommend_data(cls, table_name=''):
         logs = pd.read_sql(
             sa.text(
-                'SELECT tc.cal_date, api.* FROM ' + table_name + ' as api '),
+                'SELECT * FROM ' + table_name),
             cls.engine,
         )
         return logs

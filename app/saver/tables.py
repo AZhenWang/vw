@@ -159,12 +159,13 @@ fields_map = {
     ],
 
     'fina_sys': [
-        'code_id', 'end_date', 'adj_close', 'total_mv',
-        'income_rate', 'roe', 'sale_roe', 'eps_mul',  'V', 'glem_V', 'dpd_V', 'dyr',
+        'code_id', 'comp_type', 'end_date', 'adj_close', 'total_mv',
+        'income_rate', 'roe', 'sale_roe', 'eps_mul',
+        'V', 'glem_V', 'dpd_V', 'dyr', 'dyr_in', 'dyr_mean',
         'RR', 'glem_RR', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
-        'free_cash_mv', 'lib_cash', 'receiv_pct','money_cap'
+        'free_cash_mv', 'lib_cash', 'receiv_pct', 'money_cap'
     ],
     'fina_recom_logs': [
         'code_id', 'end_date', 'act', 'adj_close', 'years', 'result'

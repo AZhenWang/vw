@@ -9,7 +9,6 @@ from app.common.function import get_ratio, get_mean
 def get_reports(code_id, start_date='19900101', end_date='20190801'):
     incomes = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income',
                                    report_type='1', end_date_type='%1231')
-
     if incomes.empty:
         nan_series = pd.Series()
         return nan_series, nan_series, nan_series, nan_series, nan_series, nan_series
@@ -26,14 +25,11 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
         sd = (datetime.strptime(ed, '%Y%m%d') - timedelta(days=364)).strftime('%Y%m%d')
         current_div = np.float(dividends.loc[sd:ed]['div_count'].sum())
         cash_divs.loc[ed] = current_div
+
     balancesheets = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='balancesheet',
                                          report_type='1', end_date_type='%1231')
     cashflows = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow',
                                      report_type='1', end_date_type='%1231')
-    fina_indicators = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
-                                           TTB='fina_indicator', end_date_type='%1231')
-    mainbzs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_mainbz',
-                                   end_date_type='%1231')
     daily_basics = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
                                      end_date_id=incomes.iloc[-1]['date_id'], table_name='daily_basic')
     dailys = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
@@ -61,11 +57,10 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
     balancesheets.set_index('end_date', inplace=True)
     cashflows.set_index('end_date', inplace=True)
 
-    fina_indicators.set_index('end_date', inplace=True)
-    return incomes, balancesheets, cashflows, fina_indicators, code_info, cash_divs
+    return incomes, balancesheets, cashflows, code_info, cash_divs
 
 
-def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash_divs):
+def fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs):
     if incomes.empty:
         nan_series = pd.Series()
         return nan_series, nan_series,
@@ -73,12 +68,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     balancesheets.fillna(value=0, inplace=True)
     cashflows.fillna(value=0, inplace=True)
     # 一、好生意
-    # 1、销售毛利率: （营业收入-营业成本）/ 营业收入
-    if incomes.iloc[0]['comp_type'] != 1:
-        print('sorry, 此方法只支持一般工商企业')
-
-        return np.nan, np.nan
-
     gross_profit_ratio = round((incomes['revenue'] - incomes['oper_cost']) * 100 / incomes['revenue'], 1)
     gross_profit_ratio.name = 'gross'
     #     print('毛利率：gross_profit_ratio=', gross_profit_ratio)
@@ -93,16 +82,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     # 2、净资本增长率
     equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
     total_assets = balancesheets['total_assets']
-    mean_total_assets = (total_assets + total_assets.shift()) /2
-    mean_equity = (equity + equity.shift()) / 3
     equity_inc = round(get_ratio(equity.shift(), equity), 2)
     equity_inc.name = 'equity_inc'
-
-    # 二、好管理团队
-    # 1、成本费用利润率： （营业总收入-营业总成本）/营业总成本
-    cogs_profit_rate = round((incomes['total_revenue'] - incomes['total_cogs']) * 100 / abs(incomes['total_cogs']), 1)
-    cogs_profit_rate.name = 'cogs_profit_rate'
-    #     print('成本费用利润率：cogs_profit_rate=', cogs_profit_rate)
 
     # 营运资金
     oper_fun = balancesheets['total_cur_assets'] - goodwill - balancesheets['total_cur_liab']
@@ -131,9 +112,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     #     print('资金周转率：capital_turn=', capital_turn)
 
     #     4、ebitda利息倍数：衡量偿债能力，息税折旧摊销前利润/利息支出，越高，表示盈利能力相比利息越强
-    ebitda_mul = round(fina_indicators['ebitda'] / abs(fina_indicators['interst_income']), 2)
+    ebitda_mul = round(incomes['ebitda'] / abs(incomes['fin_exp']), 2)
     ebitda_mul.name = 'ebitda_mul'
-
     # 三、好结果
 
     # 1、净资产销售报酬率: 销售利润/年平均股东权益
@@ -171,7 +151,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     share_inc_ratio = balancesheets['total_share'] - balancesheets['total_share'].shift()
     share_inc_ratio.name = 'share_inc_ratio'
     #     print('经营现金流比率：cashflow_ratio=', cashflow_ratio)
-
+    print('16')
     # 五、增长率
     #   1、营业收入增长率
     #     revenue_mv = incomes['revenue'].rolling(window=4).sum()
@@ -201,7 +181,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     roe = round(incomes['n_income_attr_p'] * 100 / equity, 2)
     ret = round(incomes['n_income_attr_p'] * 100 / total_assets, 2)
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
-    sale_rate = round((incomes['operate_profit'] * 0.75) / incomes['revenue'], 2)
+    sale_rate = round((incomes['operate_profit'] * 0.75 - receiv_pct * receiv_inc) / incomes['revenue'], 2)
     sale_rate.fillna(method='backfill', inplace=True)
     em = round(total_assets / equity, 2)
     income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['total_revenue'], 2)
@@ -210,17 +190,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     pe = round(code_info['pe'], 2)
     pb = round(code_info['pb'], 2)
     total_mv = round(code_info['total_mv'], 2)
-    act_income = round(cashflows['n_cashflow_act'] / incomes['n_income'], 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
-    adv_income = round(balancesheets['adv_receipts'] / incomes['n_income'], 2)
-    #     dt_eps = round(fina_indicators['dt_eps'], 2)
     eps = round((incomes['n_income_attr_p'].shift() + incomes['n_income_attr_p']) / (
                 balancesheets['total_share'].shift() + balancesheets['total_share']), 2)
 
     mv_eps = eps.rolling(window=4).mean()
-    mv_eps_d = round(mv_eps.diff(), 2)
     eps_mul = round(code_info['close'] / eps, 2)
-    #     eps_to_ct = round(get_ratio(eps_times.pct_change() / capital_turn.pct_change(), 2)
     eps_mul_pct = round(get_ratio(eps_mul.shift(), eps_mul), 2)
     cap_turn_pct = round(get_ratio(capital_turn.shift(), capital_turn), 2)
     revenue_pct = round(get_ratio(incomes['revenue'].shift(), incomes['revenue']), 2)
@@ -232,9 +207,10 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
 
     free_cash_mv = get_rolling_mean(free_cash, window=4, mtype=1)
     lib_cash = round(free_cash_mv / balancesheets['total_cur_liab'], 2)
-
     dyr = round(cash_divs * 100 / total_mv, 2)
-    roe = get_rolling_mean(roe, window=10, mtype=0)
+    dyr_in = round(cash_divs * 10000 * 100 / incomes['n_income_attr_p'], 2)
+    dyr_mean = round(get_mean(dyr), 2)
+    roe = round(get_rolling_mean(roe, window=10, mtype=0), 2)
     sale_roe = get_sale_roe(total_turn, sale_rate, em)
     OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
     OPM = round(OPM, 2)
@@ -294,11 +270,13 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, code_info, cash
     i_debt.name = 'i_debt'
     receiv_pct.name = 'receiv_pct'
     money_cap.name = 'money_cap'
+    dyr_in.name = 'dyr_in'
+    dyr_mean.name = 'dyr_mean'
 
     data = pd.concat(
-        [code_info['adj_close'],  total_mv, income_rate, roe,  eps_mul,  V, glem_V, dpd_V, dyr,
+        [code_info['adj_close'],  total_mv, income_rate, roe,  eps_mul,  V, glem_V, dpd_V, dyr, dyr_in, dyr_mean,
          sale_roe, RR, glem_RR, dpd_RR,
-         pe, pb, i_debt,capital_turn, oper_pressure, OPM,
+         pe, pb, i_debt, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
          free_cash_mv, lib_cash, receiv_pct, money_cap], axis=1)
 
@@ -341,7 +319,6 @@ def get_rolling_mean(v, window=10, mtype=0):
 
 
 def get_sale_roe(total_turn, sale_rate, equity_times):
-    print('total_turn=', total_turn)
     sale_rate_mv = get_rolling_mean(sale_rate, window=10, mtype=0)
     total_turn_mv = get_rolling_mean(total_turn, window=10, mtype=0)
 

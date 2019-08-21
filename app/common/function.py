@@ -471,18 +471,14 @@ def get_ratio(close, later_price):
 
 def get_mean(v):
     """
-    去掉最高最低后的平均值
+    平均值
     :param v: Series
-    :param window:
     :return: IR; 移动平均值
     """
     data = pd.Series(index=v.index)
     data.fillna(0, inplace=True)
-    for j in range(2, len(data)):
-        if j <= 10:
-            data.iloc[j] = (v[:j+1].sum() - np.max(v[:j+1]) - np.min(v[:j+1])) / (j - 1)
-        else:
-            data.iloc[j] = v[:j+1].mean()
+    for j in range(len(data)):
+        data.iloc[j] = v[:j+1].mean()
 
     return data
 
