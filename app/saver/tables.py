@@ -167,6 +167,10 @@ fields_map = {
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'free_cash_mv', 'lib_cash', 'receiv_pct', 'money_cap'
     ],
+    'stk_holdernumber': [
+      'code_id', 'date_id', 'end_date', 'holder_num'
+    ],
+
     'fina_recom_logs': [
         'code_id', 'end_date', 'act', 'adj_close', 'years', 'result'
     ],
