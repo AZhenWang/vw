@@ -160,7 +160,7 @@ fields_map = {
 
     'fina_sys': [
         'code_id', 'comp_type', 'end_date', 'adj_close', 'total_mv',
-        'income_rate', 'roe', 'sale_roe', 'eps', 'eps_mul', 'pp',
+        'income_rate', 'roe', 'roe_mean', 'sale_roe', 'eps', 'eps_mul', 'pp', 'peg',
         'V', 'glem_V', 'dpd_V', 'dyr', 'dyr_or', 'dyr_mean',
         'RR', 'glem_RR', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'capital_turn', 'oper_pressure', 'OPM',

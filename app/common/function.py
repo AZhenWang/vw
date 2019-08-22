@@ -473,12 +473,29 @@ def get_mean(v):
     """
     平均值
     :param v: Series
-    :return: IR; 移动平均值
+    :return: IR; 平均值
     """
     data = pd.Series(index=v.index)
     data.fillna(0, inplace=True)
     for j in range(len(data)):
         data.iloc[j] = v[:j+1].mean()
 
+    return data
+
+
+def adj_infation_rate(dates):
+    """
+    通货膨胀调整系数
+    :param dates: 年列表：[19930101, 19961231...]
+    :return:
+    """
+    from conf.myapp import init_date, infation_rate
+    data = pd.Series(index=dates)
+    j = 0
+    for date in dates:
+        diff_year = np.ceil((int(date) - int(init_date)) / 10000)
+
+        data.iloc[j] = (1+infation_rate)**diff_year
+        j += 1
     return data
 
