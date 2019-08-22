@@ -213,11 +213,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     adj_infation = adj_infation_rate(incomes.index)
 
     eps = (adj_ebit / adj_infation) / (
-                balancesheets['total_share'].shift() + balancesheets['total_share'])
+            balancesheets['total_share'].shift() + balancesheets['total_share'])
 
     eps_mul = (code_info['close'] / adj_infation) / eps
     ebit_inc_mv = get_rolling_mean(ebit_inc, window=4, mtype=3)
-    value_five_years = (1+ebit_inc_mv/100)**5
+    value_five_years = (1 + ebit_inc_mv / 100) ** 5
     pp = round(value_five_years * 8.5 / eps_mul, 2)
     peg = round(ebit_inc_mv / eps_mul, 2)
     eps = round(eps, 2)
@@ -227,9 +227,20 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
     i_debt = round(libwithinterest * 100 / total_assets, 2)
 
-    free_cash = (cashflows['n_cashflow_inv_act'] + cashflows['n_cashflow_act'])
-    free_cash_mv = get_rolling_mean(free_cash, window=4, mtype=1)
-    lib_cash = round(free_cash_mv * 100 / balancesheets['total_cur_liab'])
+    cash_act_in = round(get_ratio(cashflows['c_fr_sale_sg'].shift(), cashflows['c_fr_sale_sg']), 2)
+    cash_act_out = round(get_ratio(cashflows['st_cash_out_act'].shift(), cashflows['st_cash_out_act']), 2)
+    # 持续投入增速如果少于0，不能认定下年度持续减少下去，需要满足最低10%的投入增速期望值
+    adj_cash_out = cash_act_out.copy()
+    adj_cash_out[cash_act_out < 0] = 10 - adj_cash_out[adj_cash_out<0]
+    adj_cash_out[cash_act_out > 30] = 30
+
+    st_cash_out_act_next = (1+adj_cash_out/100)*cashflows['st_cash_out_act']
+    cash_gap =(cashflows['end_bal_cash'] + balancesheets['nca_within_1y'] - balancesheets['non_cur_liab_due_1y'] \
+                   + cashflows['n_cashflow_act'] \
+                   # + cashflows['c_fr_sale_sg'] * adj_cash_in/100 \
+                   - cashflows['st_cash_out_act'] * adj_cash_out/100 \
+                   )
+    cash_gap_r = round(cash_gap * 12 / st_cash_out_act_next, 2)
 
     dyr = round(cash_divs * 100 / total_mv, 2)
     dyr_or = round(cash_divs * 10000 * 100 / incomes['revenue'], 2)
@@ -248,6 +259,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dpd_RR = round(dpd_V / eps_mul, 2)
     money_cap = round(balancesheets['money_cap'] * 100/ total_assets)
     holdernum_inc = round(get_ratio(holdernum.shift(), holdernum), 2)
+    cash_act_in.name = 'cash_act_in'
+    cash_act_out.name = 'cash_act_out'
 
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
     # X1= 营运资本/总资产
@@ -259,7 +272,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     X3 = round(incomes['ebit'] / total_assets, 2)
     # X4 = 股东权益 / 负债
     # X4 = equity / balancesheets['total_liab']
-    X4 = round(equity / libwithinterest, 2)
+    X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
     # X5 = 销售收入 / 总资产
     X5 = round(incomes['revenue'] / total_assets, 2)
     Z = round(0.717 * X1 + 0.847 * X2 + 3.11 * X3 + 0.420 * X4 + 0.998 * X5, 2)
@@ -270,11 +283,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     X4.name = 'X4'
     X5.name = 'X5'
     Z.name = 'Z'
-    free_cash_mv.name = 'free_cash_mv'
+    cash_gap_r.name = 'cash_gap_r'
     eps.name = 'eps'
     eps_mul.name = 'eps_mul'
     pp.name = 'pp'
-    lib_cash.name = 'lib_cash'
+    cash_gap.name = 'cash_gap'
 
     roe.name = 'roe'
     roe_mean.name = 'roe_mean'
@@ -314,7 +327,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          sale_roe, RR, glem_RR, dpd_RR,
          pe, pb, i_debt, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
-         free_cash_mv, lib_cash, receiv_pct, money_cap,
+         receiv_pct, money_cap,
+         cash_act_in, cash_act_out,cash_gap, cash_gap_r,
          rev_inc, rev_inc_mean, ebit_or, ebit_inc], axis=1)
 
     return data

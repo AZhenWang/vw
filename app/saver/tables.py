@@ -165,7 +165,7 @@ fields_map = {
         'RR', 'glem_RR', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
-        'free_cash_mv', 'lib_cash', 'receiv_pct', 'money_cap'
+        'cash_gap', 'cash_gap_r',  'receiv_pct', 'money_cap'
     ],
     'stk_holdernumber': [
       'code_id', 'date_id', 'end_date', 'holder_num'
