@@ -17,14 +17,14 @@ def execute(start_date='', end_date=''):
         latest_open_days=244*2, date_id=date_id)
     code_ids = codes['code_id']
     new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
-    # code_ids = [1442]
+    # code_ids = [2772]
     for ci in code_ids:
         Fina.delete_comp_sys_logs(ci, start_date, end_date)
-        incomes, balancesheets, cashflows, code_info, cash_divs = get_reports(ci)
+        incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs = get_reports(ci)
         if incomes.empty or incomes.iloc[0]['comp_type'] != 1:
             continue
 
-        data = fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs)
+        data = fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs)
         data['comp_type'] = incomes.iloc[0]['comp_type']
         data['code_id'] = ci
         data['end_date'] = data.index

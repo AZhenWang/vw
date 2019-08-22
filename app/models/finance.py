@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 from app.saver.logic import DB
-from app.common.function import get_ratio, get_mean
+from app.common.function import get_ratio, get_mean, adj_infation_rate
 
 
 def get_reports(code_id, start_date='19900101', end_date='20190801'):
@@ -30,6 +30,11 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
                                          report_type='1', end_date_type='%1231')
     cashflows = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow',
                                      report_type='1', end_date_type='%1231')
+    fina_indicators = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
+                                           TTB='fina_indicator', end_date_type='%1231')
+    stk_holdernumbers = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
+                                           TTB='stk_holdernumber', end_date_type='%1231')
+
     daily_basics = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
                                      end_date_id=incomes.iloc[-1]['date_id'], table_name='daily_basic')
     dailys = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
@@ -56,11 +61,13 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
     incomes.set_index('end_date', inplace=True)
     balancesheets.set_index('end_date', inplace=True)
     cashflows.set_index('end_date', inplace=True)
+    fina_indicators.set_index('end_date', inplace=True)
+    stk_holdernumbers.set_index('end_date', inplace=True)
+    holdernum = stk_holdernumbers['holder_num']
+    return incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs
 
-    return incomes, balancesheets, cashflows, code_info, cash_divs
 
-
-def fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs):
+def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs):
     if incomes.empty:
         nan_series = pd.Series()
         return nan_series, nan_series,
@@ -80,7 +87,7 @@ def fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs):
     goodwill.name = 'goodwill'
 
     # 2、净资本增长率
-    equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
+    equity = balancesheets['total_assets'] - balancesheets['total_liab']
     total_assets = balancesheets['total_assets']
     equity_inc = round(get_ratio(equity.shift(), equity), 2)
     equity_inc.name = 'equity_inc'
@@ -175,13 +182,13 @@ def fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs):
     # receiv_inc = balancesheets['accounts_receiv'] - balancesheets['accounts_receiv'].shift()
     receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
     receiv_inc = receiv - receiv.shift()
-    receiv_pct = round(receiv_inc / incomes['revenue'], 2)
-    receiv_pct[receiv_pct < 0] = 0
+    receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
+    # receiv_pct[receiv_pct < 0] = 0
 
     roe = round(incomes['n_income_attr_p'] * 100 / equity, 2)
     ret = round(incomes['n_income_attr_p'] * 100 / total_assets, 2)
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
-    sale_rate = round((incomes['operate_profit'] * 0.75 - receiv_pct * receiv_inc) / incomes['revenue'], 2)
+    sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
     sale_rate.fillna(method='backfill', inplace=True)
     em = round(total_assets / equity, 2)
     income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['total_revenue'], 2)
@@ -191,26 +198,44 @@ def fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs):
     pb = round(code_info['pb'], 2)
     total_mv = round(code_info['total_mv'], 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
-    eps = round((incomes['n_income_attr_p'].shift() + incomes['n_income_attr_p']) / (
-                balancesheets['total_share'].shift() + balancesheets['total_share']), 2)
 
-    mv_eps = eps.rolling(window=4).mean()
-    eps_mul = round(code_info['close'] / eps, 2)
-    eps_mul_pct = round(get_ratio(eps_mul.shift(), eps_mul), 2)
-    cap_turn_pct = round(get_ratio(capital_turn.shift(), capital_turn), 2)
-    revenue_pct = round(get_ratio(incomes['revenue'].shift(), incomes['revenue']), 2)
+    # adj_rev = incomes['revenue'] - receiv_inc
+    adj_rev = incomes['revenue']
+    rev_inc = round(get_ratio(adj_rev.shift(), adj_rev), 2)
+    rev_inc_mean = round(get_rolling_mean(rev_inc, window=10), 2)
+
+    # 研发费用，除去某一年的突然研发费用干扰
+    rd_exp = get_rolling_mean(fina_indicators['rd_exp'].fillna(0), mtype=3)
+    adj_ebit = (incomes['ebit'] + rd_exp)
+    ebit_or = round(adj_ebit * 100 / adj_rev, 2)
+    ebit_inc = round(get_ratio(adj_ebit.shift(), adj_ebit), 1)
+
+    adj_infation = adj_infation_rate(incomes.index)
+
+    eps = (adj_ebit / adj_infation) / (
+                balancesheets['total_share'].shift() + balancesheets['total_share'])
+
+    eps_mul = (code_info['close'] / adj_infation) / eps
+    ebit_inc_mv = get_rolling_mean(ebit_inc, window=4, mtype=3)
+    value_five_years = (1+ebit_inc_mv/100)**5
+    pp = round(value_five_years * 8.5 / eps_mul, 2)
+    peg = round(ebit_inc_mv / eps_mul, 2)
+    eps = round(eps, 2)
+    eps_mul = round(eps_mul, 2)
+
     Tassets_inc = round(get_ratio(total_assets.shift(), total_assets), 2)
     libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
     i_debt = round(libwithinterest * 100 / total_assets, 2)
 
     free_cash = (cashflows['n_cashflow_inv_act'] + cashflows['n_cashflow_act'])
-
     free_cash_mv = get_rolling_mean(free_cash, window=4, mtype=1)
-    lib_cash = round(free_cash_mv / balancesheets['total_cur_liab'], 2)
+    lib_cash = round(free_cash_mv * 100 / balancesheets['total_cur_liab'])
+
     dyr = round(cash_divs * 100 / total_mv, 2)
-    dyr_in = round(cash_divs * 10000 * 100 / incomes['n_income_attr_p'], 2)
-    dyr_mean = round(get_mean(dyr), 2)
-    roe = round(get_rolling_mean(roe, window=10, mtype=0), 2)
+    dyr_or = round(cash_divs * 10000 * 100 / incomes['revenue'], 2)
+    dyr_mean = round(get_rolling_mean(dyr), 2)
+
+    roe_mean = round(get_mean(roe), 2)
     sale_roe = get_sale_roe(total_turn, sale_rate, em)
     OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
     OPM = round(OPM, 2)
@@ -221,7 +246,8 @@ def fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs):
     RR = round(V / eps_mul, 2)
     glem_RR = round(glem_V / eps_mul, 2)
     dpd_RR = round(dpd_V / eps_mul, 2)
-    money_cap = round(balancesheets['money_cap'] / total_assets, 2)
+    money_cap = round(balancesheets['money_cap'] * 100/ total_assets)
+    holdernum_inc = round(get_ratio(holdernum.shift(), holdernum), 2)
 
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
     # X1= 营运资本/总资产
@@ -245,12 +271,13 @@ def fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs):
     X5.name = 'X5'
     Z.name = 'Z'
     free_cash_mv.name = 'free_cash_mv'
+    eps.name = 'eps'
     eps_mul.name = 'eps_mul'
-    eps_mul_pct.name = 'eps_mul_pct'
-    cap_turn_pct.name = 'cap_turn_pct'
+    pp.name = 'pp'
     lib_cash.name = 'lib_cash'
 
     roe.name = 'roe'
+    roe_mean.name = 'roe_mean'
     ret.name = 'ret'
     em.name = 'em'
     income_rate.name = 'income_rate'
@@ -270,15 +297,25 @@ def fina_kpi(incomes, balancesheets, cashflows, code_info, cash_divs):
     i_debt.name = 'i_debt'
     receiv_pct.name = 'receiv_pct'
     money_cap.name = 'money_cap'
-    dyr_in.name = 'dyr_in'
+    dyr_or.name = 'dyr_or'
     dyr_mean.name = 'dyr_mean'
+    rev_inc.name = 'rev_inc'
+    rev_inc_mean.name = 'rev_inc_mean'
+    ebit_or.name = 'ebit_or'
+    ebit_inc.name = 'ebit_inc'
+    holdernum_inc.name = 'holdernum_inc'
+    holdernum.name = 'holdernum'
+    peg.name = 'peg'
 
     data = pd.concat(
-        [code_info['adj_close'],  total_mv, income_rate, roe,  eps_mul,  V, glem_V, dpd_V, dyr, dyr_in, dyr_mean,
+        [code_info['adj_close'],  total_mv, income_rate, roe,  roe_mean, eps, eps_mul, pp, peg,
+         holdernum, holdernum_inc,
+         V, glem_V, dpd_V, dyr, dyr_or, dyr_mean,
          sale_roe, RR, glem_RR, dpd_RR,
          pe, pb, i_debt, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
-         free_cash_mv, lib_cash, receiv_pct, money_cap], axis=1)
+         free_cash_mv, lib_cash, receiv_pct, money_cap,
+         rev_inc, rev_inc_mean, ebit_or, ebit_inc], axis=1)
 
     return data
 
@@ -288,7 +325,8 @@ def get_rolling_mean(v, window=10, mtype=0):
     获取运营资金压力移动平均值，为了对经营恶化保持更高灵明度，当前报告期如果是最大值，就不能减去
     :param v:
     :param window:
-    :param mtype: 为了保守估计而设置，如果值是越大越好，就用type=1, 值越小越好，就用type=2, 无所谓：type=0
+    :param mtype: 为了保守估计而设置，保留今天的最小值：type=1, 保留今天的最大值：type=2, 去除包括今天的最大最小值：mtype=3
+    不去掉最大最小值：type=0
     :return:
     """
     v.fillna(method='backfill', inplace=True)
@@ -309,18 +347,23 @@ def get_rolling_mean(v, window=10, mtype=0):
             else:
                 data.iloc[j] = (v[j - window:j + 1].sum() - np.max(v[j - window:j]) - np.min(v[j - window:j + 1])) / (
                             window - 1)
-        else:
+        elif mtype == 3:
             if j <= window:
                 data.iloc[j] = (v[:j + 1].sum() - np.max(v[:j+1]) - np.min(v[:j + 1])) / (j - 1)
             else:
-                data.iloc[j] = (v[j - window:j + 1].sum() - np.max(v[j - window:j+1]) - np.min(v[j - window:j + 1])) / (
-                            window - 1)
+                data.iloc[j] = (v[j - window:j + 1].sum() - np.max(v[j - window:j+1]) - np.min(v[j - window:j + 1])) / (window - 1)
+        else:
+            if j <= window:
+                data.iloc[j] = v[:j+1].mean()
+            else:
+                data.iloc[j] = v[j-window:j + 1].mean()
+
     return round(data, 3)
 
 
 def get_sale_roe(total_turn, sale_rate, equity_times):
-    sale_rate_mv = get_rolling_mean(sale_rate, window=10, mtype=0)
-    total_turn_mv = get_rolling_mean(total_turn, window=10, mtype=0)
+    sale_rate_mv = get_rolling_mean(sale_rate, window=10, mtype=3)
+    total_turn_mv = get_rolling_mean(total_turn, window=10, mtype=3)
 
     total_return = sale_rate_mv*total_turn_mv
     sale_roe = round(get_rolling_mean(total_return * equity_times), 2)
