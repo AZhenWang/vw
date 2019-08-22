@@ -43,7 +43,7 @@ if file_name:
             if not end_date or end_date >= today:
                 yesterday = (now - timedelta(1)).strftime('%Y%m%d')
                 hour = now.hour
-                if hour < 16:
+                if hour < 15:
                     if start_date == end_date:
                         start_date = yesterday
                     end_date = yesterday
