@@ -7,9 +7,10 @@ from app.common.function import get_ratio, get_mean, adj_infation_rate
 
 
 def get_reports(code_id, start_date='19900101', end_date='20190801'):
-    incomes = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income',
-                                   report_type='1', end_date_type='%1231')
-    if incomes.empty:
+
+    balancesheets = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='balancesheet',
+                                         report_type='1', end_date_type='%1231')
+    if balancesheets.empty:
         nan_series = pd.Series()
         return nan_series, nan_series, nan_series, nan_series, nan_series, nan_series
 
@@ -18,16 +19,16 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
     dividends['div_count'] = dividends['total_share'] * dividends['cash_div_tax']
     dividends.div_count.astype = 'float64'
     dividends.fillna(0)
-    cash_divs = pd.Series(index=incomes['end_date'], name='cash_divs')
+    cash_divs = pd.Series(index=balancesheets['end_date'], name='cash_divs')
     dividends.set_index('end_date', inplace=True)
-    for i in range(len(incomes)):
-        ed = incomes.iloc[i]['end_date']
+    for i in range(len(balancesheets)):
+        ed = balancesheets.iloc[i]['end_date']
         sd = (datetime.strptime(ed, '%Y%m%d') - timedelta(days=364)).strftime('%Y%m%d')
         current_div = np.float(dividends.loc[sd:ed]['div_count'].sum())
         cash_divs.loc[ed] = current_div
 
-    balancesheets = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='balancesheet',
-                                         report_type='1', end_date_type='%1231')
+    incomes = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income',
+                                   report_type='1', end_date_type='%1231')
     cashflows = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow',
                                      report_type='1', end_date_type='%1231')
     fina_indicators = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
@@ -52,12 +53,13 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
 
     code_info = base.loc[incomes['end_date']]
 
-    balancesheets = balancesheets[balancesheets['end_date'].isin(incomes.end_date)]
-    cashflows = cashflows[cashflows['end_date'].isin(incomes.end_date)]
+    incomes = incomes[incomes['end_date'].isin(balancesheets.end_date)]
+    cashflows = cashflows[cashflows['end_date'].isin(balancesheets.end_date)]
 
-    if cashflows.empty or balancesheets.empty:
+    if cashflows.empty or incomes.empty:
         print('数据为空！')
 
+    balancesheets.fillna(method='backfill', inplace=True)
     incomes.set_index('end_date', inplace=True)
     balancesheets.set_index('end_date', inplace=True)
     cashflows.set_index('end_date', inplace=True)
@@ -74,23 +76,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     incomes.fillna(value=0, inplace=True)
     balancesheets.fillna(value=0, inplace=True)
     cashflows.fillna(value=0, inplace=True)
-    # 一、好生意
-    gross_profit_ratio = round((incomes['revenue'] - incomes['oper_cost']) * 100 / incomes['revenue'], 1)
-    gross_profit_ratio.name = 'gross'
-    #     print('毛利率：gross_profit_ratio=', gross_profit_ratio)
-
-    # 2、净利率
-    n_income_ratio = round(incomes['n_income'] * 100 / incomes['revenue'], 1)
-    n_income_ratio.name = 'n_income_ratio'
 
     goodwill = balancesheets['goodwill']
     goodwill.name = 'goodwill'
 
-    # 2、净资本增长率
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
     total_assets = balancesheets['total_assets']
-    equity_inc = round(get_ratio(equity.shift(), equity), 2)
-    equity_inc.name = 'equity_inc'
 
     # 营运资金
     oper_fun = balancesheets['total_cur_assets'] - goodwill - balancesheets['total_cur_liab']
@@ -118,66 +109,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     #           '预收账款周转天数:adv_receipts_days=', adv_receipts_days, '资金周转天数:capital_turn_days=', capital_turn_days)
     #     print('资金周转率：capital_turn=', capital_turn)
 
-    #     4、ebitda利息倍数：衡量偿债能力，息税折旧摊销前利润/利息支出，越高，表示盈利能力相比利息越强
-    ebitda_mul = round(incomes['ebitda'] / abs(incomes['fin_exp']), 2)
-    ebitda_mul.name = 'ebitda_mul'
-    # 三、好结果
-
-    # 1、净资产销售报酬率: 销售利润/年平均股东权益
-    equity_return = round((incomes['revenue'] - incomes['oper_cost']) * 100 / equity, 1)
-    equity_return.name = 'equity_return'
-    #     print('净资产销售报酬率: equity_return=', equity_return)
-
-    # 2、总资产报酬率: 净利润/年平均总资产
-    asset_return = round(incomes['n_income'] * 100 / balancesheets['total_assets'], 1)
-    asset_return.name = 'asset_return'
-    #     print('总资产报酬率:asset_return=', asset_return)
-
-    #     # 3、红利比率
-
-    #     4、每股收益
-    share_return = round(incomes['n_income_attr_p'] / balancesheets['total_share'], 2)
-    share_return.name = 'share_return'
-    # 四、正常的现金流
-    cashflows.fillna(value=0, inplace=True)
-    cashflow_act_ratio = round(cashflows['n_cashflow_act'] * 100 / (
-                abs(cashflows['n_cashflow_act']) + abs(cashflows['n_cash_flows_fnc_act']) + abs(
-            cashflows['n_cashflow_inv_act'])), 1)
-    cashflow_act_ratio.name = 'cashflow_act_ratio'
-    cashflow_fnc_ratio = round(cashflows['n_cash_flows_fnc_act'] * 100 / (
-                abs(cashflows['n_cashflow_act']) + abs(cashflows['n_cash_flows_fnc_act']) + abs(
-            cashflows['n_cashflow_inv_act'])), 1)
-    cashflow_fnc_ratio.name = 'cashflow_fnc_ratio'
-    cashflow_inv_ratio = round(cashflows['n_cashflow_inv_act'] * 100 / (
-                abs(cashflows['n_cashflow_act']) + abs(cashflows['n_cash_flows_fnc_act']) + abs(
-            cashflows['n_cashflow_inv_act'])), 1)
-    cashflow_inv_ratio.name = 'cashflow_inv_ratio'
-    int_exp_inc_ratio = round((incomes['ebit'] - incomes['income_tax'] - incomes['total_profit']) / incomes['revenue'],
-                              2)
-    int_exp_inc_ratio.name = 'int_exp_inc_ratio'
-    share_inc_ratio = balancesheets['total_share'] - balancesheets['total_share'].shift()
-    share_inc_ratio.name = 'share_inc_ratio'
-    #     print('经营现金流比率：cashflow_ratio=', cashflow_ratio)
-    print('16')
-    # 五、增长率
-    #   1、营业收入增长率
-    #     revenue_mv = incomes['revenue'].rolling(window=4).sum()
-    #     revenue_inc_ratio = get_ratio(revenue_mv.shift(), revenue_mv)
-    revenue_inc_ratio = get_ratio(incomes['revenue'].shift(), incomes['revenue'])
-    revenue_inc_ratio = round(revenue_inc_ratio, 2)
-    revenue_inc_ratio.name = 'revenue_inc_ratio'
-
-    #     2、费用增长率
-    #     total_cogs_mv = incomes['total_cogs'].rolling(window=4).sum()
-    #     cost_inc_ratio = get_ratio(total_cogs_mv.shift(), total_cogs_mv)
-    cost_inc_ratio = get_ratio(incomes['total_cogs'].shift(), incomes['total_cogs'])
-    cost_inc_ratio = round(cost_inc_ratio, 2)
-    cost_inc_ratio.name = 'cost_inc_ratio'
-
-    #     3、所得税占税前利润率: 保持正常比例才正常，突然的减少反而可能是内部会计造假
-    profit_tax_ratio = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
-    profit_tax_ratio.name = 'profit_tax_ratio'
-
     #     4、杜邦分析
     # receiv_inc = balancesheets['accounts_receiv'] - balancesheets['accounts_receiv'].shift()
     receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
@@ -185,8 +116,51 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
     # receiv_pct[receiv_pct < 0] = 0
 
-    roe = round(incomes['n_income_attr_p'] * 100 / equity, 2)
-    ret = round(incomes['n_income_attr_p'] * 100 / total_assets, 2)
+
+    # 企业财务造假的原因在于普通人只看净利润，也就是每股盈利，而不关注净利润的来源，是来源于把一些费用从盈余项目扣除，还是真正的到手的利润，
+    # 假装好的东西都是把好的一面呈现在你面前，侧面和后面看里面是烂的，而真正好的东西，360度看都是好的。
+    # 所以，像二郎神一样，用三只眼立体来看一个企业
+    # 第一只眼： 净利润，评估平均每股收益
+    # 第二只眼： 收入增速，评估未来10年价值，评估企业价值
+    # 第三支眼： 销售收入现金流增速，评估未来10年现金流入，评估企业价值
+
+    # 研发费用，除去某一年的突然研发费用干扰， 研发费用+营业利润的7年的平均值，作为利润的增长基础值
+    rd_exp = get_rolling_mean(fina_indicators['rd_exp'].fillna(0), mtype=3)
+    pure_equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
+    equity_pct = round((pure_equity - pure_equity.shift() + cash_divs) * 100/pure_equity, 1)
+    freecash = cashflows['n_cashflow_act'] - cashflows['c_pay_acq_const_fiolta'] + fina_indicators['rd_exp'].fillna(0)
+    freecash_rate = round(freecash * 100 / (equity), 1)
+    freecash_mv = get_rolling_mean(freecash_rate, window=7)
+
+    adj_ebit = (incomes['operate_profit'] + rd_exp)
+    op_mv = get_rolling_mean(adj_ebit, window=7)
+    op_mv_short = get_rolling_mean(adj_ebit, window=3)
+    op_pct = round((op_mv_short - op_mv_short.shift() - (op_mv - op_mv.shift())) * 100 / op_mv, 1)
+    compr_mv = get_rolling_mean(incomes['n_income_attr_p'], window=7)
+
+    roe = round(compr_mv * 100 / equity, 2)
+    ret = round(compr_mv * 100 / total_assets, 2)
+
+    total_share = balancesheets['total_share'].fillna(method='backfill')
+
+    eps = compr_mv / total_share.iloc[0]
+    dt_eps = compr_mv / total_share
+
+    eps_mul = code_info['close'] / dt_eps
+
+    OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
+    OPM = round(OPM, 2)
+    opm_coef = get_opm_coef(oper_pressure)
+    V = value_stock(roe, op_pct, OPM, opm_coef)
+
+    # value_five_years = (1 + roe_op/100) ** 5
+    pp = round(V * (1 + op_pct/100) * 8.5 / eps_mul, 2)
+    peg = round(op_pct / 10, 2)
+    eps = round(eps, 2)
+    dt_eps = round(dt_eps, 2)
+    eps_mul = round(eps_mul, 2)
+    # print(round(pd.concat([code_info['adj_close'], op_mv_short, op_mv,  OPM, roe, op_pct, V, eps_mul, eps, pp, peg], axis=1), 2))
+    # os.ex
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
     sale_rate.fillna(method='backfill', inplace=True)
@@ -199,31 +173,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_mv = round(code_info['total_mv'], 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
 
-    # adj_rev = incomes['revenue'] - receiv_inc
-    adj_rev = incomes['revenue']
-    rev_inc = round(get_ratio(adj_rev.shift(), adj_rev), 2)
-    rev_inc_mean = round(get_rolling_mean(rev_inc, window=10), 2)
-
-    # 研发费用，除去某一年的突然研发费用干扰
-    rd_exp = get_rolling_mean(fina_indicators['rd_exp'].fillna(0), mtype=3)
-    adj_ebit = (incomes['ebit'] + rd_exp)
-    ebit_or = round(adj_ebit * 100 / adj_rev, 2)
-    ebit_inc = round(get_ratio(adj_ebit.shift(), adj_ebit), 1)
-
-    adj_infation = adj_infation_rate(incomes.index)
-
-    eps = (adj_ebit / adj_infation) / (
-            balancesheets['total_share'].shift() + balancesheets['total_share'])
-
-    eps_mul = (code_info['close'] / adj_infation) / eps
-    ebit_inc_mv = get_rolling_mean(ebit_inc, window=4, mtype=3)
-    value_five_years = (1 + ebit_inc_mv / 100) ** 5
-    pp = round(value_five_years * 8.5 / eps_mul, 2)
-    peg = round(ebit_inc_mv / eps_mul, 2)
-    eps = round(eps, 2)
-    eps_mul = round(eps_mul, 2)
-
-    Tassets_inc = round(get_ratio(total_assets.shift(), total_assets), 2)
     libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
     i_debt = round(libwithinterest * 100 / total_assets, 2)
 
@@ -231,27 +180,25 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_act_out = round(get_ratio(cashflows['st_cash_out_act'].shift(), cashflows['st_cash_out_act']), 2)
     # 持续投入增速如果少于0，不能认定下年度持续减少下去，需要满足最低10%的投入增速期望值
     adj_cash_out = cash_act_out.copy()
-    adj_cash_out[cash_act_out < 0] = 10 - adj_cash_out[adj_cash_out<0]
-    adj_cash_out[cash_act_out > 30] = 30
+    adj_cash_out[cash_act_out < 0] = 10
+    adj_cash_out[cash_act_out > 30] = 0
 
     st_cash_out_act_next = (1+adj_cash_out/100)*cashflows['st_cash_out_act']
-    cash_gap =(cashflows['end_bal_cash'] + balancesheets['nca_within_1y'] - balancesheets['non_cur_liab_due_1y'] \
+    cash_gap = (cashflows['end_bal_cash'] + balancesheets['nca_within_1y'] - balancesheets['non_cur_liab_due_1y'] \
                    + cashflows['n_cashflow_act'] \
                    # + cashflows['c_fr_sale_sg'] * adj_cash_in/100 \
                    - cashflows['st_cash_out_act'] * adj_cash_out/100 \
                    )
     cash_gap_r = round(cash_gap * 12 / st_cash_out_act_next, 2)
 
+    # 股息率
     dyr = round(cash_divs * 100 / total_mv, 2)
+    # 股息占当年收入比率
     dyr_or = round(cash_divs * 10000 * 100 / incomes['revenue'], 2)
     dyr_mean = round(get_rolling_mean(dyr), 2)
 
     roe_mean = round(get_mean(roe), 2)
-    sale_roe = get_sale_roe(total_turn, sale_rate, em)
-    OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
-    OPM = round(OPM, 2)
-    opm_coef = get_opm_coef(oper_pressure)
-    V = value_stock(roe, OPM, opm_coef)
+
     glem_V = glem_value_stock(roe, OPM, opm_coef)
     dpd_V = dpd_value_stock(roe, OPM, opm_coef)
     RR = round(V / eps_mul, 2)
@@ -285,6 +232,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     Z.name = 'Z'
     cash_gap_r.name = 'cash_gap_r'
     eps.name = 'eps'
+    dt_eps.name = 'dt_eps'
     eps_mul.name = 'eps_mul'
     pp.name = 'pp'
     cash_gap.name = 'cash_gap'
@@ -300,7 +248,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dyr.name = 'dyr'
     receiv_income.name = 'receiv_income'
     V.name = 'V'
-    sale_roe.name = 'sale_roe'
     OPM.name = 'OPM'
     RR.name = 'RR'
     glem_RR.name = 'glem_RR'
@@ -312,27 +259,41 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     money_cap.name = 'money_cap'
     dyr_or.name = 'dyr_or'
     dyr_mean.name = 'dyr_mean'
-    rev_inc.name = 'rev_inc'
-    rev_inc_mean.name = 'rev_inc_mean'
-    ebit_or.name = 'ebit_or'
-    ebit_inc.name = 'ebit_inc'
+    op_pct.name = 'op_pct'
     holdernum_inc.name = 'holdernum_inc'
     holdernum.name = 'holdernum'
     peg.name = 'peg'
+    freecash_mv.name = 'freecash_mv'
+    equity_pct.name = 'equity_pct'
 
     data = pd.concat(
-        [code_info['adj_close'],  total_mv, income_rate, roe,  roe_mean, eps, eps_mul, pp, peg,
+        [round(code_info['adj_close'],2),  total_mv, income_rate,
+         roe,  roe_mean, eps, dt_eps, eps_mul, pp, peg,
          holdernum, holdernum_inc,
          V, glem_V, dpd_V, dyr, dyr_or, dyr_mean,
-         sale_roe, RR, glem_RR, dpd_RR,
+         RR, glem_RR, dpd_RR,
          pe, pb, i_debt, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
-         receiv_pct, money_cap,
-         cash_act_in, cash_act_out,cash_gap, cash_gap_r,
-         rev_inc, rev_inc_mean, ebit_or, ebit_inc], axis=1)
+         receiv_pct,cash_act_in, cash_act_out,cash_gap, cash_gap_r,
+         freecash_mv, equity_pct, op_pct], axis=1)
 
     return data
 
+def get_right_mean(v, l=0.9):
+    """
+    时间加权平均值
+    :param v: Series
+    :param l: 时间加权系数
+    :return: IR; 平均值
+    """
+    data = pd.Series(index=v.index)
+    coefs = pd.Series(l, index=v.index)
+    print(coefs)
+    data.fillna(0, inplace=True)
+    for j in range(1, len(data)):
+        data.iloc[j] = (v[:j+1] * coefs[:j+1]).mean()
+        print(data.iloc[j])
+    return data
 
 def get_rolling_mean(v, window=10, mtype=0):
     """
@@ -408,7 +369,7 @@ def get_opm_coef(OPM):
     return opm_coef
 
 
-def value_stock(IR, OPM, opm_coef):
+def value_stock(IR, IR_a, OPM, opm_coef):
     """
     总投资10年，前5年保持现有增长率，后5年不增长，收入平稳
 
@@ -422,19 +383,26 @@ def value_stock(IR, OPM, opm_coef):
         if k not in OPM.index:
             continue
         ir = IR.loc[k] / 100
+        a = IR_a.loc[k] / 100
 
-        for i in range(1, 11):
-            # 贴现率
-            E = E * (1 + ir)
-            if ir <= 0:
-                E = 0
+        # for i in range(1, 11):
+        #     # 贴现率
+        #     if a < 5:
+        #         ir = ir * (1+a)
+        #         # print('ir=', ir, 'a=', a)
+        #     E = E * (1 + ir)
+        #     print('e=', E)
+        #     if ir <= 0:
+        #         E = 0
+        #
+        #     v += L ** i * E
 
-            v += L ** i * E
-
+        print('v0', v)
+        v = E*(1+ir)**10
         v = v * (1 - OPM.loc[k] * opm_coef.loc[k])
+        print('v=', v, 'opm=',OPM.loc[k], 'opm_coef=', opm_coef.loc[k])
 
         V.loc[k] = v
-
     V = round(V, 2)
     return V
 

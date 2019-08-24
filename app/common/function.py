@@ -482,6 +482,18 @@ def get_mean(v):
 
     return data
 
+def get_mean(v):
+    """
+    平均值
+    :param v: Series
+    :return: IR; 平均值
+    """
+    data = pd.Series(index=v.index)
+    data.fillna(0, inplace=True)
+    for j in range(len(data)):
+        data.iloc[j] = v[:j+1].mean()
+
+    return data
 
 def adj_infation_rate(dates):
     """
