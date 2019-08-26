@@ -419,6 +419,7 @@ create table fina_sys (
    adj_close float null comment'报告期调整后收盘价',
    total_mv float null comment'总市值（万元）',
    income_rate float NULL comment'净利率',
+   tax_rate float null comment'所得税费用/利润总额',
    holdernum float null comment'股东人数',
    holdernum_inc  float null comment'股东人数变动比率',
    freecash_mv float null comment'自由现金占净资产的比例平均值',

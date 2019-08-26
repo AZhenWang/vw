@@ -10,9 +10,11 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
 
     balancesheets = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='balancesheet',
                                          report_type='1', end_date_type='%1231')
-    if balancesheets.empty:
+    incomes = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income',
+                                   report_type='1', end_date_type='%1231')
+    if balancesheets.empty or incomes.empty:
         nan_series = pd.Series()
-        return nan_series, nan_series, nan_series, nan_series, nan_series, nan_series
+        return nan_series, nan_series, nan_series, nan_series, nan_series, nan_series,  nan_series
 
     dividends = Fina.get_divdends(code_id=code_id, start_date=start_date, end_date=end_date)
 
@@ -27,15 +29,13 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
         current_div = np.float(dividends.loc[sd:ed]['div_count'].sum())
         cash_divs.loc[ed] = current_div
 
-    incomes = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income',
-                                   report_type='1', end_date_type='%1231')
+
     cashflows = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow',
                                      report_type='1', end_date_type='%1231')
     fina_indicators = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
                                            TTB='fina_indicator', end_date_type='%1231')
     stk_holdernumbers = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
                                            TTB='stk_holdernumber', end_date_type='%1231')
-
     daily_basics = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
                                      end_date_id=incomes.iloc[-1]['date_id'], table_name='daily_basic')
     dailys = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
@@ -123,6 +123,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 第一只眼： 净利润，评估平均每股收益
     # 第二只眼： 收入增速，评估未来10年价值，评估企业价值
     # 第三支眼： 销售收入现金流增速，评估未来10年现金流入，评估企业价值
+    # 第四只眼： 所得税缴纳比例正常
 
     # 研发费用，除去某一年的突然研发费用干扰， 研发费用+营业利润的7年的平均值，作为利润的增长基础值
     rd_exp = get_rolling_mean(fina_indicators['rd_exp'].fillna(0), mtype=3)
@@ -209,6 +210,13 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_act_in.name = 'cash_act_in'
     cash_act_out.name = 'cash_act_out'
 
+    # 所得税缴纳基数
+    tax_rate = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
+    tax_mv = round(get_rolling_mean(tax_rate, window=5), 2)
+    tax_std = round(get_rolling_std(tax_rate, window=5), 2)
+    tax_right = tax_std * 1.9 < tax_mv
+
+
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
     # X1= 营运资本/总资产
     X1 = round(oper_fun / total_assets, 2)
@@ -265,6 +273,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     peg.name = 'peg'
     freecash_mv.name = 'freecash_mv'
     equity_pct.name = 'equity_pct'
+    tax_rate.name = 'tax_rate'
+
 
     data = pd.concat(
         [round(code_info['adj_close'],2),  total_mv, income_rate,
@@ -275,7 +285,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          pe, pb, i_debt, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
          receiv_pct,cash_act_in, cash_act_out,cash_gap, cash_gap_r,
-         freecash_mv, equity_pct, op_pct], axis=1)
+         freecash_mv, equity_pct, op_pct, tax_rate], axis=1)
 
     return data
 
@@ -288,14 +298,12 @@ def get_right_mean(v, l=0.9):
     """
     data = pd.Series(index=v.index)
     coefs = pd.Series(l, index=v.index)
-    print(coefs)
     data.fillna(0, inplace=True)
     for j in range(1, len(data)):
         data.iloc[j] = (v[:j+1] * coefs[:j+1]).mean()
-        print(data.iloc[j])
     return data
 
-def get_rolling_mean(v, window=10, mtype=0):
+def get_rolling_mean(v, window=7, mtype=0):
     """
     获取运营资金压力移动平均值，为了对经营恶化保持更高灵明度，当前报告期如果是最大值，就不能减去
     :param v:
@@ -335,10 +343,27 @@ def get_rolling_mean(v, window=10, mtype=0):
 
     return round(data, 3)
 
+def get_rolling_std(v, window=7):
+    """
+    获取运营资金压力移动平均值，为了对经营恶化保持更高灵明度，当前报告期如果是最大值，就不能减去
+    :param v:
+    :param window:
+    :return:
+    """
+    v.fillna(method='backfill', inplace=True)
+    v.fillna(method='ffill', inplace=True)
+    v.fillna(0, inplace=True)
+    data = pd.Series(index=v.index)
+    for j in range(2, len(data)):
+        if j <= window:
+            data.iloc[j] = v[:j+1].std()
+        else:
+            data.iloc[j] = v[j-window:j + 1].std()
+    return data
 
 def get_sale_roe(total_turn, sale_rate, equity_times):
-    sale_rate_mv = get_rolling_mean(sale_rate, window=10, mtype=3)
-    total_turn_mv = get_rolling_mean(total_turn, window=10, mtype=3)
+    sale_rate_mv = get_rolling_mean(sale_rate, window=7, mtype=3)
+    total_turn_mv = get_rolling_mean(total_turn, window=7, mtype=3)
 
     total_return = sale_rate_mv*total_turn_mv
     sale_roe = round(get_rolling_mean(total_return * equity_times), 2)
@@ -397,7 +422,6 @@ def value_stock(IR, IR_a, OPM, opm_coef):
         #
         #     v += L ** i * E
 
-        print('v0', v)
         v = E*(1+ir)**10
         v = v * (1 - OPM.loc[k] * opm_coef.loc[k])
         print('v=', v, 'opm=',OPM.loc[k], 'opm_coef=', opm_coef.loc[k])

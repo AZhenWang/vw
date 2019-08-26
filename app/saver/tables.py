@@ -168,7 +168,7 @@ fields_map = {
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'cash_gap', 'cash_gap_r',  'receiv_pct',
         'holdernum', 'holdernum_inc',
-        'freecash_mv', 'equity_pct', 'op_pct'
+        'freecash_mv', 'equity_pct', 'op_pct', 'tax_rate'
     ],
     'stk_holdernumber': [
       'code_id', 'date_id', 'end_date', 'holder_num'
