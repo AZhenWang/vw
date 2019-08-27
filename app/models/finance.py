@@ -130,7 +130,10 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     adj_ebit = (incomes['operate_profit'] + rd_exp)
     op_mv = get_rolling_mean(adj_ebit, window=7)
     op_mv_short = get_rolling_mean(adj_ebit, window=3)
-    op_pct = round((op_mv_short - op_mv_short.shift() - (op_mv - op_mv.shift())) * 100 / op_mv, 1)
+    # op_pct = round((op_mv_short - op_mv_short.shift() - (op_mv - op_mv.shift())) * 100 / op_mv_short, 1)
+    op_pct = round((op_mv - op_mv.shift()) * 100 / abs(op_mv.shift()), 1)
+    op_pct[op_pct > 30] = 30
+    op_pct[op_pct < -30] = -30
     compr_mv = get_rolling_mean((incomes['n_income_attr_p'] + rd_exp), window=7)
 
     roe = round(compr_mv * 100 / equity, 2)
@@ -146,8 +149,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     opm_coef = get_opm_coef(oper_pressure)
     V = value_stock(roe, op_pct, OPM, opm_coef)
     # value_five_years = (1 + roe_op/100) ** 5
-    pp = round(V * (1 + op_pct/10) * 8.5 / abs(eps_mul), 2)
-    peg = round(op_pct / 10, 2)
+
+    peg = round((1 + op_pct / 10) * 8.5 / abs(eps_mul), 2)
+    pp = round(V * peg, 2)
     eps = round(eps, 2)
     dt_eps = round(dt_eps, 2)
     eps_mul = round(eps_mul, 2)
