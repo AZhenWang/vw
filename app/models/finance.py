@@ -12,7 +12,13 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
                                          report_type='1', end_date_type='%1231')
     incomes = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income',
                                    report_type='1', end_date_type='%1231')
-    if balancesheets.empty or incomes.empty:
+    cashflows = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow',
+                                     report_type='1', end_date_type='%1231')
+
+    balancesheets = balancesheets[balancesheets['end_date'].isin(incomes.end_date)]
+    cashflows = cashflows[cashflows['end_date'].isin(incomes.end_date)]
+
+    if balancesheets.empty or incomes.empty or cashflows.empty:
         nan_series = pd.Series()
         return nan_series, nan_series, nan_series, nan_series, nan_series, nan_series,  nan_series
 
@@ -29,9 +35,6 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
         current_div = np.float(dividends.loc[sd:ed]['div_count'].sum())
         cash_divs.loc[ed] = current_div
 
-
-    cashflows = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow',
-                                     report_type='1', end_date_type='%1231')
     fina_indicators = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
                                            TTB='fina_indicator', end_date_type='%1231')
     stk_holdernumbers = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
@@ -45,19 +48,11 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
 
     base_date_id = np.sort(np.unique(np.concatenate((daily_basics.cal_date.values, incomes['end_date'].values))))
     base = pd.DataFrame(index=base_date_id)
-
     dailys['adj_close'] = dailys['close'] * adj_factors['adj_factor']
     base = base.join(dailys[['cal_date', 'close', 'adj_close']].set_index('cal_date'))
     base = base.join(daily_basics[['cal_date', 'pe', 'pb', 'total_mv', 'total_share']].set_index('cal_date'))
     base.fillna(method='ffill', inplace=True)
-
     code_info = base.loc[incomes['end_date']]
-
-    incomes = incomes[incomes['end_date'].isin(balancesheets.end_date)]
-    cashflows = cashflows[cashflows['end_date'].isin(balancesheets.end_date)]
-
-    if cashflows.empty or incomes.empty:
-        print('数据为空！')
 
     balancesheets.fillna(method='backfill', inplace=True)
     incomes.set_index('end_date', inplace=True)
@@ -116,7 +111,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
     # receiv_pct[receiv_pct < 0] = 0
 
-
     # 企业财务造假的原因在于普通人只看净利润，也就是每股盈利，而不关注净利润的来源，是来源于把一些费用从盈余项目扣除，还是真正的到手的利润，
     # 假装好的东西都是把好的一面呈现在你面前，侧面和后面看里面是烂的，而真正好的东西，360度看都是好的。
     # 所以，像二郎神一样，用三只眼立体来看一个企业
@@ -132,7 +126,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     freecash = cashflows['n_cashflow_act'] - cashflows['c_pay_acq_const_fiolta'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 1)
     freecash_mv = get_rolling_mean(freecash_rate, window=7)
-
     adj_ebit = (incomes['operate_profit'] + rd_exp)
     op_mv = get_rolling_mean(adj_ebit, window=7)
     op_mv_short = get_rolling_mean(adj_ebit, window=3)
@@ -141,19 +134,16 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     roe = round(compr_mv * 100 / equity, 2)
     ret = round(compr_mv * 100 / total_assets, 2)
-
     total_share = balancesheets['total_share'].fillna(method='backfill')
 
     eps = compr_mv / total_share.iloc[0]
     dt_eps = compr_mv / total_share
 
     eps_mul = code_info['close'] / dt_eps
-
     OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
     OPM = round(OPM, 2)
     opm_coef = get_opm_coef(oper_pressure)
     V = value_stock(roe, op_pct, OPM, opm_coef)
-
     # value_five_years = (1 + roe_op/100) ** 5
     pp = round(V * (1 + op_pct/100) * 8.5 / eps_mul, 2)
     peg = round(op_pct / 10, 2)
@@ -424,7 +414,6 @@ def value_stock(IR, IR_a, OPM, opm_coef):
 
         v = E*(1+ir)**10
         v = v * (1 - OPM.loc[k] * opm_coef.loc[k])
-        print('v=', v, 'opm=',OPM.loc[k], 'opm_coef=', opm_coef.loc[k])
 
         V.loc[k] = v
     V = round(V, 2)
