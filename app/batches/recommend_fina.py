@@ -12,14 +12,19 @@ def execute(start_date='', end_date=''):
     :return:
     """
     new_rows = pd.DataFrame(columns=['code_id', 'end_date', 'adj_close', 'total_mv',
-        'income_rate', 'roe',  'eps_mul',  'V', 'glem_V', 'dpd_V', 'dyr',
-        'roe_inc', 'RR', 'glem_RR', 'dpd_RR',
+        'pp', 'peg', 'RR', 'eps', 'eps_mul',
+        'income_rate', 'roe', 'roe_mean',  'holdernum', 'holdernum_inc',
+        'V', 'glem_V', 'dpd_V', 'dyr', 'dry_or', 'dyr_mean',
+        'glem_RR', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
-        'free_cash_mv', 'lib_cash', 'receiv_pct', 'money_cap', 'years', 'result'])
+        'cash_gap', 'cash_gap_r',  'receiv_pct',
+        'freecash_mv', 'equity_pct', 'op_pct', 'tax_rate',
+        'years', 'result'])
 
-    codes = DB.get_code_list(list_status='')
-    code_ids = codes['code_id']
+    # codes = DB.get_code_list(list_status='')
+    # code_ids = codes['code_id']
+    code_ids = range(1, 500)
     # code_ids = [2]
     for code_id in code_ids:
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
