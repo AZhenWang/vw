@@ -126,11 +126,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     freecash = cashflows['n_cashflow_act'] - cashflows['c_pay_acq_const_fiolta'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 1)
     freecash_mv = get_rolling_mean(freecash_rate, window=7)
+
     adj_ebit = (incomes['operate_profit'] + rd_exp)
     op_mv = get_rolling_mean(adj_ebit, window=7)
     op_mv_short = get_rolling_mean(adj_ebit, window=3)
     op_pct = round((op_mv_short - op_mv_short.shift() - (op_mv - op_mv.shift())) * 100 / op_mv, 1)
-    compr_mv = get_rolling_mean(incomes['n_income_attr_p'], window=7)
+    compr_mv = get_rolling_mean((incomes['n_income_attr_p'] + rd_exp), window=7)
 
     roe = round(compr_mv * 100 / equity, 2)
     ret = round(compr_mv * 100 / total_assets, 2)
@@ -145,12 +146,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     opm_coef = get_opm_coef(oper_pressure)
     V = value_stock(roe, op_pct, OPM, opm_coef)
     # value_five_years = (1 + roe_op/100) ** 5
-    pp = round(V * (1 + op_pct/100) * 8.5 / eps_mul, 2)
+    pp = round(V * (1 + op_pct/10) * 8.5 / abs(eps_mul), 2)
     peg = round(op_pct / 10, 2)
     eps = round(eps, 2)
     dt_eps = round(dt_eps, 2)
     eps_mul = round(eps_mul, 2)
-    # print(round(pd.concat([code_info['adj_close'], op_mv_short, op_mv,  OPM, roe, op_pct, V, eps_mul, eps, pp, peg], axis=1), 2))
+    # print(round(pd.concat([code_info['adj_close'], op_mv_short, op_mv,  OPM,  V, eps_mul, eps,roe, op_pct, pp, peg], axis=1), 2))
     # os.ex
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
