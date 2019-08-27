@@ -12,10 +12,8 @@ def execute(start_date='', end_date=''):
     :return:
     """
     new_rows = pd.DataFrame(columns=['code_id', 'end_date', 'adj_close', 'total_mv',
-        'pp', 'peg', 'RR', 'eps', 'eps_mul',
         'income_rate', 'roe', 'roe_mean',  'holdernum', 'holdernum_inc',
-        'V', 'glem_V', 'dpd_V', 'dyr', 'dry_or', 'dyr_mean',
-        'glem_RR', 'dpd_RR',
+        'V',  'pp', 'dpd_V', 'dpd_RR', 'dyr', 'dry_or', 'dyr_mean',
         'pe', 'pb', 'i_debt', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'cash_gap', 'cash_gap_r',  'receiv_pct',
