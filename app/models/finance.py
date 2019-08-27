@@ -130,33 +130,33 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     adj_ebit = (incomes['operate_profit'] + rd_exp)
     op_mv = get_rolling_mean(adj_ebit, window=7)
     op_mv_short = get_rolling_mean(adj_ebit, window=3)
-    # op_pct = round((op_mv_short - op_mv_short.shift() - (op_mv - op_mv.shift())) * 100 / op_mv_short, 1)
-    op_pct = round((op_mv - op_mv.shift()) * 100 / abs(op_mv.shift()), 1)
+    op_pct_short = round((op_mv_short - op_mv_short.shift()) * 100 / equity, 1)
+    op_pct = round((op_mv - op_mv.shift()) * 100 / equity, 1)
+    mix_op_diff = op_pct_short - op_pct
+
     op_pct[op_pct > 30] = 30
-    op_pct[op_pct < -30] = -30
+    op_pct[op_pct < -100] = -100
+
     compr_mv = get_rolling_mean((incomes['n_income_attr_p'] + rd_exp), window=7)
 
     roe = round(compr_mv * 100 / equity, 2)
     ret = round(compr_mv * 100 / total_assets, 2)
-    total_share = balancesheets['total_share'].fillna(method='backfill')
+    pe = round(code_info['pe'], 2)
+    pb = round(code_info['pb'], 2)
+    total_mv = round(code_info['total_mv'], 2)
 
-    eps = compr_mv / total_share.iloc[0]
-    dt_eps = compr_mv / total_share
-
-    eps_mul = code_info['close'] / dt_eps
     OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
     OPM = round(OPM, 2)
-    opm_coef = get_opm_coef(oper_pressure)
+    opm_coef = get_opm_coef(OPM)
+    # 未来10年涨幅倍数
     V = value_stock(roe, op_pct, OPM, opm_coef)
-    # value_five_years = (1 + roe_op/100) ** 5
+    # 赔率= 未来10年涨幅倍数/市现率
+    pp = round(V / pb, 2)
+    # 未来10年总营业增速
+    dpd_V = dpd_value_stock(op_pct, OPM, opm_coef)
+    # 未来10年总营业增速/市盈率
+    dpd_RR = round(dpd_V / pe, 2)
 
-    peg = round((1 + op_pct / 10) * 8.5 / abs(eps_mul), 2)
-    pp = round(V * peg, 2)
-    eps = round(eps, 2)
-    dt_eps = round(dt_eps, 2)
-    eps_mul = round(eps_mul, 2)
-    # print(round(pd.concat([code_info['adj_close'], op_mv_short, op_mv,  OPM,  V, eps_mul, eps,roe, op_pct, pp, peg], axis=1), 2))
-    # os.ex
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
     sale_rate.fillna(method='backfill', inplace=True)
@@ -164,9 +164,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['total_revenue'], 2)
     total_turn = round(incomes['revenue'] / total_assets, 2)
     total_assets.name = 'total_assets'
-    pe = round(code_info['pe'], 2)
-    pb = round(code_info['pb'], 2)
-    total_mv = round(code_info['total_mv'], 2)
+
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
 
     libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
@@ -194,12 +192,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dyr_mean = round(get_rolling_mean(dyr), 2)
 
     roe_mean = round(get_mean(roe), 2)
-
-    glem_V = glem_value_stock(roe, OPM, opm_coef)
-    dpd_V = dpd_value_stock(roe, OPM, opm_coef)
-    RR = round(V / eps_mul, 2)
-    glem_RR = round(glem_V / eps_mul, 2)
-    dpd_RR = round(dpd_V / eps_mul, 2)
     money_cap = round(balancesheets['money_cap'] * 100/ total_assets)
     holdernum_inc = round(get_ratio(holdernum.shift(), holdernum), 2)
     cash_act_in.name = 'cash_act_in'
@@ -234,9 +226,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     X5.name = 'X5'
     Z.name = 'Z'
     cash_gap_r.name = 'cash_gap_r'
-    eps.name = 'eps'
-    dt_eps.name = 'dt_eps'
-    eps_mul.name = 'eps_mul'
     pp.name = 'pp'
     cash_gap.name = 'cash_gap'
 
@@ -252,9 +241,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv_income.name = 'receiv_income'
     V.name = 'V'
     OPM.name = 'OPM'
-    RR.name = 'RR'
-    glem_RR.name = 'glem_RR'
-    glem_V.name = 'glem_V'
     dpd_RR.name = 'dpd_RR'
     dpd_V.name = 'dpd_V'
     i_debt.name = 'i_debt'
@@ -265,22 +251,21 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct.name = 'op_pct'
     holdernum_inc.name = 'holdernum_inc'
     holdernum.name = 'holdernum'
-    peg.name = 'peg'
     freecash_mv.name = 'freecash_mv'
     equity_pct.name = 'equity_pct'
     tax_rate.name = 'tax_rate'
+    mix_op_diff.name = 'mix_op_diff'
 
 
     data = pd.concat(
         [round(code_info['adj_close'],2),  total_mv, income_rate,
-         roe,  roe_mean, eps, dt_eps, eps_mul, pp, peg,
+         roe,  roe_mean, pp,
          holdernum, holdernum_inc,
-         V, glem_V, dpd_V, dyr, dyr_or, dyr_mean,
-         RR, glem_RR, dpd_RR,
+         V, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
          pe, pb, i_debt, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
          receiv_pct,cash_act_in, cash_act_out,cash_gap, cash_gap_r,
-         freecash_mv, equity_pct, op_pct, tax_rate], axis=1)
+         freecash_mv, equity_pct, op_pct, mix_op_diff, tax_rate], axis=1)
 
     return data
 
@@ -396,29 +381,30 @@ def value_stock(IR, IR_a, OPM, opm_coef):
     """
     V = pd.Series(index=IR.index)
 
-    L = 0.85
+    L = 0
     for k in IR.index:
+        print('end_date', k)
         v = 1
-        E = 1
         if k not in OPM.index:
             continue
         ir = IR.loc[k] / 100
         a = IR_a.loc[k] / 100
 
-        # for i in range(1, 11):
-        #     # 贴现率
-        #     if a < 5:
-        #         ir = ir * (1+a)
-        #         # print('ir=', ir, 'a=', a)
-        #     E = E * (1 + ir)
-        #     print('e=', E)
-        #     if ir <= 0:
-        #         E = 0
-        #
-        #     v += L ** i * E
+        for i in range(1, 11):
+            # 贴现率
+            print('i=', i, ',ir=', ir, 'a=',a, ',v=', v)
+            if i < 6:
+                ir = ir + a
+            if ir >= 0.25:
+                ir = 0.25
 
-        v = E*(1+ir)**10
-        v = v * (1 - OPM.loc[k] * opm_coef.loc[k])
+            v = v * (1+ir) / ((1+L) ** i)
+            print('v=', v, ',ir=', ir)
+            print("\\n")
+        # v = E*(1+ir)**10
+        # print('v1=', v)
+        v = v * (1 - OPM.loc[k] * IR.loc[k] / 100)
+        # print('v2=', v, 'OPM.loc[k] =', OPM.loc[k],',IR.loc[k]=', IR.loc[k])
 
         V.loc[k] = v
     V = round(V, 2)

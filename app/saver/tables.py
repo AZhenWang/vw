@@ -161,14 +161,13 @@ fields_map = {
     'fina_sys': [
         'code_id', 'comp_type', 'end_date', 'adj_close', 'total_mv',
         'income_rate', 'roe', 'roe_mean',
-        'eps', 'dt_eps', 'eps_mul', 'pp', 'peg',
-        'V', 'glem_V', 'dpd_V', 'dyr', 'dyr_or', 'dyr_mean',
-        'RR', 'glem_RR', 'dpd_RR',
+        'pp', 'V', 'dpd_V', 'dpd_RR',  'op_pct',  'mix_op_diff',
+        'dyr', 'dyr_or', 'dyr_mean',
         'pe', 'pb', 'i_debt', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'cash_gap', 'cash_gap_r',  'receiv_pct',
         'holdernum', 'holdernum_inc',
-        'freecash_mv', 'equity_pct', 'op_pct', 'tax_rate'
+        'freecash_mv', 'equity_pct', 'tax_rate'
     ],
     'stk_holdernumber': [
       'code_id', 'date_id', 'end_date', 'holder_num'
