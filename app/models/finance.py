@@ -140,6 +140,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     compr_mv = get_rolling_mean((incomes['n_income_attr_p'] + rd_exp), window=7)
 
     roe = round(compr_mv * 100 / equity, 2)
+    roe_mean = round(get_mean(roe), 2)
     ret = round(compr_mv * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
     pb = round(code_info['pb'], 2)
@@ -149,7 +150,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     OPM = round(OPM, 2)
     opm_coef = get_opm_coef(OPM)
     # 未来10年涨幅倍数
-    V = value_stock(roe, op_pct, OPM, opm_coef)
+    V = value_stock(roe_mean, op_pct, OPM, opm_coef)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     # 未来10年总营业增速
@@ -191,7 +192,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dyr_or = round(cash_divs * 10000 * 100 / incomes['revenue'], 2)
     dyr_mean = round(get_rolling_mean(dyr), 2)
 
-    roe_mean = round(get_mean(roe), 2)
+
     money_cap = round(balancesheets['money_cap'] * 100/ total_assets)
     holdernum_inc = round(get_ratio(holdernum.shift(), holdernum), 2)
     cash_act_in.name = 'cash_act_in'
