@@ -27,7 +27,7 @@ def execute(start_date='', end_date=''):
     code_ids = range(1, 500)
     # code_ids = [2]
     for code_id in code_ids:
-        # DB.delete_code_logs(code_id, tablename='fina_recom_logs')
+        DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
         logs.dropna(inplace=True)
