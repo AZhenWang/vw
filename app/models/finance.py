@@ -54,7 +54,6 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
     base.fillna(method='ffill', inplace=True)
     code_info = base.loc[incomes['end_date']]
 
-    balancesheets.fillna(method='backfill', inplace=True)
     incomes.set_index('end_date', inplace=True)
     balancesheets.set_index('end_date', inplace=True)
     cashflows.set_index('end_date', inplace=True)
@@ -127,9 +126,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     freecash_rate = round(freecash * 100 / (equity), 1)
     freecash_mv = get_rolling_mean(freecash_rate, window=7)
 
-    adj_ebit = (incomes['operate_profit'] + rd_exp)
-    op_mv = get_rolling_mean(adj_ebit, window=7)
-    op_mv_short = get_rolling_mean(adj_ebit, window=3)
+    adj_ebit = (incomes['ebitda'] + rd_exp)
+    op_mv = get_rolling_mean(adj_ebit, mtype=3, window=7)
+    op_mv_short = get_rolling_mean(adj_ebit, mtype=3, window=4)
     op_pct_short = round((op_mv_short - op_mv_short.shift()) * 100 / equity, 1)
     op_pct = round((op_mv - op_mv.shift()) * 100 / equity, 1)
     mix_op_diff = op_pct_short - op_pct
@@ -137,14 +136,15 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct[op_pct > 30] = 30
     op_pct[op_pct < -100] = -100
 
-    compr_mv = get_rolling_mean((incomes['n_income_attr_p'] + rd_exp), window=7)
+    compr_mv = get_rolling_mean((incomes['n_income_attr_p']), window=7)
+    total_mv = round(code_info['total_mv'], 2)
 
     roe = round(compr_mv * 100 / equity, 2)
-    roe_mean = round(get_mean(roe), 2)
+    roe_mean = round(get_rolling_mean(roe, mtype=3, window=10), 2)
+    # roe_mean = round(get_mean(roe), 2)
     ret = round(compr_mv * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
     pb = round(code_info['pb'], 2)
-    total_mv = round(code_info['total_mv'], 2)
 
     OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
     OPM = round(OPM, 2)
@@ -168,7 +168,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
 
-    libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
+    libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts'] + balancesheets['total_hldr_eqy_inc_min_int']
     i_debt = round(libwithinterest * 100 / total_assets, 2)
 
     cash_act_in = round(get_ratio(cashflows['c_fr_sale_sg'].shift(), cashflows['c_fr_sale_sg']), 2)
@@ -395,9 +395,11 @@ def value_stock(IR, IR_a, OPM, opm_coef):
             # 贴现率
             print('i=', i, ',ir=', ir, 'a=',a, ',v=', v)
             if i < 6:
-                ir = ir + a
+                ir = ir+a
             if ir >= 0.25:
                 ir = 0.25
+            elif ir <= 0:
+                ir = 0
 
             v = v * (1+ir) / ((1+L) ** i)
             print('v=', v, ',ir=', ir)
