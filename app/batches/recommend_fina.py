@@ -11,19 +11,22 @@ def execute(start_date='', end_date=''):
     :param end_date: 公告结束日期
     :return:
     """
-    new_rows = pd.DataFrame(columns=['code_id', 'end_date', 'adj_close', 'total_mv',
-        'income_rate', 'roe', 'roe_mean',  'holdernum', 'holdernum_inc',
-        'V',  'pp', 'dpd_V', 'dpd_RR', 'dyr', 'dry_or', 'dyr_mean',
-        'pe', 'pb', 'i_debt', 'capital_turn', 'oper_pressure', 'OPM',
+    new_rows = pd.DataFrame(columns=['code_id', 'comp_type', 'end_date', 'adj_close', 'total_mv',
+        'income_rate', 'roe', 'roe_mean', 'roe_std',
+        'pp', 'V', 'dpd_V', 'dpd_RR',  'op_pct',  'mix_op_diff',
+        'dyr', 'dyr_or', 'dyr_mean',
+        'pe', 'pb', 'i_debt','share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'cash_gap', 'cash_gap_r',  'receiv_pct',
-        'freecash_mv', 'equity_pct', 'op_pct', 'tax_rate',
+        'holdernum', 'holdernum_inc',
+        'freecash_mv', 'equity_pct', 'tax_rate',
+        'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or', 'rev_pct', 'fix_asset_pct',
         'years', 'result'])
 
     # codes = DB.get_code_list(list_status='')
     # code_ids = codes['code_id']
     code_ids = range(1, 500)
-    # code_ids = [2]
+    # code_ids = [214]
     for code_id in code_ids:
         # DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
