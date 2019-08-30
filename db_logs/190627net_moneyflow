@@ -68,3 +68,4 @@ create table YY8G (
    index(code_id),
    index(date_id)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'阴阳八卦';
+

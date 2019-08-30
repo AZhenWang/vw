@@ -24,7 +24,7 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
 
     dividends = Fina.get_divdends(code_id=code_id, start_date=start_date, end_date=end_date)
 
-    dividends['div_count'] = dividends['total_share'] * dividends['cash_div_tax']
+    dividends['div_count'] = dividends['total_share'] * dividends['cash_div_tax'] * 10000
     dividends.div_count.astype = 'float64'
     dividends.fillna(0)
     cash_divs = pd.Series(index=balancesheets['end_date'], name='cash_divs')
@@ -108,7 +108,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
     receiv_inc = receiv - receiv.shift()
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
-    # receiv_pct[receiv_pct < 0] = 0
+    rev_pct = round(get_ratio(incomes['revenue'].shift(), incomes['revenue']), 2)
+    fix_asset_pct = round(get_ratio(balancesheets['fix_assets'].shift(), balancesheets['fix_assets']), 2)
+    # 调整折旧费用
+    gross = incomes['revenue'] - incomes['oper_cost']
+    dpba_of_assets = round(cashflows['depr_fa_coga_dpba'] * 100 / balancesheets['fix_assets'], 2)
+    dpba_of_gross = round(cashflows['depr_fa_coga_dpba'] * 100 / gross, 2)
 
     # 企业财务造假的原因在于普通人只看净利润，也就是每股盈利，而不关注净利润的来源，是来源于把一些费用从盈余项目扣除，还是真正的到手的利润，
     # 假装好的东西都是把好的一面呈现在你面前，侧面和后面看里面是烂的，而真正好的东西，360度看都是好的。
@@ -120,13 +125,14 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     # 研发费用，除去某一年的突然研发费用干扰， 研发费用+营业利润的7年的平均值，作为利润的增长基础值
     rd_exp = get_rolling_mean(fina_indicators['rd_exp'].fillna(0), mtype=3)
+    rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
     pure_equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
     equity_pct = round((pure_equity - pure_equity.shift() + cash_divs) * 100/pure_equity, 1)
     freecash = cashflows['n_cashflow_act'] - cashflows['c_pay_acq_const_fiolta'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 1)
     freecash_mv = get_rolling_mean(freecash_rate, window=7)
 
-    adj_ebit = (incomes['ebitda'] + rd_exp)
+    adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
     op_mv = get_rolling_mean(adj_ebit, mtype=3, window=7)
     op_mv_short = get_rolling_mean(adj_ebit, mtype=3, window=4)
     op_pct_short = round((op_mv_short - op_mv_short.shift()) * 100 / equity, 1)
@@ -137,10 +143,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct[op_pct < -100] = -100
 
     compr_mv = get_rolling_mean((incomes['n_income_attr_p']), window=7)
-    total_mv = round(code_info['total_mv'], 2)
+    total_mv = round(code_info['total_mv'] * 10000, 2)
 
     roe = round(compr_mv * 100 / equity, 2)
     roe_mean = round(get_rolling_mean(roe, mtype=3, window=10), 2)
+    roe_std = round(get_rolling_std(roe, window=10), 2)
     # roe_mean = round(get_mean(roe), 2)
     ret = round(compr_mv * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
@@ -170,6 +177,10 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts'] + balancesheets['total_hldr_eqy_inc_min_int']
     i_debt = round(libwithinterest * 100 / total_assets, 2)
+    # 利息保障倍数
+    IER = round((incomes['ebitda'] - incomes['income_tax']) / (cashflows['c_pay_dist_dpcp_int_exp'] - cash_divs), 2)
+    # 普通股在资本总额中的占比
+    share_ratio = round(total_mv * 100 / (balancesheets['oth_eqt_tools_p_shr'] + balancesheets['bond_payable'] + total_mv), 1)
 
     cash_act_in = round(get_ratio(cashflows['c_fr_sale_sg'].shift(), cashflows['c_fr_sale_sg']), 2)
     cash_act_out = round(get_ratio(cashflows['st_cash_out_act'].shift(), cashflows['st_cash_out_act']), 2)
@@ -189,7 +200,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 股息率
     dyr = round(cash_divs * 100 / total_mv, 2)
     # 股息占当年收入比率
-    dyr_or = round(cash_divs * 10000 * 100 / incomes['revenue'], 2)
+    dyr_or = round(cash_divs * 100 / incomes['revenue'], 2)
     dyr_mean = round(get_rolling_mean(dyr), 2)
 
 
@@ -203,7 +214,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     tax_mv = round(get_rolling_mean(tax_rate, window=5), 2)
     tax_std = round(get_rolling_std(tax_rate, window=5), 2)
     tax_right = tax_std * 1.9 < tax_mv
-
 
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
     # X1= 营运资本/总资产
@@ -256,17 +266,27 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     equity_pct.name = 'equity_pct'
     tax_rate.name = 'tax_rate'
     mix_op_diff.name = 'mix_op_diff'
-
+    dpba_of_assets.name = 'dpba_of_assets'
+    dpba_of_gross.name = 'dpba_of_gross'
+    IER.name = 'IER'
+    rd_exp_or.name = 'rd_exp_or'
+    roe_std.name = 'roe_std'
+    fix_asset_pct.name = 'fix_asset_pct'
+    rev_pct.name = 'rev_pct'
+    share_ratio.name='share_ratio'
 
     data = pd.concat(
         [round(code_info['adj_close'],2),  total_mv, income_rate,
          roe,  roe_mean, pp,
          holdernum, holdernum_inc,
          V, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
-         pe, pb, i_debt, capital_turn, oper_pressure, OPM,
+         pe, pb, i_debt,share_ratio, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
          receiv_pct,cash_act_in, cash_act_out,cash_gap, cash_gap_r,
-         freecash_mv, equity_pct, op_pct, mix_op_diff, tax_rate], axis=1)
+         freecash_mv, equity_pct, op_pct, mix_op_diff, tax_rate,
+         dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
+         fix_asset_pct, rev_pct
+         ], axis=1)
 
     return data
 
