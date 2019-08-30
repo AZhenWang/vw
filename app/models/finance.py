@@ -128,9 +128,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
     pure_equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
     equity_pct = round((pure_equity - pure_equity.shift() + cash_divs) * 100/pure_equity, 1)
-    freecash = cashflows['n_cashflow_act'] - cashflows['c_pay_acq_const_fiolta'] + fina_indicators['rd_exp'].fillna(0)
-    freecash_rate = round(freecash * 100 / (equity), 1)
-    freecash_mv = get_rolling_mean(freecash_rate, window=7)
+    freecash = cashflows['free_cashflow'] + fina_indicators['rd_exp'].fillna(0)
+    freecash_rate = round(freecash * 100 / (equity), 2)
+    freecash_mv = round(get_rolling_mean(freecash_rate, window=7), 1)
 
     adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
     op_mv = get_rolling_mean(adj_ebit, mtype=3, window=7)
@@ -142,7 +142,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct[op_pct > 30] = 30
     op_pct[op_pct < -100] = -100
 
-    compr_mv = get_rolling_mean((incomes['n_income_attr_p']), window=7)
+    compr_mv = get_rolling_mean(incomes['operate_profit']-incomes['income_tax'], window=7)
+    # compr_mv = get_rolling_mean((incomes['n_income_attr_p']), window=7)
     total_mv = round(code_info['total_mv'] * 10000, 2)
 
     roe = round(compr_mv * 100 / equity, 2)
@@ -175,10 +176,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
 
-    libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts'] + balancesheets['total_hldr_eqy_inc_min_int']
+    libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
     i_debt = round(libwithinterest * 100 / total_assets, 2)
     # 利息保障倍数
-    IER = round((incomes['ebitda'] - incomes['income_tax']) / (cashflows['c_pay_dist_dpcp_int_exp'] - cash_divs), 2)
+    IER = round((incomes['ebitda']) / abs(cashflows['finan_exp']), 2)
+
     # 普通股在资本总额中的占比
     share_ratio = round(total_mv * 100 / (balancesheets['oth_eqt_tools_p_shr'] + balancesheets['bond_payable'] + total_mv), 1)
 
@@ -224,8 +226,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # X3 = 息税前利润 / 总资产
     X3 = round(incomes['ebit'] / total_assets, 2)
     # X4 = 股东权益 / 负债
-    # X4 = equity / balancesheets['total_liab']
-    X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
+    X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / balancesheets['total_liab'], 2)
+    # X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
     # X5 = 销售收入 / 总资产
     X5 = round(incomes['revenue'] / total_assets, 2)
     Z = round(0.717 * X1 + 0.847 * X2 + 3.11 * X3 + 0.420 * X4 + 0.998 * X5, 2)
@@ -402,10 +404,11 @@ def value_stock(IR, IR_a, OPM, opm_coef):
     """
     V = pd.Series(index=IR.index)
 
-    L = 0
+    L = 0.03
     for k in IR.index:
         print('end_date', k)
-        v = 1
+        v = 0
+        base_v = 1
         if k not in OPM.index:
             continue
         ir = IR.loc[k] / 100
@@ -421,7 +424,9 @@ def value_stock(IR, IR_a, OPM, opm_coef):
             elif ir <= 0:
                 ir = 0
 
-            v = v * (1+ir) / ((1+L) ** i)
+            # v = v * (1+ir) / (1+L)
+            v += base_v * ir / (1 + L)**i
+            base_v = base_v * (1 + ir)
             print('v=', v, ',ir=', ir)
             print("\\n")
         # v = E*(1+ir)**10
