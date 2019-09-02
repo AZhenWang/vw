@@ -159,17 +159,16 @@ fields_map = {
     ],
 
     'fina_sys': [
-        'code_id', 'comp_type', 'end_date', 'adj_close', 'total_mv',
-        'income_rate', 'roe', 'roe_mean', 'roe_std',
-        'pp', 'V', 'dpd_V', 'dpd_RR',  'op_pct',  'mix_op_diff',
-        'dyr', 'dyr_or', 'dyr_mean',
-        'pe', 'pb', 'i_debt','share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
+        'code_id', 'comp_type', 'end_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc',
+        'roe', 'roe_mean', 'roe_std', 'op_pct',  'mix_op_diff',
+        'V', 'dpd_V', 'pp', 'dpd_RR',
+        'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
-        'cash_gap', 'cash_gap_r',  'receiv_pct',
-        'holdernum', 'holdernum_inc',
-        'freecash_mv', 'equity_pct', 'tax_rate',
-        'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or', 'rev_pct', 'fix_asset_pct',
-        'tax_payable_pct', 'def_tax_ratio', 'income_pct', 'tax_pct'
+        'dyr', 'dyr_or', 'dyr_mean',
+        'freecash_mv','cash_gap', 'cash_gap_r',  'receiv_pct',
+        'equity_pct', 'fix_asset_pct', 'rev_pct',
+        'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio',
+        'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
     ],
     'stk_holdernumber': [
       'code_id', 'date_id', 'end_date', 'holder_num'
