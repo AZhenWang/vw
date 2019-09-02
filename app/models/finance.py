@@ -132,12 +132,34 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     freecash_rate = round(freecash * 100 / (equity), 2)
     freecash_mv = round(get_rolling_mean(freecash_rate, window=7), 1)
 
-    adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
-    op_mv = get_rolling_mean(adj_ebit, mtype=3, window=7)
-    op_mv_short = get_rolling_mean(adj_ebit, mtype=3, window=4)
-    op_pct_short = round((op_mv_short - op_mv_short.shift()) * 100 / equity, 1)
-    op_pct = round((op_mv - op_mv.shift()) * 100 / equity, 1)
+    # 所得税缴纳基数
+    tax_rate = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
+    tax_mv = round(get_rolling_mean(tax_rate, window=5), 2)
+    tax_std = round(get_rolling_std(tax_rate, window=5), 2)
+    tax_right = tax_std * 1.9 < tax_mv
+    # 应纳税额
+    def_tax = cashflows['incr_def_inc_tax_liab'] + cashflows['decr_def_inc_tax_assets']
+    tax_payable = incomes['income_tax'] - def_tax
+    tax_payable_pct = round(get_ratio(tax_payable.shift(), tax_payable), 2)
+    tax_pct = round(get_ratio(incomes['income_tax'].shift(), incomes['income_tax']), 2)
+    tax_diff = tax_payable - tax_payable.shift()
+    tax_base = tax_payable.shift()[tax_diff >= 0].add(tax_payable[tax_diff < 0], fill_value=0.01)
+    def_tax_ratio = round(def_tax * 100 / tax_base, 2)
+    # def_tax_ratio = round(get_ratio((balancesheets['defer_tax_liab'] - balancesheets['defer_tax_assets']).shift(), balancesheets['defer_tax_liab'] - balancesheets['defer_tax_assets']), 2)
+    income_pct = round(get_ratio(incomes['n_income'].shift(), incomes['n_income']), 2)
+
+    # adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
+    adj_ebit = tax_payable
+    op_mv = get_rolling_mean(adj_ebit, mtype=3,  window=7)
+    op_mv_short = get_rolling_mean(adj_ebit, mtype=3,  window=4)
+    op_pct_short = round((op_mv_short - op_mv_short.shift()) * 100 / op_mv_short.shift(), 2)
+    op_pct = round((op_mv - op_mv.shift()) * 100 / op_mv.shift(), 2)
     mix_op_diff = op_pct_short - op_pct
+    # tax_payable_pct_mv = get_rolling_mean(tax_payable_pct,mtype=3, window=7)
+    # rev_pct_mv = get_rolling_mean(rev_pct, mtype=3, window=7)
+    tax_payable_pct_mv = tax_payable_pct.rolling(window=5).median()
+    rev_pct_mv = rev_pct.rolling(window=5).median()
+    op_pct = pd.concat([tax_payable_pct_mv, rev_pct_mv], axis=1).min(axis=1)
 
     op_pct[op_pct > 30] = 30
     op_pct[op_pct < -100] = -100
@@ -147,7 +169,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_mv = round(code_info['total_mv'] * 10000, 2)
 
     roe = round(compr_mv * 100 / equity, 2)
-    roe_mean = round(get_rolling_mean(roe, mtype=3, window=10), 2)
+    roe_mean = round(roe.rolling(window=5).median(), 2)
+    # roe_mean = round(get_rolling_mean(roe, mtype=3, window=10), 2)
     roe_std = round(get_rolling_std(roe, window=10), 2)
     # roe_mean = round(get_mean(roe), 2)
     ret = round(compr_mv * 100 / total_assets, 2)
@@ -211,12 +234,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_act_in.name = 'cash_act_in'
     cash_act_out.name = 'cash_act_out'
 
-    # 所得税缴纳基数
-    tax_rate = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
-    tax_mv = round(get_rolling_mean(tax_rate, window=5), 2)
-    tax_std = round(get_rolling_std(tax_rate, window=5), 2)
-    tax_right = tax_std * 1.9 < tax_mv
-
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
     # X1= 营运资本/总资产
     X1 = round(oper_fun / total_assets, 2)
@@ -275,7 +292,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_std.name = 'roe_std'
     fix_asset_pct.name = 'fix_asset_pct'
     rev_pct.name = 'rev_pct'
-    share_ratio.name='share_ratio'
+    share_ratio.name = 'share_ratio'
+    tax_payable_pct.name = 'tax_payable_pct'
+    def_tax_ratio.name = 'def_tax_ratio'
+    income_pct.name = 'income_pct'
+    tax_pct.name = 'tax_pct'
 
     data = pd.concat(
         [round(code_info['adj_close'],2),  total_mv, income_rate,
@@ -287,7 +308,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          receiv_pct,cash_act_in, cash_act_out,cash_gap, cash_gap_r,
          freecash_mv, equity_pct, op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
-         fix_asset_pct, rev_pct
+         fix_asset_pct, rev_pct,
+         tax_payable_pct, def_tax_ratio, income_pct, tax_pct
          ], axis=1)
 
     return data
@@ -418,9 +440,9 @@ def value_stock(IR, IR_a, OPM, opm_coef):
             # 贴现率
             print('i=', i, ',ir=', ir, 'a=',a, ',v=', v)
             if i < 6:
-                ir = ir+a
-            if ir >= 0.25:
-                ir = 0.25
+                ir = ir*(1+a)
+            if ir >= 0.3:
+                ir = 0.3
             elif ir <= 0:
                 ir = 0
 
@@ -430,9 +452,9 @@ def value_stock(IR, IR_a, OPM, opm_coef):
             print('v=', v, ',ir=', ir)
             print("\\n")
         # v = E*(1+ir)**10
-        # print('v1=', v)
-        v = v * (1 - OPM.loc[k] * IR.loc[k] / 100)
-        # print('v2=', v, 'OPM.loc[k] =', OPM.loc[k],',IR.loc[k]=', IR.loc[k])
+        print('v1=', v)
+        v = v * (1 - OPM.loc[k] * opm_coef.loc[k] / 100)
+        print('v2=', v, 'OPM.loc[k] =', OPM.loc[k],',IR.loc[k]=', IR.loc[k])
 
         V.loc[k] = v
     V = round(V, 2)
