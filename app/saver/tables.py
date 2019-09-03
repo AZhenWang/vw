@@ -169,6 +169,7 @@ fields_map = {
         'equity_pct', 'fix_asset_pct', 'rev_pct', 'rev_pct_mv', 'debt_pct_mv',
         'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio',
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
+        'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds'
     ],
     'stk_holdernumber': [
       'code_id', 'date_id', 'end_date', 'holder_num'

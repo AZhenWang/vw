@@ -466,6 +466,12 @@ create table fina_sys (
    tax_pct  float null comment'所得税费用变化比例',
    tax_payable_pct float null comment '应纳税额变化比例',
    def_tax_ratio float null comment'递延所得税占应纳税额的比例，持续增大，表示盈余管理越严重',
+   LP float null comment'最低价',
+   MP float null comment'合适卖价',
+   HP float null comment'最高价',
+   win_return float null comment'赢得倍数',
+   lose_return float null comment'输的倍数',
+   odds float null comment'总的赔率=赢得倍数+输的倍数',
    created_at timestamp null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`( `code_id`, `end_date`)
