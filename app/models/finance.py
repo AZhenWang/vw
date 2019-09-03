@@ -462,7 +462,7 @@ def value_stock(IR, IR_a, OPM, opm_coef):
 
         for i in range(1, 11):
             # 贴现率
-            print('i=', i, ',ir=', ir, 'a=',a, ',v=', v)
+            # print('i=', i, ',ir=', ir, 'a=',a, ',v=', v)
             if i < 6:
                 ir = ir*(1+a)
             if ir >= 0.3:
@@ -473,12 +473,12 @@ def value_stock(IR, IR_a, OPM, opm_coef):
             # v = v * (1+ir) / (1+L)
             v += base_v * ir / (1 + L)**i
             base_v = base_v * (1 + ir)
-            print('v=', v, ',ir=', ir)
-            print("\\n")
+            # print('v=', v, ',ir=', ir)
+            # print("\\n")
         # v = E*(1+ir)**10
-        print('v1=', v)
+        # print('v1=', v)
         v = v * (1 - OPM.loc[k] * opm_coef.loc[k] / 100)
-        print('v2=', v, 'OPM.loc[k] =', OPM.loc[k],',IR.loc[k]=', IR.loc[k])
+        # print('v2=', v, 'OPM.loc[k] =', OPM.loc[k],',IR.loc[k]=', IR.loc[k])
 
         V.loc[k] = v
     V = round(V, 2)
