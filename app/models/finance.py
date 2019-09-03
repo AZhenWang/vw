@@ -27,7 +27,7 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
     dividends['div_count'] = dividends['total_share'] * dividends['cash_div_tax'] * 10000
     dividends.div_count.astype = 'float64'
     dividends.fillna(0)
-    cash_divs = pd.Series(index=balancesheets['end_date'], name='cash_divs')
+    cash_divs = pd.Series(index=incomes['end_date'], name='cash_divs')
     dividends.set_index('end_date', inplace=True)
     for i in range(len(balancesheets)):
         ed = balancesheets.iloc[i]['end_date']
@@ -78,7 +78,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_assets = balancesheets['total_assets']
 
     # 营运资金
-    oper_fun = balancesheets['total_cur_assets'] - goodwill - balancesheets['total_cur_liab']
+    oper_fun = balancesheets['total_cur_assets'] - balancesheets['total_cur_liab']
 
     # 4、资金周转率：平均准备期+平均收账期-平均付账期
     # 存货周转天数：360*存货平均余额/主营成本
@@ -108,7 +108,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
     receiv_inc = receiv - receiv.shift()
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
-    rev_pct = round(get_ratio(incomes['revenue']), 2)
+    # rev_pct = round(get_ratio(incomes['revenue']), 2)
+    rev_pct = get_rev_pct(incomes['revenue'], cash_divs)
     debt_pct = round(get_ratio(balancesheets['total_liab']), 2)
     rev_debt = (incomes['revenue'] - (balancesheets['total_liab'] - balancesheets['total_liab'].shift())) / balancesheets['total_liab']
     rev_debt_pct = round(get_ratio(rev_debt), 2)
@@ -160,10 +161,10 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct = round((op_mv - op_mv.shift()) * 100 / op_mv.shift(), 2)
     mix_op_diff = op_pct_short - op_pct
 
-    tax_payable_pct_mv = tax_payable_pct.rolling(window=5).median()
-    rev_pct_mv = rev_pct.rolling(window=5).median()
+    tax_payable_pct_mv = get_rolling_median(tax_payable_pct, window=5)
+    rev_pct_mv = get_rolling_median(rev_pct, window=5)
     op_pct = pd.concat([tax_payable_pct_mv, rev_pct_mv], axis=1).min(axis=1)
-    debt_pct_mv = debt_pct.rolling(window=5).median()
+    debt_pct_mv = get_rolling_median(debt_pct, window=5)
 
     op_pct[op_pct > 30] = 30
     op_pct[op_pct < -100] = -100
@@ -174,13 +175,14 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_mv = round(code_info['total_mv'] * 10000, 2)
 
     roe = round(compr_mv * 100 / equity, 2)
+    roe[roe > 30] = 30
     roe_mv = round(get_rolling_median(roe, window=5), 1)
     roe_std = round(get_rolling_std(roe, window=10), 2)
     ret = round(compr_mv * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
     pb = round(code_info['pb'], 2)
 
-    OPM = get_rolling_mean(oper_pressure, window=4, mtype=2)
+    OPM = get_rolling_median(oper_pressure, window=5)
     OPM = round(OPM, 2)
     opm_coef = get_opm_coef(OPM)
     # 未来10年涨幅倍数
@@ -191,6 +193,18 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dpd_V = dpd_value_stock(op_pct, OPM, opm_coef)
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
+
+    next_V = V * (1+roe_mv/100)
+    normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr']
+    pb2 = (code_info['close'] * code_info['total_share']*10000) / normal_equity
+    LP = round(V / 2 * normal_equity / (code_info['total_share']*10000), 2)
+    MP = round(V * normal_equity / (code_info['total_share'] * 10000), 2)
+    HP = round(V * 2 * normal_equity / (code_info['total_share']*10000), 2)
+    win_base = pd.concat([MP, code_info['close']], axis=1).min(axis=1)
+    lose_base = pd.concat([LP, code_info['close']], axis=1).min(axis=1)
+    win_return = round((MP - code_info['close'])*100/win_base, 2)
+    lose_return = round((LP - code_info['close']) * 100 / lose_base, 2)
+    odds = win_return + lose_return
 
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
@@ -302,6 +316,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     tax_pct.name = 'tax_pct'
     rev_pct_mv.name = 'rev_pct_mv'
     debt_pct_mv.name = 'debt_pct_mv'
+    win_return.name = 'win_return'
+    lose_return.name = 'lose_return'
+    odds.name = 'odds'
+    LP.name = 'LP'
+    MP.name = 'MP'
+    HP.name = 'HP'
 
     data = pd.concat(
         [round(code_info['adj_close'],2),  total_mv, income_rate,
@@ -315,6 +335,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
          fix_asset_pct, rev_pct, rev_pct_mv, debt_pct_mv,
          tax_payable_pct, def_tax_ratio, income_pct, tax_pct,
+         LP, MP, HP, win_return, lose_return, odds
          ], axis=1)
 
     return data
@@ -431,6 +452,22 @@ def get_sale_roe(total_turn, sale_rate, equity_times):
     return sale_roe
 
 
+def get_rev_pct(revenue, cash_divs):
+    """
+    收入增长率，考虑现金分红
+    :param revenue:
+    :param cash_divs:
+    :return:
+    """
+    cash_divs.fillna(0, inplace=True)
+    pct = pd.Series(index=revenue.index)
+    for i in range(1, len(revenue)):
+        pct.iloc[i] = (revenue.iloc[i] + cash_divs.iloc[i] - revenue.iloc[i - 1])/ min(
+            revenue.iloc[i] + cash_divs.iloc[i], revenue.iloc[i - 1])
+    pct = round(pct * 100, 2)
+    return pct
+
+
 def get_opm_coef(OPM):
     """
     0.3是个人对被占用资金的惩罚系数，如果没有资金压力，占用资金的时间价值0.15, 赚钱难，亏钱容易
@@ -443,7 +480,7 @@ def get_opm_coef(OPM):
     return opm_coef
 
 
-def value_stock(IR, IR_a, OPM, opm_coef):
+def value_stock(IR, IR_a, OPM, opm_coef, years=10):
     """
     总投资10年，前5年保持现有增长率，后5年不增长，收入平稳
 
@@ -460,10 +497,12 @@ def value_stock(IR, IR_a, OPM, opm_coef):
         ir = IR.loc[k] / 100
         a = IR_a.loc[k] / 100
 
-        for i in range(1, 11):
+        for i in range(1, years+1):
             # 贴现率
             # print('i=', i, ',ir=', ir, 'a=',a, ',v=', v)
             if i < 6:
+                if a < 0:
+                    a = 0
                 ir = ir*(1+a)
             if ir >= 0.3:
                 ir = 0.3
@@ -473,7 +512,7 @@ def value_stock(IR, IR_a, OPM, opm_coef):
             # v = v * (1+ir) / (1+L)
             v += base_v * ir / (1 + L)**i
             base_v = base_v * (1 + ir)
-            # print('v=', v, ',ir=', ir)
+            print('v=', v, ',ir=', ir, ',base_v=',base_v)
             # print("\\n")
         # v = E*(1+ir)**10
         # print('v1=', v)
