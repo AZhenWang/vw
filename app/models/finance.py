@@ -159,14 +159,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct_short = round((op_mv_short - op_mv_short.shift()) * 100 / op_mv_short.shift(), 2)
     op_pct = round((op_mv - op_mv.shift()) * 100 / op_mv.shift(), 2)
     mix_op_diff = op_pct_short - op_pct
-    # tax_payable_pct_mv = get_rolling_mean(tax_payable_pct,mtype=3, window=7)
-    # rev_pct_mv = get_rolling_mean(rev_pct, mtype=3, window=7)
+
     tax_payable_pct_mv = tax_payable_pct.rolling(window=5).median()
     rev_pct_mv = rev_pct.rolling(window=5).median()
     op_pct = pd.concat([tax_payable_pct_mv, rev_pct_mv], axis=1).min(axis=1)
     debt_pct_mv = debt_pct.rolling(window=5).median()
-    # print(pd.concat([code_info['adj_close'], rev_pct, debt_pct, op_pct, rev_pct_mv, debt_pct_mv], axis=1))
-    # os.ex
 
     op_pct[op_pct > 30] = 30
     op_pct[op_pct < -100] = -100
@@ -177,10 +174,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_mv = round(code_info['total_mv'] * 10000, 2)
 
     roe = round(compr_mv * 100 / equity, 2)
-    roe_mean = round(roe.rolling(window=5).median(), 2)
-    # roe_mean = round(get_rolling_mean(roe, mtype=3, window=10), 2)
+    roe_mv = round(get_rolling_median(roe, window=5), 1)
     roe_std = round(get_rolling_std(roe, window=10), 2)
-    # roe_mean = round(get_mean(roe), 2)
     ret = round(compr_mv * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
     pb = round(code_info['pb'], 2)
@@ -189,7 +184,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     OPM = round(OPM, 2)
     opm_coef = get_opm_coef(OPM)
     # 未来10年涨幅倍数
-    V = value_stock(roe_mean, op_pct, OPM, opm_coef)
+    V = value_stock(roe_mv, op_pct, OPM, opm_coef)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     # 未来10年总营业增速
@@ -268,7 +263,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_gap.name = 'cash_gap'
 
     roe.name = 'roe'
-    roe_mean.name = 'roe_mean'
+    roe_mv.name = 'roe_mv'
     ret.name = 'ret'
     em.name = 'em'
     income_rate.name = 'income_rate'
@@ -310,7 +305,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     data = pd.concat(
         [round(code_info['adj_close'],2),  total_mv, income_rate,
-         roe,  roe_mean, pp,
+         roe,  roe_mv, pp,
          holdernum, holdernum_inc,
          V, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
          pe, pb, i_debt,share_ratio, capital_turn, oper_pressure, OPM,
@@ -340,7 +335,7 @@ def get_right_mean(v, l=0.9):
 
 def get_rolling_mean(v, window=7, mtype=0):
     """
-    获取运营资金压力移动平均值，为了对经营恶化保持更高灵明度，当前报告期如果是最大值，就不能减去
+    移动平均值
     :param v:
     :param window:
     :param mtype: 为了保守估计而设置，保留今天的最小值：type=1, 保留今天的最大值：type=2, 去除包括今天的最大最小值：mtype=3
@@ -374,13 +369,13 @@ def get_rolling_mean(v, window=7, mtype=0):
             if j <= window:
                 data.iloc[j] = v[:j+1].mean()
             else:
-                data.iloc[j] = v[j-window:j + 1].mean()
+                data.iloc[j] = v[j-window+1:j + 1].mean()
 
     return round(data, 3)
 
 def get_rolling_std(v, window=7):
     """
-    获取运营资金压力移动平均值，为了对经营恶化保持更高灵明度，当前报告期如果是最大值，就不能减去
+    移动方差
     :param v:
     :param window:
     :return:
@@ -393,8 +388,27 @@ def get_rolling_std(v, window=7):
         if j <= window:
             data.iloc[j] = v[:j+1].std()
         else:
-            data.iloc[j] = v[j-window:j + 1].std()
+            data.iloc[j] = v[j-window+1:j + 1].std()
     return data
+
+def get_rolling_median(v, window=7):
+    """
+    移动中值
+    :param v:
+    :param window:
+    :return:
+    """
+    v.fillna(method='backfill', inplace=True)
+    v.fillna(method='ffill', inplace=True)
+    v.fillna(0, inplace=True)
+    data = pd.Series(index=v.index)
+    for j in range(2, len(data)):
+        if j <= window:
+            data.iloc[j] = v[:j+1].median()
+        else:
+            data.iloc[j] = v[j-window+1:j + 1].median()
+    return data
+
 
 def get_sale_roe(total_turn, sale_rate, equity_times):
     sale_rate_mv = get_rolling_mean(sale_rate, window=7, mtype=3)

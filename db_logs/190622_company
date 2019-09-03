@@ -422,7 +422,7 @@ create table fina_sys (
    holdernum_inc  float null comment'股东人数变动比率',
    freecash_mv float null comment'自由现金占净资产的比例平均值',
    roe float NULL comment'净资产收益率=归属于母公司利润/净资产',
-   roe_mean float null comment'净资产收益率的平均值',
+   roe_mv float null comment'净资产收益率的均值',
    roe_std float null comment'roe标准差',
    op_pct float null comment'营业利润增速',
    mix_op_diff float null comment'短期营业增速-长期营业增速',
