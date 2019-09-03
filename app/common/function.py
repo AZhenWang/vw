@@ -462,10 +462,10 @@ def get_wave_segment(Y):
     return qqb
 
 
-def get_ratio(close, later_price):
-    diff = later_price - close
-    fm = close[diff >= 0].add(later_price[diff < 0], fill_value=0)
-    targets = round((diff / fm * 100).fillna(value=0))
+def get_ratio(data):
+    diff = data.diff()
+    fm = pd.concat([abs(data), abs(data.shift())], axis=1).min(axis=1)
+    targets = round(diff * 100 / fm)
     return targets
 
 

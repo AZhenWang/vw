@@ -108,8 +108,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
     receiv_inc = receiv - receiv.shift()
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
-    rev_pct = round(get_ratio(incomes['revenue'].shift(), incomes['revenue']), 2)
-    fix_asset_pct = round(get_ratio(balancesheets['fix_assets'].shift(), balancesheets['fix_assets']), 2)
+    rev_pct = round(get_ratio(incomes['revenue']), 2)
+    debt_pct = round(get_ratio(balancesheets['total_liab']), 2)
+    rev_debt = (incomes['revenue'] - (balancesheets['total_liab'] - balancesheets['total_liab'].shift())) / balancesheets['total_liab']
+    rev_debt_pct = round(get_ratio(rev_debt), 2)
+
+    fix_asset_pct = round(get_ratio(balancesheets['fix_assets']), 2)
     # 调整折旧费用
     gross = incomes['revenue'] - incomes['oper_cost']
     dpba_of_assets = round(cashflows['depr_fa_coga_dpba'] * 100 / balancesheets['fix_assets'], 2)
@@ -140,13 +144,13 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 应纳税额
     def_tax = cashflows['incr_def_inc_tax_liab'] + cashflows['decr_def_inc_tax_assets']
     tax_payable = incomes['income_tax'] - def_tax
-    tax_payable_pct = round(get_ratio(tax_payable.shift(), tax_payable), 2)
-    tax_pct = round(get_ratio(incomes['income_tax'].shift(), incomes['income_tax']), 2)
+    tax_payable_pct = round(get_ratio(tax_payable), 2)
+    tax_pct = round(get_ratio(incomes['income_tax']), 2)
     tax_diff = tax_payable - tax_payable.shift()
     tax_base = tax_payable.shift()[tax_diff >= 0].add(tax_payable[tax_diff < 0], fill_value=0.01)
     def_tax_ratio = round(def_tax * 100 / tax_base, 2)
-    # def_tax_ratio = round(get_ratio((balancesheets['defer_tax_liab'] - balancesheets['defer_tax_assets']).shift(), balancesheets['defer_tax_liab'] - balancesheets['defer_tax_assets']), 2)
-    income_pct = round(get_ratio(incomes['n_income'].shift(), incomes['n_income']), 2)
+    # def_tax_ratio = round(get_ratio(balancesheets['defer_tax_liab'] - balancesheets['defer_tax_assets']), 2)
+    income_pct = round(get_ratio(incomes['n_income']), 2)
 
     # adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
     adj_ebit = tax_payable
@@ -160,9 +164,13 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     tax_payable_pct_mv = tax_payable_pct.rolling(window=5).median()
     rev_pct_mv = rev_pct.rolling(window=5).median()
     op_pct = pd.concat([tax_payable_pct_mv, rev_pct_mv], axis=1).min(axis=1)
+    debt_pct_mv = debt_pct.rolling(window=5).median()
+    # print(pd.concat([code_info['adj_close'], rev_pct, debt_pct, op_pct, rev_pct_mv, debt_pct_mv], axis=1))
+    # os.ex
 
     op_pct[op_pct > 30] = 30
     op_pct[op_pct < -100] = -100
+
 
     compr_mv = get_rolling_mean(incomes['operate_profit']-incomes['income_tax'], window=7)
     # compr_mv = get_rolling_mean((incomes['n_income_attr_p']), window=7)
@@ -207,8 +215,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 普通股在资本总额中的占比
     share_ratio = round(total_mv * 100 / (balancesheets['oth_eqt_tools_p_shr'] + balancesheets['bond_payable'] + total_mv), 1)
 
-    cash_act_in = round(get_ratio(cashflows['c_fr_sale_sg'].shift(), cashflows['c_fr_sale_sg']), 2)
-    cash_act_out = round(get_ratio(cashflows['st_cash_out_act'].shift(), cashflows['st_cash_out_act']), 2)
+    cash_act_in = round(get_ratio(cashflows['c_fr_sale_sg']), 2)
+    cash_act_out = round(get_ratio(cashflows['st_cash_out_act']), 2)
     # 持续投入增速如果少于0，不能认定下年度持续减少下去，需要满足最低10%的投入增速期望值
     adj_cash_out = cash_act_out.copy()
     adj_cash_out[cash_act_out < 0] = 10
@@ -230,7 +238,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
 
     money_cap = round(balancesheets['money_cap'] * 100/ total_assets)
-    holdernum_inc = round(get_ratio(holdernum.shift(), holdernum), 2)
+    holdernum_inc = round(get_ratio(holdernum), 2)
     cash_act_in.name = 'cash_act_in'
     cash_act_out.name = 'cash_act_out'
 
@@ -297,6 +305,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     def_tax_ratio.name = 'def_tax_ratio'
     income_pct.name = 'income_pct'
     tax_pct.name = 'tax_pct'
+    rev_pct_mv.name = 'rev_pct_mv'
+    debt_pct_mv.name = 'debt_pct_mv'
 
     data = pd.concat(
         [round(code_info['adj_close'],2),  total_mv, income_rate,
@@ -308,8 +318,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          receiv_pct,cash_act_in, cash_act_out,cash_gap, cash_gap_r,
          freecash_mv, equity_pct, op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
-         fix_asset_pct, rev_pct,
-         tax_payable_pct, def_tax_ratio, income_pct, tax_pct
+         fix_asset_pct, rev_pct, rev_pct_mv, debt_pct_mv,
+         tax_payable_pct, def_tax_ratio, income_pct, tax_pct,
          ], axis=1)
 
     return data

@@ -166,7 +166,7 @@ fields_map = {
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'dyr', 'dyr_or', 'dyr_mean',
         'freecash_mv','cash_gap', 'cash_gap_r',  'receiv_pct',
-        'equity_pct', 'fix_asset_pct', 'rev_pct',
+        'equity_pct', 'fix_asset_pct', 'rev_pct', 'rev_pct_mv', 'debt_pct_mv',
         'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio',
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
     ],
