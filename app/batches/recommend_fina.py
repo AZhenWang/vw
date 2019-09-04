@@ -14,7 +14,6 @@ def execute(start_date='', end_date=''):
     new_rows = pd.DataFrame(columns=['code_id', 'comp_type',
         'end_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc',
         'roe', 'roe_mean', 'roe_std', 'op_pct',  'mix_op_diff',
-        'V', 'dpd_V', 'pp', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'dyr', 'dyr_or', 'dyr_mean',
@@ -22,6 +21,8 @@ def execute(start_date='', end_date=''):
         'equity_pct', 'fix_asset_pct', 'rev_pct',
         'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio',
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
+        'V', 'dpd_V', 'pp', 'dpd_RR',
+        'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds',
         'years', 'result'])
 
     # codes = DB.get_code_list(list_status='')
