@@ -49,6 +49,7 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
     base_date_id = np.sort(np.unique(np.concatenate((daily_basics.cal_date.values, incomes['end_date'].values))))
     base = pd.DataFrame(index=base_date_id)
     dailys['adj_close'] = dailys['close'] * adj_factors['adj_factor']
+    base = base.join(adj_factors[['cal_date', 'adj_factor']].set_index('cal_date'))
     base = base.join(dailys[['cal_date', 'close', 'adj_close']].set_index('cal_date'))
     base = base.join(daily_basics[['cal_date', 'pe', 'pb', 'total_mv', 'total_share']].set_index('cal_date'))
     base.fillna(method='ffill', inplace=True)
@@ -167,19 +168,19 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 收入，利润，负债，税的长期率
     rev_pct = get_rev_pct(incomes['revenue'], cash_divs)
 
-    debt_pct = round(balancesheets['total_liab'].pct_change()*100, 2)
     liab_pct = balancesheets['total_liab'].pct_change()*100
     liab_pctmv = get_mean_of_complex_rate(liab_pct)
 
     income_pct = incomes['n_income'].pct_change() * 100
-    tax_payable_pct[tax_payable_pct > 30] = 30
+    tax_payable_pct[tax_payable_pct > 50] = 50
     tax_payable_pct[tax_payable_pct < -50] = -50
     tax_payable_pctmv = get_mean_of_complex_rate(tax_payable_pct)
     rev_pctmv = get_mean_of_complex_rate(rev_pct)
     income_pctmv = get_mean_of_complex_rate(income_pct)
+    equity_pctmv = get_mean_of_complex_rate(equity_pct)
+    fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct)
 
     op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv-income_pctmv.shift()], axis=1).min(axis=1)
-    debt_pctmv = get_mean_of_complex_rate(debt_pct, window=5)
 
     op_pct[op_pct > 30] = 30
     op_pct[op_pct < -50] = -50
@@ -208,6 +209,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     V0 = value_stock2(roe_mv, OPM, opm_coef)
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
     V_rd = value_stock2(roe_rd_mv, OPM, opm_coef)
+    min_pctmv = pd.concat([tax_payable_pctmv, roe_rd_mv], axis=1).min(axis=1)
+    V_min = value_stock2(min_pctmv, OPM, opm_coef)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     # 赔率，不计算加速度
@@ -215,18 +218,21 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 税率验证：税的价值比总价值，要和税率相差无几，比如企业税率25%，那么这pp_tax的值不能离25太远
     pp_tax = round(V_tax * 100 / (V_tax+V0), 1)
     pp_rd = round(V_rd / pb, 2)
+    pp_min = round(V_min / pb, 2)
     # 未来10年总营业增速
     dpd_V = dpd_value_stock(roe_mv, OPM, opm_coef)
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
 
-    LP = round(V / 2 * normal_equity / (code_info['total_share']*10000), 2)
-    MP = round(V * normal_equity / (code_info['total_share'] * 10000), 2)
-    HP = round(V * 2 * normal_equity / (code_info['total_share']*10000), 2)
-    win_base = pd.concat([MP, code_info['close']], axis=1).min(axis=1)
-    lose_base = pd.concat([LP, code_info['close']], axis=1).min(axis=1)
-    win_return = round((MP - code_info['close'])*100/win_base, 2)
-    lose_return = round((LP - code_info['close']) * 100 / lose_base, 2)
+    next_V0 = V_min
+    total_share = code_info['total_share'] * 10000
+    LP = round(next_V0 / 2 * code_info['adj_factor'] * normal_equity / total_share, 2)
+    MP = round(next_V0 * code_info['adj_factor'] * normal_equity / total_share, 2)
+    HP = round(next_V0 * 2 * code_info['adj_factor'] * normal_equity / total_share, 2)
+    win_base = pd.concat([HP, code_info['adj_close']], axis=1).min(axis=1)
+    lose_base = pd.concat([LP, code_info['adj_close']], axis=1).min(axis=1)
+    win_return = round((HP - code_info['adj_close'])*100/win_base, 2)
+    lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
     odds = win_return + lose_return
 
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
@@ -299,6 +305,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     pp0.name = 'pp0'
     pp_tax.name = 'pp_tax'
     pp_rd.name = 'pp_rd'
+    pp_min.name = 'pp_min'
     cash_gap.name = 'cash_gap'
 
     roe.name = 'roe'
@@ -344,6 +351,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     liab_pctmv.name = 'liab_pctmv'
     income_pctmv.name = 'income_pctmv'
     tax_payable_pctmv.name = 'tax_payable_pctmv'
+    equity_pctmv.name = 'equity_pctmv'
+    min_pctmv.name = 'min_pctmv'
+    fix_asset_pctmv.name = 'fix_asset_pctmv'
     win_return.name = 'win_return'
     lose_return.name = 'lose_return'
     odds.name = 'odds'
@@ -353,7 +363,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     data = pd.concat(
         [round(code_info['adj_close'],2),  total_mv, income_rate,
-         roe,  roe_mv, pp, pp0, pp_tax, pp_rd,
+         roe,  roe_mv, pp, pp0, pp_tax, pp_rd, pp_min,
          holdernum, holdernum_inc,
          V, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
          pe, pb, i_debt, share_ratio, capital_turn, oper_pressure, OPM,
@@ -362,7 +372,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
          equity_pct, fix_asset_pct, tax_payable_pct, def_tax_ratio,
-         rev_pct, tax_pct, income_pct, rev_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv,
+         rev_pct, tax_pct, income_pct,
+         rev_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv, equity_pctmv, min_pctmv, fix_asset_pctmv,
          LP, MP, HP, win_return, lose_return, odds
          ], axis=1)
 
