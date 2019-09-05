@@ -79,8 +79,40 @@ class Fina(Base):
         return report_info
 
     @classmethod
-    def delete_comp_sys_logs(cls, code_id, start_date, end_date):
-        pd.io.sql.execute('delete from fina_sys where code_id = %s and end_date >= %s and end_date <= %s',
+    def get_fina_sys_logs(cls, code_id, start_date='', end_date='', TTB=''):
+        """
+        获取财务分析日志
+        :param code_id:
+        :param start_date:
+        :param end_date: 报告结束日期
+        :param TTB: 表名，income: 利润表， balancesheet: 资产负债表， cashflow：现金流量表
+        :return:
+        """
+        sql_str = ' SELECT r.* from fina_sys where r.code_id = :code_id ' \
+                                   ' and r.end_date >= :sdi and r.end_date <= :edi'
+        params = {'code_id': str(code_id), 'sdi': str(start_date), 'edi': str(end_date)}
+
+        if report_type != '':
+            sql_str += ' and r.report_type =:report_type'
+            params['report_type'] = report_type
+
+        if end_date_type != '':
+            sql_str += ' and r.end_date like ' + ':end_date_type'
+            params['end_date_type'] = end_date_type
+
+        sql_str += ' order by r.end_date asc '
+
+        report_info = pd.read_sql(sa.text(sql_str), cls.engine, params=params)
+        return report_info
+
+    @classmethod
+    def delete_logs_by_end_date(cls, code_id='', start_date='', end_date='', tablename=''):
+        pd.io.sql.execute('delete from ' + tablename + ' where code_id = %s and end_date >= %s and end_date <= %s',
+                          cls.engine, params=[str(code_id), str(start_date), str(end_date)])
+
+    @classmethod
+    def delete_fina_super_logs(cls, code_id='', start_date='', end_date=''):
+        pd.io.sql.execute('delete from fina_super where code_id = %s and cal_date >= %s and cal_date <= %s',
                           cls.engine, params=[str(code_id), str(start_date), str(end_date)])
 
     @classmethod
