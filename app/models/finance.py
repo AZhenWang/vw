@@ -362,7 +362,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     HP.name = 'HP'
 
     data = pd.concat(
-        [round(code_info['adj_close'],2),  total_mv, income_rate,
+        [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), total_mv, income_rate,
          roe,  roe_mv, pp, pp0, pp_tax, pp_rd, pp_min,
          holdernum, holdernum_inc,
          V, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
@@ -374,7 +374,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          equity_pct, fix_asset_pct, tax_payable_pct, def_tax_ratio,
          rev_pct, tax_pct, income_pct,
          rev_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv, equity_pctmv, min_pctmv, fix_asset_pctmv,
-         LP, MP, HP, win_return, lose_return, odds
+         LP, MP, HP, win_return, lose_return, odds,
          ], axis=1)
 
     return data

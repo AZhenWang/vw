@@ -416,6 +416,7 @@ create table fina_sys (
    code_id INT NOT NULL,
    comp_type int null comment'公司类型，公司：1',
    end_date varchar(8) NOT NULL comment'报告期',
+   adj_factor float null comment'报告期的调整因子',
    adj_close float null comment'报告期调整后收盘价',
    total_mv float null comment'总市值（万元）',
    holdernum float null comment'股东人数',
@@ -476,7 +477,7 @@ create table fina_sys (
    fix_asset_pctmv float null comment'固定资产增长率均值',
    def_tax_ratio float null comment'递延所得税占应纳税额的比例，持续增大，表示盈余管理越严重',
    LP float null comment'最低价',
-   MP float null comment'合适卖价',
+   MP float null comment'价值',
    HP float null comment'最高价',
    win_return float null comment'赢得倍数',
    lose_return float null comment'输的倍数',
@@ -485,6 +486,28 @@ create table fina_sys (
    PRIMARY KEY(id),
    CONSTRAINT symbol UNIQUE KEY `unique_code_end_date`( `code_id`, `end_date`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'公司估值';
+
+create table fina_super (
+   id int not null auto_increment,
+   code_id INT NOT NULL,
+   end_date varchar(8) NOT NULL comment'依据报告日期',
+   cal_date varchar(8) NOT NULL comment'当天',
+   LP float null comment'最低价',
+   MP float null comment'价值',
+   HP float null comment'最高价',
+   adj_factor float null comment'当天调整因子',
+   adj_LP float null comment'调整之后的最低价',
+   adj_MP float null comment'调整之后的价值',
+   adj_HP float null comment'调整之后的最高价',
+   win_return float null comment'赢得倍数',
+   lose_return float null comment'输的倍数',
+   odds float null comment'总的赔率=赢得倍数+输的倍数',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(code_id),
+   index(end_date),
+   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `code_id`, `date_id`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'动态跟踪比较股票价格和价值';
 
 
 create table stk_holdernumber (
