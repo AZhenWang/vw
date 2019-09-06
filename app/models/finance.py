@@ -179,6 +179,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     income_pctmv = get_mean_of_complex_rate(income_pct)
     equity_pctmv = get_mean_of_complex_rate(equity_pct)
     fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct)
+    income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['revenue'], 2)
+    total_turn = round(incomes['revenue'] / total_assets, 2)
+    total_assets_pct = round(total_assets.pct_change()*100, 2)
+    total_assets_pctmv = get_mean_of_complex_rate(total_assets_pct)
+    total_assets.name = 'total_assets'
 
     op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv-income_pctmv.shift()], axis=1).min(axis=1)
 
@@ -187,7 +192,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     total_mv = round(code_info['total_mv'] * 10000, 2)
     roe = round(incomes['n_income_attr_p'] * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
-    roe[roe > 50] = 50
+    roe[roe > 30] = 30
     roe[roe < -50] = -50
     roe_mv = get_mean_of_complex_rate(roe, window=10)
     roe_std = round(get_rolling_std(roe, window=10), 2)
@@ -210,7 +215,10 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
     V_rd = value_stock2(roe_rd_mv, OPM, opm_coef)
     min_pctmv = pd.concat([tax_payable_pctmv, roe_rd_mv], axis=1).min(axis=1)
-    V_min = value_stock2(min_pctmv, OPM, opm_coef)
+    # V_min = value_stock2(min_pctmv, OPM, opm_coef)
+    total_turn_pctmv = round((rev_pctmv/ total_assets_pctmv).pct_change()*100, 2)
+    V_min = value_stock(roe_mv, total_turn_pctmv, OPM, opm_coef)
+    # V_min = value_stock2(roe_mv, OPM, opm_coef)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     # 赔率，不计算加速度
@@ -235,13 +243,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
     odds = win_return + lose_return
 
+    # print(pd.concat([code_info['adj_close'], total_turn_pctmv, pp_min, roe, roe_mv, op_pct, pp, pp0, LP, MP, HP, win_return, lose_return, odds], axis=1))
+    # os.ex
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
     sale_rate.fillna(method='backfill', inplace=True)
     em = round(total_assets / equity, 2)
-    income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['total_revenue'], 2)
-    total_turn = round(incomes['revenue'] / total_assets, 2)
-    total_assets.name = 'total_assets'
 
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
 
@@ -348,11 +355,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     tax_pct.name = 'tax_pct'
     tax_payable_pct.name = 'tax_payable_pct'
     rev_pctmv.name = 'rev_pctmv'
+    total_turn_pctmv.name = 'total_turn_pctmv'
     liab_pctmv.name = 'liab_pctmv'
     income_pctmv.name = 'income_pctmv'
     tax_payable_pctmv.name = 'tax_payable_pctmv'
     equity_pctmv.name = 'equity_pctmv'
-    min_pctmv.name = 'min_pctmv'
+    total_assets_pctmv.name = 'total_assets_pctmv'
     fix_asset_pctmv.name = 'fix_asset_pctmv'
     win_return.name = 'win_return'
     lose_return.name = 'lose_return'
@@ -363,7 +371,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     data = pd.concat(
         [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), total_mv, income_rate,
-         roe,  roe_mv, pp, pp0, pp_tax, pp_rd, pp_min,
+         roe,  roe_mv, pp, pp0, pp_tax, pp_rd,
          holdernum, holdernum_inc,
          V, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
          pe, pb, i_debt, share_ratio, capital_turn, oper_pressure, OPM,
@@ -372,8 +380,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
          equity_pct, fix_asset_pct, tax_payable_pct, def_tax_ratio,
-         rev_pct, tax_pct, income_pct,
-         rev_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv, equity_pctmv, min_pctmv, fix_asset_pctmv,
+         rev_pct, total_turn_pctmv, tax_pct, income_pct,
+         rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv, equity_pctmv, fix_asset_pctmv,
          LP, MP, HP, win_return, lose_return, odds,
          ], axis=1)
 
@@ -477,7 +485,8 @@ def get_mean_of_complex_rate(v, window=10):
     :param window:
     :return:
     """
-    v.fillna(0, inplace=True)
+    base = pd.DataFrame(index=v.index)
+    v.dropna(0, inplace=True)
     v[v < -50] = -50
     v[v > 100] = 100
     v = v/100
@@ -492,9 +501,10 @@ def get_mean_of_complex_rate(v, window=10):
             t = t**(1/(i-1)) - 1
         else:
             t = mv**(1/ (i+1)) - 1
-
         data.iloc[i] = round(t*100, 2)
-    return data
+    data.name = 'data'
+    base = base.join(data)
+    return base['data']
 
 
 def get_sale_roe(total_turn, sale_rate, equity_times):
