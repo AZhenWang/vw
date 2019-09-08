@@ -176,6 +176,10 @@ fields_map = {
         'code_id', 'end_date',  'cal_date', 'adj_factor',  'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds',
         'adj_close', 'adj_high', 'adj_low', 'sell_p1', 'sell_p2', 'buy_p1', 'buy_p2', 'position'
     ],
+    'express': [
+        'code_id', 'date_id', 'end_date', 'revenue', 'operate_profit', 'total_profit', 'n_income', 'total_assets', 'total_hldr_eqy_exc_min_int', 'is_audit'
+    ],
+
     'stk_holdernumber': [
       'code_id', 'date_id', 'end_date', 'holder_num'
     ],

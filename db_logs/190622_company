@@ -517,6 +517,24 @@ create table fina_super (
    CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `code_id`, `date_id`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'动态跟踪比较股票价格和价值';
 
+create table express (
+   id int not null auto_increment,
+   date_id INT NOT NULL comment'公告日期',
+   code_id INT NOT NULL,
+   end_date varchar(8) NOT NULL comment'截止日期',
+   revenue	float null comment	'营业收入(元)',
+   operate_profit	float NULL comment'营业利润(元)',
+   total_profit	float NULL comment'利润总额(元)',
+   n_income	float NULL comment'净利润(元)',
+   total_assets	float NULL comment'总资产(元)',
+   total_hldr_eqy_exc_min_int	float NULL comment'股东权益合计(不含少数股东权益)(元)',
+   is_audit	tinyint NULL comment'是否审计： 1是 0否',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   index(code_id),
+   index(end_date)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'业绩快报';
+
 
 create table stk_holdernumber (
    id int not null auto_increment,
