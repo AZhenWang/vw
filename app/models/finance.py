@@ -80,7 +80,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     balancesheets.fillna(value=0, inplace=True)
     cashflows.fillna(value=0, inplace=True)
     fina_indicators.fillna(value=0, inplace=True)
-
     goodwill = balancesheets['goodwill']
     goodwill.name = 'goodwill'
 
@@ -141,7 +140,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     freecash = cashflows['free_cashflow'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 2)
     freecash_mv = round(get_rolling_mean(freecash_rate, window=7), 1)
-
     # 所得税缴纳基数
     tax_rate = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
 
@@ -155,7 +153,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     tax_diff = tax_payable - tax_payable.shift()
     tax_base = tax_payable.shift()[tax_diff >= 0].add(tax_payable[tax_diff < 0], fill_value=0.01)
     def_tax_ratio = round(def_tax * 100 / tax_base, 2)
-
     # 短期营业收入是否加速
     adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
     # adj_ebit = tax_payable
@@ -170,7 +167,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     liab_pct = balancesheets['total_liab'].pct_change()*100
     liab_pctmv = get_mean_of_complex_rate(liab_pct)
-
     income_pct = incomes['n_income'].pct_change() * 100
     tax_payable_pct[tax_payable_pct > 50] = 50
     tax_payable_pct[tax_payable_pct < -50] = -50
@@ -189,12 +185,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     op_pct[op_pct > 30] = 30
     op_pct[op_pct < -50] = -50
-
     total_mv = round(code_info['total_mv'] * 10000, 2)
     roe = round(incomes['n_income_attr_p'] * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe[roe > 30] = 30
     roe[roe < -50] = -50
-    roe_mv = get_mean_of_complex_rate(roe, window=10)
+
     roe_std = round(get_rolling_std(roe, window=10), 2)
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
@@ -205,6 +200,16 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_rd[roe_rd > 50] = 50
     roe_rd[roe_rd < -50] = -50
     roe_rd_mv = get_mean_of_complex_rate(roe_rd, window=10)
+
+    # roe_mv = get_mean_of_complex_rate(roe, window=10)
+
+    roe_mv = pd.Series(index=balancesheets.index)
+    roe_mv.fillna(0, inplace=True)
+    roe_mv.iloc[2] = roe_rd.iloc[2] / 100
+    for i in range(3, len(roe_rd)):
+        # roe_g.iloc[i] = ((1+1.25*roe.iloc[i]/100) * (1+0.75*roe_g.iloc[i-1]))**(1/2) - 1
+        roe_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 8) * (1 + roe_mv.iloc[i - 1]) ** (7 / 8) - 1
+    roe_mv = round(roe_mv * 100, 2)
 
     OPM = get_rolling_median(oper_pressure, window=5)
     OPM = round(OPM, 2)
@@ -217,8 +222,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     min_pctmv = pd.concat([tax_payable_pctmv, roe_rd_mv], axis=1).min(axis=1)
     # V_min = value_stock2(min_pctmv, OPM, opm_coef)
     total_turn_pctmv = round((rev_pctmv/ total_assets_pctmv).pct_change()*100, 2)
-    V_min = value_stock(roe_mv, total_turn_pctmv, OPM, opm_coef)
+    # V_min = value_stock(roe_mv, total_turn_pctmv, OPM, opm_coef)
     # V_min = value_stock2(roe_mv, OPM, opm_coef)
+    V_min = value_stock2(roe_mv, OPM, opm_coef)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     # 赔率，不计算加速度
@@ -231,7 +237,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dpd_V = dpd_value_stock(roe_mv, OPM, opm_coef)
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
-
     next_V0 = V_min
     total_share = code_info['total_share'] * 10000
     LP = round(next_V0 / 2 * code_info['adj_factor'] * normal_equity / total_share, 2)
@@ -243,13 +248,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
     odds = win_return + lose_return
 
-    # print(pd.concat([code_info['adj_close'], total_turn_pctmv, pp_min, roe, roe_mv, op_pct, pp, pp0, LP, MP, HP, win_return, lose_return, odds], axis=1))
+    # print(pd.concat([code_info['adj_close'], equity_pctmv, roe, roe_mv, pp_min, pp, pp0, op_pct, rev_pctmv, income_pctmv, total_assets_pctmv, total_turn_pctmv, LP, MP, HP, win_return, lose_return, odds], axis=1))
     # os.ex
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
     sale_rate.fillna(method='backfill', inplace=True)
     em = round(total_assets / equity, 2)
-
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
 
     libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
@@ -280,12 +284,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 股息占当年收入比率
     dyr_or = round(cash_divs * 100 / incomes['revenue'], 2)
     dyr_mean = round(get_mean_of_complex_rate(dyr), 2)
-
-    money_cap = round(balancesheets['money_cap'] * 100/ total_assets)
-    holdernum_inc = round(get_ratio(holdernum), 2)
+    money_cap = round(balancesheets['money_cap'] * 100 / total_assets)
+    holdernum_inc = get_mean_of_complex_rate(holdernum.pct_change()*100)
+    # holdernum_inc = round(get_ratio(holdernum), 2)
     cash_act_in.name = 'cash_act_in'
     cash_act_out.name = 'cash_act_out'
-
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
     # X1= 营运资本/总资产
     X1 = round(oper_fun / total_assets, 2)
@@ -300,7 +303,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # X5 = 销售收入 / 总资产
     X5 = round(incomes['revenue'] / total_assets, 2)
     Z = round(0.717 * X1 + 0.847 * X2 + 3.11 * X3 + 0.420 * X4 + 0.998 * X5, 2)
-
     X1.name = 'X1'
     X2.name = 'X2'
     X3.name = 'X3'
@@ -486,6 +488,8 @@ def get_mean_of_complex_rate(v, window=10):
     :return:
     """
     base = pd.DataFrame(index=v.index)
+    if v.isna().all():
+        return v
     v.dropna(0, inplace=True)
     v[v < -50] = -50
     v[v > 100] = 100
@@ -500,7 +504,8 @@ def get_mean_of_complex_rate(v, window=10):
             t = mv / ((1+max_v) * (1+min_v))
             t = t**(1/(i-1)) - 1
         else:
-            t = mv**(1/ (i+1)) - 1
+            mv = mv / (1+v.iloc[i - window])
+            t = mv**( 1 / window) - 1
         data.iloc[i] = round(t*100, 2)
     data.name = 'data'
     base = base.join(data)
@@ -563,7 +568,6 @@ def value_stock2(IR, OPM, opm_coef, years=10):
 
     L = 0
     for k in IR.index:
-        print('end_date', k)
         v = 0
         base_v = 1
         if k not in OPM.index:
@@ -594,8 +598,8 @@ def value_stock(IR, IR_a, OPM, opm_coef, years=10):
     L = 0
     IR_a[IR_a > 5] = 5
     IR_a[IR_a < -5] = -5
+    IR_a.fillna(value=0, inplace=True)
     for k in IR.index:
-        print('end_date', k)
         v = 0
         base_v = 1
         if k not in OPM.index:
@@ -616,7 +620,6 @@ def value_stock(IR, IR_a, OPM, opm_coef, years=10):
             # v = v * (1+ir) / (1+L)
             v += base_v * ir / (1 + L)**i
             base_v = base_v * (1 + ir)
-            print('v=', v, ',ir=', ir, ',base_v=',base_v)
             # print("\\n")
         # v = E*(1+ir)**10
         # print('v1=', v)
