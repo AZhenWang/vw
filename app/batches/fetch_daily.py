@@ -17,9 +17,9 @@ def execute(start_date='', end_date=''):
     worker.set_trade_dates()
 
     if not worker.trade_dates.empty:
-        ts_apis = ['weekly', 'monthly']
+        ts_apis = ['block_trade']
         # ts_apis = ['daily', 'daily_basic', 'adj_factor',
-        #            'moneyflow', 'block_trade', 'weekly', 'monthly']
+        #            'moneyflow','weekly', 'monthly', 'block_trade' ]
         for api in ts_apis:
             worker.query(api)
 
