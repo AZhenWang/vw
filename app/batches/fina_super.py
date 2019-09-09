@@ -20,12 +20,12 @@ def execute(start_date='', end_date=''):
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
     new_rows = pd.DataFrame(columns=fields_map['fina_super'])
-    code_ids = [214]
-    # code_ids = range(1, 500)
+    # code_ids = [132]
+    code_ids = range(1, 500)
     str2date = lambda x: datetime.strptime(str(x), '%Y%m%d')
     for code_id in code_ids:
         print('code_id=', code_id)
-        # Fina.delete_fina_super_logs(code_id, start_date=start_date, end_date=end_date)
+        Fina.delete_fina_super_logs(code_id, start_date=start_date, end_date=end_date)
         logs = Fina.get_report_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
         dailys = DB.get_code_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='daily')
@@ -82,10 +82,14 @@ def execute(start_date='', end_date=''):
         data['sell_p2'] = round(adj_HP / 1.1, 2)
         position = pd.Series(index=base.index)
         for i in range(len(base)):
-            if data.iloc[i]['adj_high'] >= data.iloc[i]['sell_p2']:
+            if data.iloc[i]['adj_high'] >= data.iloc[i]['adj_HP']:
+                position.iloc[i] = 3
+            elif data.iloc[i]['adj_high'] >= data.iloc[i]['sell_p2']:
                 position.iloc[i] = 2
             elif data.iloc[i]['adj_high'] >= data.iloc[i]['sell_p1']:
                 position.iloc[i] = 1
+            elif data.iloc[i]['adj_low'] <= data.iloc[i]['adj_LP']:
+                position.iloc[i] = -3
             elif data.iloc[i]['adj_low'] <= data.iloc[i]['buy_p2']:
                 position.iloc[i] = -2
             elif data.iloc[i]['adj_low'] <= data.iloc[i]['buy_p1']:
