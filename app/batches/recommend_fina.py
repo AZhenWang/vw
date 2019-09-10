@@ -23,23 +23,36 @@ def execute(start_date='', end_date=''):
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
         'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv', 'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
         'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds', 'adj_factor',
-        'years', 'result', 'return_yearly'])
+        'flag', 'years', 'result', 'return_yearly'])
 
     # codes = DB.get_code_list(list_status='')
     # code_ids = codes['code_id']
     code_ids = range(1, 500)
-    # code_ids = [214]
+    # code_ids = [132, 161, 2772, 2020]
     for code_id in code_ids:
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
+        logs.drop(['V_tax'], inplace=True)
         logs.dropna(inplace=True)
         logs.reset_index(inplace=True, drop=True)
+
         Y = logs['adj_close']
         point_args = np.diff(np.where(np.diff(Y) > 0, 0, 1))
         logs = logs.join(pd.Series(point_args, name='point').shift())
-        for j in range(len(logs)-1):
+        for j in range(len(logs)):
+            log = logs.iloc[j]
             index = logs.index[j]
+            # 先判断这个企业是不是历史表现良好
+            flag = 0
+            if log['rev_pctmv'] > 10 and log['liab_pctmv'] < log['rev_pctmv'] * 1.5 \
+                    and log['equity_pctmv'] > 18 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 18 and log['tax_payable_pctmv'] > 5 \
+                    and log['receiv_pct'] < 20 and log['Z'] > 1.2 \
+                    and log['roe_mv'] > 2*log['roe_std'] and log['roe_mv'] > 10:
+                flag = 1
+
+            logs.at[index, 'flag'] = flag
+
             today = logs.iloc[j]['end_date']
             later_logs = logs[logs.end_date > today]
             corner = later_logs[later_logs['point'] != 0]
