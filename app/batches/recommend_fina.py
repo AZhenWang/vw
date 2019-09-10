@@ -22,7 +22,7 @@ def execute(start_date='', end_date=''):
         'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio',
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
         'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv', 'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
-        'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds', 'adj_factor'
+        'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds', 'adj_factor',
         'years', 'result'])
 
     # codes = DB.get_code_list(list_status='')
