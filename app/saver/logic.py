@@ -284,7 +284,7 @@ class DB(Base):
         if start_date == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share'
+                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share, db.total_mv'
                     ' FROM  ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
@@ -298,7 +298,7 @@ class DB(Base):
         elif end_date == '':
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share '
+                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share, db.total_mv '
                     ' FROM  ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'
@@ -312,7 +312,7 @@ class DB(Base):
         else:
             code_info = pd.read_sql(
                 sa.text(
-                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share'
+                    ' SELECT tc.cal_date, d.*, af.adj_factor, db.turnover_rate_f, db.float_share, db.total_mv'
                     ' FROM ' + TTB + ' d '
                     ' left join daily_basic db on db.date_id = d.date_id and db.code_id = d.code_id'
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'

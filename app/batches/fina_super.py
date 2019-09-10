@@ -22,7 +22,6 @@ def execute(start_date='', end_date=''):
     new_rows = pd.DataFrame(columns=fields_map['fina_super'])
     # code_ids = [132]
     code_ids = range(1, 500)
-    str2date = lambda x: datetime.strptime(str(x), '%Y%m%d')
     for code_id in code_ids:
         print('code_id=', code_id)
         Fina.delete_fina_super_logs(code_id, start_date=start_date, end_date=end_date)
@@ -31,7 +30,7 @@ def execute(start_date='', end_date=''):
         dailys = DB.get_code_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='daily')
         logs['report_adj_factor'] = logs['adj_factor']
         base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LP', 'MP', 'HP', 'pp0', 'roe_mv', 'report_adj_factor']].set_index('f_ann_date', drop=False), on='cal_date')
-        base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor']], on='date_id')
+        base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor', 'total_mv']], on='date_id')
         base.fillna(method='ffill', inplace=True)
         base.dropna(inplace=True)
         base = base[base['cal_date'] >= start_date]
@@ -63,6 +62,7 @@ def execute(start_date='', end_date=''):
         data['f_ann_date'] = base['f_ann_date']
         data['cal_date'] = base['cal_date']
         data['code_id'] = code_id
+        data['total_mv'] = base['total_mv']
         data['adj_factor'] = base['adj_factor']
         data['LP'] = LP
         data['MP'] = MP
