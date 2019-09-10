@@ -33,7 +33,7 @@ def execute(start_date='', end_date=''):
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
-        logs.drop(['V_tax'], inplace=True)
+        logs.drop(['V_tax'], axis=1, inplace=True)
         logs.dropna(inplace=True)
         logs.reset_index(inplace=True, drop=True)
 
