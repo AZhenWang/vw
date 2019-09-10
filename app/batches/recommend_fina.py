@@ -23,14 +23,14 @@ def execute(start_date='', end_date=''):
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
         'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv', 'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
         'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds', 'adj_factor',
-        'years', 'result'])
+        'years', 'result', 'return_yearly'])
 
     # codes = DB.get_code_list(list_status='')
     # code_ids = codes['code_id']
     code_ids = range(1, 500)
     # code_ids = [214]
     for code_id in code_ids:
-        # DB.delete_code_logs(code_id, tablename='fina_recom_logs')
+        DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
         logs.dropna(inplace=True)
@@ -48,9 +48,11 @@ def execute(start_date='', end_date=''):
                 next_close = next_act['adj_close']
                 next_date = next_act['end_date']
                 today_close = logs.iloc[j]['adj_close']
-                result = round((next_close - today_close) / min(next_close, today_close), 2)
+                result = round(next_close / today_close, 2)
+                years = (int(next_date) - int(today)) / 10000
                 logs.at[index, 'result'] = result
-                logs.at[index, 'years'] = (int(next_date) - int(today)) / 10000
+                logs.at[index, 'years'] = years
+                logs.at[index, 'return_yearly'] = round((result**(1/years) - 1)*100, 2)
 
         new_rows = pd.concat([new_rows, logs], sort=False)
 
