@@ -285,7 +285,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # X3 = 息税前利润 / 总资产
     X3 = round(incomes['ebit'] / total_assets, 2)
     # X4 = 股东权益 / 负债
-    X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / balancesheets['total_liab'], 2)
+    X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
     # X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
     # X5 = 销售收入 / 总资产
     X5 = round(incomes['revenue'] / total_assets, 2)
@@ -476,7 +476,7 @@ def get_mean_of_complex_rate(v, window=10):
     if v.isna().all():
         return v
     v.dropna(0, inplace=True)
-    v[v < -50] = -50
+    v[v <= -100] = -99
     v[v > 100] = 100
     v = v/100
     data = pd.Series(index=v.index, name='data')
