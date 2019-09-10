@@ -142,7 +142,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     freecash_mv = round(get_rolling_mean(freecash_rate, window=7), 1)
     # 所得税缴纳基数
     tax_rate = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
-
     # 应纳税额
     def_tax = cashflows['incr_def_inc_tax_liab'] + cashflows['decr_def_inc_tax_assets']
     def_tax.fillna(0, inplace=True)
@@ -180,7 +179,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_assets_pct = round(total_assets.pct_change()*100, 2)
     total_assets_pctmv = get_mean_of_complex_rate(total_assets_pct)
     total_assets.name = 'total_assets'
-
     op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv-income_pctmv.shift()], axis=1).min(axis=1)
 
     op_pct[op_pct > 30] = 30
@@ -195,7 +193,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     pe = round(code_info['pe'], 2)
     normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr']
     pb = total_mv / normal_equity
-
     roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe_rd[roe_rd > 50] = 50
     roe_rd[roe_rd < -50] = -50
@@ -210,7 +207,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         # roe_g.iloc[i] = ((1+1.25*roe.iloc[i]/100) * (1+0.75*roe_g.iloc[i-1]))**(1/2) - 1
         roe_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 8) * (1 + roe_mv.iloc[i - 1]) ** (7 / 8) - 1
     roe_mv = round(roe_mv * 100, 2)
-
     OPM = get_rolling_median(oper_pressure, window=5)
     OPM = round(OPM, 2)
     opm_coef = get_opm_coef(OPM)
@@ -278,7 +274,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
                    - cashflows['st_cash_out_act'] * adj_cash_out/100 \
                    )
     cash_gap_r = round(cash_gap * 12 / st_cash_out_act_next, 2)
-
     # 股息率
     dyr = round(cash_divs * 100 / total_mv, 2)
     # 股息占当年收入比率
@@ -491,11 +486,18 @@ def get_mean_of_complex_rate(v, window=10):
     if v.isna().all():
         return v
     v.dropna(0, inplace=True)
+    print('v=', v)
     v[v < -50] = -50
     v[v > 100] = 100
     v = v/100
-    data = pd.Series(index=v.index)
+    data = pd.Series(index=v.index, name='data')
+    if len(v) == 1:
+        data.iloc[0] = v.iloc[0]
+        base = base.join(data)
+        return base['data']
+
     mv = (1 + v.iloc[0]) * (1 + v.iloc[1])
+
     for i in range(2, len(data)):
         mv = mv * (1 + v.iloc[i])
         if i < window:
@@ -507,7 +509,6 @@ def get_mean_of_complex_rate(v, window=10):
             mv = mv / (1+v.iloc[i - window])
             t = mv**( 1 / window) - 1
         data.iloc[i] = round(t*100, 2)
-    data.name = 'data'
     base = base.join(data)
     return base['data']
 
