@@ -194,7 +194,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr']
     pb = total_mv / normal_equity
     roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
-    roe_rd[roe_rd > 50] = 50
+    roe_rd[roe_rd > 30] = 30
     roe_rd[roe_rd < -50] = -50
     roe_rd_mv = get_mean_of_complex_rate(roe_rd, window=10)
 
@@ -202,8 +202,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     roe_mv = pd.Series(index=balancesheets.index)
     roe_mv.fillna(0, inplace=True)
-    roe_mv.iloc[2] = roe_rd.iloc[2] / 100
-    for i in range(3, len(roe_rd)):
+    roe_mv.iloc[3] = roe_rd.iloc[3] / 100
+    for i in range(4, len(roe_rd)):
         # roe_g.iloc[i] = ((1+1.25*roe.iloc[i]/100) * (1+0.75*roe_g.iloc[i-1]))**(1/2) - 1
         roe_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 8) * (1 + roe_mv.iloc[i - 1]) ** (7 / 8) - 1
     roe_mv = round(roe_mv * 100, 2)
@@ -214,26 +214,18 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     V = value_stock(roe_mv, op_pct, OPM, opm_coef)
     V0 = value_stock2(roe_mv, OPM, opm_coef)
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
-    V_rd = value_stock2(roe_rd_mv, OPM, opm_coef)
-    min_pctmv = pd.concat([tax_payable_pctmv, roe_rd_mv], axis=1).min(axis=1)
-    # V_min = value_stock2(min_pctmv, OPM, opm_coef)
     total_turn_pctmv = round((rev_pctmv/ total_assets_pctmv).pct_change()*100, 2)
-    # V_min = value_stock(roe_mv, total_turn_pctmv, OPM, opm_coef)
-    # V_min = value_stock2(roe_mv, OPM, opm_coef)
-    V_min = value_stock2(roe_mv, OPM, opm_coef)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     # 赔率，不计算加速度
     pp0 = round(V0 / pb, 2)
     # 税率验证：税的价值比总价值，要和税率相差无几，比如企业税率25%，那么这pp_tax的值不能离25太远
     pp_tax = round(V_tax * 100 / (V_tax+V0), 1)
-    pp_rd = round(V_rd / pb, 2)
-    pp_min = round(V_min / pb, 2)
     # 未来10年总营业增速
     dpd_V = dpd_value_stock(roe_mv, OPM, opm_coef)
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
-    next_V0 = V_min
+    next_V0 = V0
     total_share = code_info['total_share'] * 10000
     LP = round(next_V0 / 2 * code_info['adj_factor'] * normal_equity / total_share, 2)
     MP = round(next_V0 * code_info['adj_factor'] * normal_equity / total_share, 2)
@@ -244,7 +236,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
     odds = win_return + lose_return
 
-    # print(pd.concat([code_info['adj_close'], equity_pctmv, roe, roe_mv, pp_min, pp, pp0, op_pct, rev_pctmv, income_pctmv, total_assets_pctmv, total_turn_pctmv, LP, MP, HP, win_return, lose_return, odds], axis=1))
+    # print(pd.concat([code_info['adj_close'], equity_pctmv, roe, roe_rd_mv, roe_mv,  pp, pp0, pp_tax, op_pct, rev_pctmv, income_pctmv, total_assets_pctmv, total_turn_pctmv, LP, MP, HP, win_return, lose_return, odds], axis=1))
     # os.ex
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
@@ -308,8 +300,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     pp.name = 'pp'
     pp0.name = 'pp0'
     pp_tax.name = 'pp_tax'
-    pp_rd.name = 'pp_rd'
-    pp_min.name = 'pp_min'
     cash_gap.name = 'cash_gap'
 
     roe.name = 'roe'
@@ -323,6 +313,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dyr.name = 'dyr'
     receiv_income.name = 'receiv_income'
     V.name = 'V'
+    V_tax.name = 'V_tax'
     OPM.name = 'OPM'
     dpd_RR.name = 'dpd_RR'
     dpd_V.name = 'dpd_V'
@@ -365,12 +356,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     LP.name = 'LP'
     MP.name = 'MP'
     HP.name = 'HP'
-
     data = pd.concat(
-        [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv, income_rate,
-         roe,  roe_mv, pp, pp0, pp_tax, pp_rd,
+        [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, income_rate,
+         roe,  roe_mv, pp, pp0, pp_tax,
          holdernum, holdernum_inc,
-         V, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
+         V, V_tax, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
          pe, pb, i_debt, share_ratio, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
          receiv_pct, cash_act_in, cash_act_out, cash_gap, cash_gap_r,
@@ -486,7 +476,6 @@ def get_mean_of_complex_rate(v, window=10):
     if v.isna().all():
         return v
     v.dropna(0, inplace=True)
-    print('v=', v)
     v[v < -50] = -50
     v[v > 100] = 100
     v = v/100
