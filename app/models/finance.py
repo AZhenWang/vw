@@ -166,7 +166,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     liab_pct = balancesheets['total_liab'].pct_change()*100
     liab_pctmv = get_mean_of_complex_rate(liab_pct)
     income_pct = incomes['n_income'].pct_change() * 100
-    tax_payable_pct[tax_payable_pct > 50] = 50
+    tax_payable_pct[tax_payable_pct > 100] = 100
     tax_payable_pct[tax_payable_pct < -50] = -50
     tax_payable_pctmv = get_mean_of_complex_rate(tax_payable_pct)
     rev_pctmv = get_mean_of_complex_rate(rev_pct)
@@ -183,16 +183,16 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     opm_coef = get_opm_coef(OPM)
     op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv-income_pctmv.shift()], axis=1).min(axis=1)
     op_pct[op_pct > 30] = 30
-    op_pct[op_pct < -50] = -50
+    op_pct[op_pct < -30] = -30
     total_mv = round(code_info['total_mv'] * 10000, 2)
     roe = round(incomes['n_income_attr_p'] * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe[roe > 30] = 30
-    roe[roe < -50] = -50
+    roe[roe < -30] = -30
 
     roe_std = round(get_rolling_std(roe, window=10), 2)
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
-    normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr']
+    normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - goodwill
     pb = total_mv / normal_equity
     roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe_rd[roe_rd > 30] = 30
@@ -235,6 +235,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     next_V0 = V
     total_share = code_info['total_share'] * 10000
+
     LP = round(next_V0 / 2 * code_info['adj_factor'] * normal_equity / total_share, 2)
     MP = round(next_V0 * code_info['adj_factor'] * normal_equity / total_share, 2)
     HP = round(next_V0 * 2 * code_info['adj_factor'] * normal_equity / total_share, 2)
@@ -244,8 +245,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
     odds = win_return + lose_return
 
-    # print(pd.concat([code_info['adj_close'], pp, pp_adj, roe_rd, roe_mv, adj_roe, LP, MP, HP, win_return, lose_return, odds], axis=1))
-    # os.ex
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
     sale_rate.fillna(method='backfill', inplace=True)
@@ -269,7 +268,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dyr_or = round(cash_divs * 100 / incomes['revenue'], 2)
     dyr_mean = round(get_mean_of_complex_rate(dyr), 2)
     money_cap = round(balancesheets['money_cap'] * 100 / total_assets)
-    holdernum_inc = get_mean_of_complex_rate(holdernum.pct_change()*100)
+    holdernum_inc = round(holdernum.pct_change()*100, 1)
     # holdernum_inc = round(get_ratio(holdernum), 2)
 
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
