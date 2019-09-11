@@ -12,14 +12,14 @@ def execute(start_date='', end_date=''):
     :return:
     """
     new_rows = pd.DataFrame(columns=['code_id', 'comp_type', 'end_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc',
-        'roe', 'roe_mv', 'roe_std', 'op_pct',  'mix_op_diff',
-        'V', 'V_tax', 'dpd_V', 'pp', 'pp0', 'pp_tax', 'dpd_RR',
+        'roe', 'roe_adj', 'roe_mv', 'roe_std', 'op_pct',  'mix_op_diff',
+        'V', 'V_adj', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_tax', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'dyr', 'dyr_or', 'dyr_mean',
         'freecash_mv', 'cash_gap', 'cash_gap_r',  'receiv_pct',
         'equity_pct', 'fix_asset_pct', 'rev_pct',
-        'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio',
+        'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio', 'cash_act_in', 'cash_act_out', 'cash_act_rate',
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
         'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv', 'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
         'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds', 'adj_factor',
@@ -27,13 +27,13 @@ def execute(start_date='', end_date=''):
 
     # codes = DB.get_code_list(list_status='')
     # code_ids = codes['code_id']
-    code_ids = range(1, 500)
-    # code_ids = [132, 161, 2772, 2020]
+    # code_ids = range(1, 500)
+    code_ids = range(2920, 3670)
+    # code_ids = [214]
     for code_id in code_ids:
-        DB.delete_code_logs(code_id, tablename='fina_recom_logs')
+        # DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
-        logs.drop(['V_tax'], axis=1, inplace=True)
         logs.dropna(inplace=True)
         logs.reset_index(inplace=True, drop=True)
 
@@ -46,9 +46,10 @@ def execute(start_date='', end_date=''):
             # 先判断这个企业是不是历史表现良好
             flag = 0
             if log['rev_pctmv'] > 10 and log['liab_pctmv'] < log['rev_pctmv'] * 1.5 \
-                    and log['equity_pctmv'] > 18 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 18 and log['tax_payable_pctmv'] > 5 \
+                    and log['equity_pctmv'] > 18 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 10 and log['tax_payable_pctmv'] > 5 \
                     and log['receiv_pct'] < 20 and log['Z'] > 1.2 \
-                    and log['roe_mv'] > 2*log['roe_std'] and log['roe_mv'] > 10:
+                    and log['roe_mv'] > 2*log['roe_std'] and log['roe_mv'] > 12\
+                    and log['cash_act_in'] > 8:
                 flag = 1
 
             logs.at[index, 'flag'] = flag

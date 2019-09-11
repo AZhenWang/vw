@@ -16,9 +16,10 @@ def execute(start_date='', end_date=''):
     # codes = DB.get_latestopendays_code_list(
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
-    new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
-    # code_ids = [132, 161, 2772, 2020]
-    code_ids = range(2920, 3789)
+    # new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
+    # code_ids = [132, 2, 214, 161, 2772]
+    code_ids = range(2920, 3670)
+    # code_ids = range(1, 500)
     for ci in code_ids:
         print('code_id=', ci)
         Fina.delete_logs_by_end_date(ci, start_date=start_date, end_date=end_date, tablename='fina_sys')
@@ -27,12 +28,13 @@ def execute(start_date='', end_date=''):
             continue
 
         data = fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs)
+        if data.empty:
+            continue
         data['comp_type'] = incomes.iloc[0]['comp_type']
         data['code_id'] = ci
         data['end_date'] = data.index
-        data['f_ann_date'] = data.f_ann_date
         data[data.isin([np.inf, -np.inf])] = np.nan
-        new_rows = pd.concat([new_rows, data.reset_index(drop=True)], sort=False)
-    if not new_rows.empty:
-        new_rows.to_sql('fina_sys', DB.engine, index=False, if_exists='append', chunksize=1000)
+        # new_rows = pd.concat([new_rows, data.reset_index(drop=True)], sort=False)
+        if not data.empty:
+            data.to_sql('fina_sys', DB.engine, index=False, if_exists='append', chunksize=1000)
 

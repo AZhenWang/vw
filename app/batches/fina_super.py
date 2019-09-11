@@ -20,8 +20,9 @@ def execute(start_date='', end_date=''):
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
     new_rows = pd.DataFrame(columns=fields_map['fina_super'])
-    # code_ids = [132]
-    code_ids = range(1, 500)
+    # code_ids = [214]
+    code_ids = range(2920, 3670)
+    # code_ids = range(1, 500)
     for code_id in code_ids:
         print('code_id=', code_id)
         Fina.delete_fina_super_logs(code_id, start_date=start_date, end_date=end_date)
