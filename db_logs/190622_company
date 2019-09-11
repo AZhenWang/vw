@@ -520,9 +520,9 @@ create table fina_super (
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
    index(code_id),
-   index(end_date),
-   CONSTRAINT symbol UNIQUE KEY `unique_code_date`( `code_id`, `date_id`)
+   index(end_date)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'动态跟踪比较股票价格和价值';
+
 
 create table express (
    id int not null auto_increment,

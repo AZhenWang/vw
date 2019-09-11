@@ -21,6 +21,7 @@ def execute(start_date='', end_date=''):
     # code_ids = codes['code_id']
     new_rows = pd.DataFrame(columns=fields_map['fina_super'])
     # code_ids = [214]
+    # code_ids = [214, 2]
     code_ids = range(2920, 3670)
     # code_ids = range(1, 500)
     for code_id in code_ids:
@@ -30,7 +31,7 @@ def execute(start_date='', end_date=''):
                                     end_date_type='%1231%')
         dailys = DB.get_code_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='daily')
         logs['report_adj_factor'] = logs['adj_factor']
-        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LP', 'MP', 'HP', 'pp0', 'roe_mv', 'report_adj_factor']].set_index('f_ann_date', drop=False), on='cal_date')
+        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LP', 'MP', 'HP', 'roe_mv', 'report_adj_factor']].set_index('f_ann_date', drop=False), on='cal_date')
         base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor', 'total_mv']], on='date_id')
         base.fillna(method='ffill', inplace=True)
         base.dropna(inplace=True)
@@ -106,7 +107,7 @@ def execute(start_date='', end_date=''):
         data['basis'] = basis
         data[data.isin([np.inf, -np.inf])] = np.nan
         data.dropna(inplace=True)
-        new_rows = pd.concat([new_rows, data.reset_index(drop=True)], sort=False)
-    if not new_rows.empty:
-        new_rows.to_sql('fina_super', DB.engine, index=False, if_exists='append', chunksize=1000)
+        # new_rows = pd.concat([new_rows, data.reset_index(drop=True)], sort=False)
+        if not data.empty:
+            data.to_sql('fina_super', DB.engine, index=False, if_exists='append', chunksize=1000)
 
