@@ -196,7 +196,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     pb = total_mv / normal_equity
     roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe_rd[roe_rd > 30] = 30
-    roe_rd[roe_rd < -50] = -50
+    roe_rd[roe_rd < -100] = -100
     roe_rd_mv = get_mean_of_complex_rate(roe_rd, window=10)
 
     # roe_mv = get_mean_of_complex_rate(roe, window=10)
@@ -206,6 +206,19 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     for i in range(3, len(roe_rd)):
         roe_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 8) * (1 + roe_mv.iloc[i - 1]) ** (7 / 8) - 1
     roe_mv = round(roe_mv * 100, 2)
+    roe_adj = round(roe_mv - roe_std, 2)
+
+    # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
+    roe_sale = round((incomes['operate_profit']) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
+    roe_sale[roe_sale > 30] = 30
+    roe_sale[roe_sale < -100] = -100
+
+    roe_sale_mv = pd.Series(index=balancesheets.index)
+    roe_sale_mv.fillna(0, inplace=True)
+    roe_sale_mv.iloc[2] = roe_sale.iloc[2] / 100
+    for i in range(3, len(roe_rd)):
+        roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 8) * (1 + roe_sale_mv.iloc[i - 1]) ** (7 / 8) - 1
+    roe_sale_mv = round(roe_sale_mv * 100, 2)
 
     libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
     i_debt = round(libwithinterest * 100 / total_assets, 2)
@@ -215,17 +228,20 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_act_in = get_mv_pct(cashflows['c_inf_fr_operate_a'].pct_change() * 100)
     cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
-    roe_adj = round(roe_mv * cash_act_rate, 2)
+
 
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
-    V_adj = value_stock(roe_mv, cash_act_in.diff(), OPM, opm_coef)
+    V_adj = value_stock2(roe_adj,  OPM, opm_coef)
+    V_sale = value_stock2(roe_sale_mv, OPM, opm_coef)
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
     total_turn_pctmv = round((rev_pctmv/ total_assets_pctmv).pct_change()*100, 2)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
-    # 赔率，不计算加速度
+    # 赔率，考虑roe_std波动
     pp_adj = round(V_adj / pb, 2)
+    # 赔率，基于可持续的主营业务
+    pp_sale = round(V_sale / pb, 2)
     # 税率验证：税的价值比总价值，要和税率相差无几，比如企业税率25%，那么这pp_tax的值不能离25太远
     pp_tax = round(V_tax * 100 / (V_tax + V_adj), 1)
     # 未来10年总营业增速
@@ -245,9 +261,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
     odds = win_return + lose_return
 
-    # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
-    sale_rate = round((incomes['operate_profit']) * 100 / incomes['revenue'], 2)
-    sale_rate.fillna(method='backfill', inplace=True)
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
 
@@ -298,8 +311,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_gap.name = 'cash_gap'
 
     roe.name = 'roe'
+    roe_sale.name = 'roe_sale'
     roe_mv.name = 'roe_mv'
     roe_adj.name = 'roe_adj'
+    roe_sale_mv.name = 'roe_sale_mv'
+
     ret.name = 'ret'
     em.name = 'em'
     income_rate.name = 'income_rate'
@@ -310,6 +326,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv_income.name = 'receiv_income'
     V.name = 'V'
     V_adj.name = 'V_adj'
+    V_sale.name = 'V_sale'
     V_tax.name = 'V_tax'
     OPM.name = 'OPM'
     dpd_RR.name = 'dpd_RR'
@@ -358,9 +375,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     HP.name = 'HP'
     data = pd.concat(
         [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, income_rate,
-         roe, roe_adj, roe_mv, pp, pp_adj, pp_tax,
+         roe, roe_adj, roe_sale, roe_mv, roe_sale_mv, pp, pp_adj, pp_sale, pp_tax,
          holdernum, holdernum_inc,
-         V, V_adj, V_tax, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
+         V, V_adj, V_sale, V_tax, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
          pe, pb, i_debt, share_ratio, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
          receiv_pct, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,

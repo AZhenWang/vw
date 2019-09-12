@@ -11,18 +11,24 @@ def execute(start_date='', end_date=''):
     :param end_date: 公告结束日期
     :return:
     """
-    new_rows = pd.DataFrame(columns=['code_id', 'comp_type', 'end_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc',
-        'roe', 'roe_adj', 'roe_mv', 'roe_std', 'op_pct',  'mix_op_diff',
-        'V', 'V_adj', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_tax', 'dpd_RR',
-        'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
-        'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
-        'dyr', 'dyr_or', 'dyr_mean',
-        'freecash_mv', 'cash_gap', 'cash_gap_r',  'receiv_pct',
-        'equity_pct', 'fix_asset_pct', 'rev_pct',
-        'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio', 'cash_act_in', 'cash_act_out', 'cash_act_rate',
-        'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
-        'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv', 'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
-        'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds', 'adj_factor',
+    new_rows = pd.DataFrame(columns=['code_id', 'comp_type', 'end_date',
+                                     'f_ann_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc',
+                                     'roe', 'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'op_pct',
+                                     'mix_op_diff',
+                                     'V', 'V_adj', 'V_sale', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_tax',
+                                     'dpd_RR',
+                                     'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
+                                     'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
+                                     'dyr', 'dyr_or', 'dyr_mean',
+                                     'freecash_mv', 'cash_gap', 'cash_gap_r', 'receiv_pct', 'cash_act_in',
+                                     'cash_act_out', 'cash_act_rate',
+                                     'equity_pct', 'fix_asset_pct', 'rev_pct',
+                                     'income_rate', 'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct',
+                                     'def_tax_ratio',
+                                     'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
+                                     'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv',
+                                     'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
+                                     'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds', 'adj_factor',
         'flag', 'years', 'result', 'return_yearly'])
 
     # codes = DB.get_code_list(list_status='')
@@ -45,11 +51,12 @@ def execute(start_date='', end_date=''):
             index = logs.index[j]
             # 先判断这个企业是不是历史表现良好
             flag = 0
-            if log['rev_pctmv'] > 10 and log['liab_pctmv'] < log['rev_pctmv'] * 1.5 \
+            if log['rev_pct'] > 18 and log['rev_pctmv'] > 18 and log['liab_pctmv'] < log['rev_pctmv'] * 1.5 \
                     and log['equity_pctmv'] > 18 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 10 and log['tax_payable_pctmv'] > 5 \
                     and log['receiv_pct'] < 20 and log['Z'] > 1.2 \
-                    and log['roe_mv'] > 2*log['roe_std'] and log['roe_mv'] > 12\
-                    and log['cash_act_in'] > 8:
+                    and log['roe_mv'] > 12 \
+                    and log['roe_sale_mv'] > 15 \
+                    and log['cash_act_in'] > 8 :
                 flag = 1
 
             logs.at[index, 'flag'] = flag
