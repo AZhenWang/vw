@@ -102,8 +102,6 @@ def execute(start_date='', end_date=''):
                 logs.at[index, 'return_yearly'] = round((result**(1/years) - 1)*100, 2)
 
         new_rows = pd.concat([new_rows, logs], sort=False)
-    print(new_rows.drop(['created_at'], axis=1))
-    os.s
     if not new_rows.empty:
         new_rows.to_sql('fina_recom_logs', DB.engine, index=False, if_exists='append', chunksize=1000)
 
