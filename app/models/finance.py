@@ -202,8 +202,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # roe_mv = get_mean_of_complex_rate(roe, window=10)
     roe_mv = pd.Series(index=balancesheets.index)
     roe_mv.fillna(0, inplace=True)
-    roe_mv.iloc[2] = roe_rd.iloc[2] / 100
-    for i in range(3, len(roe_rd)):
+    roe_mv.iloc[0] = roe_rd.iloc[0] / 100
+    for i in range(1, len(roe_rd)):
         roe_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 8) * (1 + roe_mv.iloc[i - 1]) ** (7 / 8) - 1
     roe_mv = round(roe_mv * 100, 2)
     roe_adj = round(roe_mv - roe_std, 2)
@@ -215,8 +215,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     roe_sale_mv = pd.Series(index=balancesheets.index)
     roe_sale_mv.fillna(0, inplace=True)
-    roe_sale_mv.iloc[2] = roe_sale.iloc[2] / 100
-    for i in range(3, len(roe_rd)):
+    roe_sale_mv.iloc[0] = roe_sale.iloc[0] / 100
+    for i in range(1, len(roe_rd)):
         roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 8) * (1 + roe_sale_mv.iloc[i - 1]) ** (7 / 8) - 1
     roe_sale_mv = round(roe_sale_mv * 100, 2)
 
@@ -307,6 +307,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_gap_r.name = 'cash_gap_r'
     pp.name = 'pp'
     pp_adj.name = 'pp_adj'
+    pp_sale.name = 'pp_sale'
     pp_tax.name = 'pp_tax'
     cash_gap.name = 'cash_gap'
 
