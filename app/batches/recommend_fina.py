@@ -33,8 +33,8 @@ def execute(start_date='', end_date=''):
 
     # codes = DB.get_code_list(list_status='')
     # code_ids = codes['code_id']
-    # code_ids = range(1, 500)
-    code_ids = range(2920, 3670)
+    code_ids = range(1, 500)
+    # code_ids = range(2920, 3670)
     # code_ids = [214]
     for code_id in code_ids:
         # DB.delete_code_logs(code_id, tablename='fina_recom_logs')
@@ -54,9 +54,14 @@ def execute(start_date='', end_date=''):
             if log['rev_pct'] > 18 and log['rev_pctmv'] > 18 and log['liab_pctmv'] < log['rev_pctmv'] * 1.5 \
                     and log['equity_pctmv'] > 18 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 10 and log['tax_payable_pctmv'] > 5 \
                     and log['receiv_pct'] < 20 and log['Z'] > 1.2 \
+                    and log['cash_act_in'] > 8 \
+                    and log['i_debt'] < 50 \
                     and log['roe_mv'] > 12 \
                     and log['roe_sale_mv'] > 15 \
-                    and log['cash_act_in'] > 8 :
+                    and log['pp_adj'] > 1\
+                    and log['pp'] > 1.3 \
+                    and log['pp_sale'] > 1.3 \
+                    and log['dpd_RR'] > 2:
                 flag = 1
 
             logs.at[index, 'flag'] = flag
