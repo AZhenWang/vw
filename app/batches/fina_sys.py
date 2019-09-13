@@ -17,9 +17,10 @@ def execute(start_date='', end_date=''):
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
     # new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
-    # code_ids = [3045, 3296]
-    code_ids = range(2000, 3670)
+    # code_ids = [2, 161]
+    # code_ids = range(2000, 3670)
     # code_ids = range(1, 500)
+    code_ids = range(500, 2000)
     for ci in code_ids:
         print('code_id=', ci)
         Fina.delete_logs_by_end_date(ci, start_date=start_date, end_date=end_date, tablename='fina_sys')
