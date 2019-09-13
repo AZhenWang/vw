@@ -12,7 +12,7 @@ def execute(start_date='', end_date=''):
     :return:
     """
     new_rows = pd.DataFrame(columns=['code_id', 'comp_type', 'end_date',
-                                     'f_ann_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc',
+                                     'f_ann_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc', 'holder_unit',
                                      'roe', 'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'op_pct',
                                      'mix_op_diff',
                                      'V', 'V_adj', 'V_sale', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_tax',
@@ -35,7 +35,8 @@ def execute(start_date='', end_date=''):
     # code_ids = codes['code_id']
     code_ids = range(1, 500)
     # code_ids = range(2920, 3670)
-    # code_ids = [3296]
+    # code_ids = [range(1, 500), range(2920, 3670)]
+    # code_ids = [132]
     for code_id in code_ids:
         # DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
@@ -46,35 +47,42 @@ def execute(start_date='', end_date=''):
         Y = logs['adj_close']
         point_args = np.diff(np.where(np.diff(Y) > 0, 0, 1))
         logs = logs.join(pd.Series(point_args, name='point').shift())
-        for j in range(1, len(logs)):
+        for j in range(len(logs)):
             log = logs.iloc[j]
-            pre_log = logs.iloc[j-1]
             index = logs.index[j]
             # 先判断这个企业是不是历史表现良好
             flag = 0
 
             if log['liab_pctmv'] < log['rev_pctmv'] * 1.5 \
                     and log['equity_pctmv'] > 18 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 10 and log['tax_payable_pctmv'] > 5 \
-                    and log['receiv_pct'] < 20 and log['Z'] > 1.2 \
+                    and log['receiv_pct'] < 20 and log['Z'] > 0.8 \
                     and log['cash_act_in'] > 8 \
                     and log['i_debt'] < 50 \
                     and log['roe_mv'] > 12 \
-                    and log['roe_sale_mv'] > 15:
+                    and log['roe_sale_mv'] > 15\
+                    and log['IER'] > 10:
 
                 flag = 1
             # 再看这个企业的业务是不是在突飞猛进
             step = 0
-            if log['roe_sale'] > log['roe_sale_mv']\
-                    and log['roe_mv'] > pre_log['roe_mv']\
-                    and log['rev_pct'] > 18\
-                    and log['rev_pctmv'] > 18 :
+            if j >= 1:
+                pre_roe = logs.iloc[j-1]['roe']
+                pre_roe_sale = logs.iloc[j-1]['roe_sale']
+            else:
+                pre_roe = log['roe_mv']
+                pre_roe_sale = log['roe_sale_mv']
+
+            if (log['roe_sale'] >= log['roe_sale_mv'] or log['roe_sale'] >= pre_roe_sale)\
+                    and (log['roe'] >= log['roe_mv'] or log['roe'] >= pre_roe)\
+                    and log['rev_pct'] >= 18\
+                    and log['equity_pct'] >= 18:
                 step = 1
 
             # 三看年报性价比
             nice = 0
             if log['pp_adj'] > 1\
                     and log['pp'] > 1.3 \
-                    and log['pp_sale'] > 1.3 \
+                    and log['pp_sale'] > 1.5 \
                     and log['dpd_RR'] > 2:
                 nice = 1
             elif log['pp_adj'] <= 0.6 \
@@ -86,6 +94,7 @@ def execute(start_date='', end_date=''):
             logs.at[index, 'flag'] = flag
             logs.at[index, 'step'] = step
             logs.at[index, 'nice'] = nice
+            logs.at[index, 'holder_unit'] = round(log['total_mv'] / log['holdernum'], 1)
 
             today = logs.iloc[j]['end_date']
             later_logs = logs[logs.end_date > today]
@@ -102,6 +111,8 @@ def execute(start_date='', end_date=''):
                 logs.at[index, 'return_yearly'] = round((result**(1/years) - 1)*100, 2)
 
         new_rows = pd.concat([new_rows, logs], sort=False)
+        # print(new_rows[['end_date', 'adj_close', 'holder_unit', 'odds', 'rev_pct', 'equity_pct', 'roe', 'roe_mv', 'roe_sale', 'roe_sale_mv', 'flag', 'step', 'nice', 'result', 'years', 'return_yearly']])
+        # os.ex
     if not new_rows.empty:
         new_rows.to_sql('fina_recom_logs', DB.engine, index=False, if_exists='append', chunksize=1000)
 
