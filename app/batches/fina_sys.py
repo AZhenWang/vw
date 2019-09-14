@@ -20,7 +20,8 @@ def execute(start_date='', end_date=''):
     # code_ids = [2, 161]
     # code_ids = range(2000, 3670)
     # code_ids = range(1, 500)
-    code_ids = range(500, 2000)
+    code_ids = range(1230, 2000)
+
     for ci in code_ids:
         print('code_id=', ci)
         Fina.delete_logs_by_end_date(ci, start_date=start_date, end_date=end_date, tablename='fina_sys')
