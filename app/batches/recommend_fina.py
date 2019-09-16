@@ -54,6 +54,7 @@ def execute(start_date='', end_date=''):
         logs = logs.join(pd.Series(point_args, name='point').shift())
         for j in range(len(logs)):
             log = logs.iloc[j]
+            print('code_id=', log['code_id'])
             index = logs.index[j]
             # 先判断这个企业是不是历史表现良好
             flag = 0
