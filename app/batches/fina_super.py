@@ -23,7 +23,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [2]
     # code_ids = [2942]
     # code_ids = range(2920, 3670)
-    code_ids = range(1, 3670)
+    code_ids = range(1, 3667)
     for code_id in code_ids:
         print('code_id=', code_id)
         Fina.delete_fina_super_logs(code_id, start_date=start_date, end_date=end_date)
@@ -33,8 +33,8 @@ def execute(start_date='', end_date=''):
                                     end_date_type='%1231%')
         dailys = DB.get_code_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='daily')
         logs['report_adj_factor'] = logs['adj_factor']
-        logs['report_total_mv'] = logs['total_mv']
-        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LP', 'MP', 'HP', 'roe_mv', 'report_adj_factor', 'V', 'V_adj', 'V_sale', 'dpd_V', 'pe', 'pb', 'report_total_mv']].set_index('f_ann_date', drop=False), on='cal_date')
+        logs['report_adj_close'] = logs['adj_close']
+        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LP', 'MP', 'HP', 'roe_mv', 'report_adj_factor', 'V', 'V_adj', 'V_sale', 'dpd_V', 'pe', 'pb', 'report_adj_close']].set_index('f_ann_date', drop=False), on='cal_date')
         base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor', 'total_mv']], on='date_id')
         base.fillna(method='ffill', inplace=True)
         base.dropna(inplace=True)
@@ -89,8 +89,8 @@ def execute(start_date='', end_date=''):
         data['sell_p1'] = round(adj_HP / 1.2, 2)
         data['sell_p2'] = round(adj_HP / 1.1, 2)
 
-        pb = base['pb'] * base['total_mv'] / base['report_total_mv']
-        pe = base['pe'] * base['total_mv'] / base['report_total_mv']
+        pb = base['pb'] * adj_close / base['report_adj_close']
+        pe = base['pe'] * adj_close / base['report_adj_close']
         data['pp'] = round(base['V'] / pb, 2)
         data['pp_adj'] = round(base['V_adj'] / pb, 2)
         data['pp_sale'] = round(base['V_sale'] / pb, 2)
