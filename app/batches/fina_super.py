@@ -20,21 +20,27 @@ def execute(start_date='', end_date=''):
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
     new_rows = pd.DataFrame(columns=fields_map['fina_super'])
-    # code_ids = [214]
-    # code_ids = [214, 2]
-    code_ids = range(2920, 3670)
-    # code_ids = range(1, 500)
+    # code_ids = [2]
+    # code_ids = [2942]
+    # code_ids = range(2920, 3670)
+    code_ids = range(1, 3670)
     for code_id in code_ids:
         print('code_id=', code_id)
         Fina.delete_fina_super_logs(code_id, start_date=start_date, end_date=end_date)
         logs = Fina.get_report_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
+        recom_logs = Fina.get_report_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='fina_recom_logs',
+                                    end_date_type='%1231%')
         dailys = DB.get_code_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='daily')
         logs['report_adj_factor'] = logs['adj_factor']
-        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LP', 'MP', 'HP', 'roe_mv', 'report_adj_factor']].set_index('f_ann_date', drop=False), on='cal_date')
+        logs['report_total_mv'] = logs['total_mv']
+        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LP', 'MP', 'HP', 'roe_mv', 'report_adj_factor', 'V', 'V_adj', 'V_sale', 'dpd_V', 'pe', 'pb', 'report_total_mv']].set_index('f_ann_date', drop=False), on='cal_date')
         base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor', 'total_mv']], on='date_id')
         base.fillna(method='ffill', inplace=True)
         base.dropna(inplace=True)
+        base = base.join(recom_logs[['f_ann_date', 'flag', 'step', 'nice', 'v_inc', 'holdernum_2inc']].set_index('f_ann_date'),
+                         on='cal_date')
+        base.fillna(method='ffill', inplace=True)
         base = base[base['cal_date'] >= start_date]
 
         d_dates = pd.Series(index=base.index)
@@ -82,7 +88,22 @@ def execute(start_date='', end_date=''):
         data['buy_p2'] = round(adj_LP / 0.9, 2)
         data['sell_p1'] = round(adj_HP / 1.2, 2)
         data['sell_p2'] = round(adj_HP / 1.1, 2)
+
+        pb = base['pb'] * base['total_mv'] / base['report_total_mv']
+        pe = base['pe'] * base['total_mv'] / base['report_total_mv']
+        data['pp'] = round(base['V'] / pb, 2)
+        data['pp_adj'] = round(base['V_adj'] / pb, 2)
+        data['pp_sale'] = round(base['V_sale'] / pb, 2)
+        data['dpd_RR'] = round(base['dpd_V'] / pe, 2)
+
+        data['flag'] = base['flag']
+        data['step'] = base['step']
+
+        data['v_inc'] = base['v_inc']
+        data['holdernum_2inc'] = base['holdernum_2inc']
+
         position = pd.Series(index=base.index)
+        nice = pd.Series(index=base.index)
         for i in range(len(base)):
             if data.iloc[i]['adj_high'] >= data.iloc[i]['adj_HP']:
                 position.iloc[i] = 3
@@ -99,12 +120,22 @@ def execute(start_date='', end_date=''):
             else:
                 position.iloc[i] = 0
 
+            if (data.iloc[i]['pp'] + data.iloc[i]['pp_sale']) > 3 and data.iloc[i]['pp_adj'] > 1 and data.iloc[i]['dpd_RR'] > 2:
+                nice.iloc[i] = 1
+            elif (data.iloc[i]['pp'] + data.iloc[i]['pp_sale']) < 1 and data.iloc[i]['pp_adj'] < 0.5 and data.iloc[i]['dpd_RR'] < 1:
+                nice.iloc[i] = -1
+            else:
+                nice.iloc[i] = 0
+
+            data['nice'] = nice
+
         basis = position.diff()
         basis[basis == 0] = np.nan
         basis.fillna(method='ffill', inplace=True)
 
         data['position'] = position
         data['basis'] = basis
+
         data[data.isin([np.inf, -np.inf])] = np.nan
         data.dropna(inplace=True)
         # new_rows = pd.concat([new_rows, data.reset_index(drop=True)], sort=False)

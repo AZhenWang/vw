@@ -77,6 +77,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         return nan_series
     incomes.fillna(method='backfill', inplace=True)
     incomes.fillna(value=0, inplace=True)
+    balancesheets.fillna(method='ffill', inplace=True)
+    balancesheets.fillna(method='backfill', inplace=True)
     balancesheets.fillna(value=0, inplace=True)
     cashflows.fillna(value=0, inplace=True)
     fina_indicators.fillna(value=0, inplace=True)
@@ -120,7 +122,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     # 调整折旧费用
     gross = incomes['revenue'] - incomes['oper_cost']
-    dpba_of_assets = round(cashflows['depr_fa_coga_dpba'] * 100 / balancesheets['fix_assets'], 2)
+    fix_assets = balancesheets['fix_assets'].fillna(method='ffill')
+    dpba_of_assets = round(cashflows['depr_fa_coga_dpba'] * 100 / fix_assets, 2)
     dpba_of_gross = round(cashflows['depr_fa_coga_dpba'] * 100 / gross, 2)
 
     # 企业财务造假的原因在于普通人只看净利润，也就是每股盈利，而不关注净利润的来源，是来源于把一些费用从盈余项目扣除，还是真正的到手的利润，
@@ -135,8 +138,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     rd_exp = fina_indicators['rd_exp']
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
     pure_equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
-    equity_pct = round((pure_equity - pure_equity.shift() + cash_divs) * 100/pure_equity.shift(), 1)
-    fix_asset_pct = round(balancesheets['fix_assets'].pct_change()*100, 2)
+    equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100/pure_equity.shift(), 1)
+    fix_asset_pct = round(fix_assets.pct_change()*100, 2)
     freecash = cashflows['free_cashflow'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 2)
     freecash_mv = round(get_mean_of_complex_rate(freecash_rate, window=10), 1)
@@ -160,7 +163,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     ebit_mv_short_pct = round((ebit_mv_short - ebit_mv_short.shift()) * 100 / ebit_mv_short.shift(), 2)
     ebit_mv_pct = round((ebit_mv - ebit_mv.shift()) * 100 / ebit_mv.shift(), 2)
     mix_op_diff = ebit_mv_short_pct - ebit_mv_pct
-
+    print('ss1=')
     # 收入，利润，负债，税的长期率
     rev_pct = get_rev_pct(incomes['revenue'], cash_divs)
     liab_pct = balancesheets['total_liab'].pct_change()*100
@@ -188,7 +191,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe = round(incomes['n_income_attr_p'] * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe[roe > 30] = 30
     roe[roe < -30] = -30
-
+    print('ss1=')
     roe_std = round(get_rolling_std(roe, window=10), 2)
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
@@ -204,7 +207,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_mv.fillna(0, inplace=True)
     roe_mv.iloc[0] = roe_rd.iloc[0] / 100
     for i in range(1, len(roe_rd)):
-        roe_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 8) * (1 + roe_mv.iloc[i - 1]) ** (7 / 8) - 1
+        roe_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 4) * (1 + roe_mv.iloc[i - 1]) ** (3 / 4) - 1
     roe_mv = round(roe_mv * 100, 2)
     roe_adj = round(roe_mv - roe_std, 2)
 
@@ -217,7 +220,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_sale_mv.fillna(0, inplace=True)
     roe_sale_mv.iloc[0] = roe_sale.iloc[0] / 100
     for i in range(1, len(roe_rd)):
-        roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 8) * (1 + roe_sale_mv.iloc[i - 1]) ** (7 / 8) - 1
+        roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 4) * (1 + roe_sale_mv.iloc[i - 1]) ** (3 / 4) - 1
     roe_sale_mv = round(roe_sale_mv * 100, 2)
 
     libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
@@ -229,7 +232,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
 
-
+    print('ss2=')
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
     V_adj = value_stock2(roe_adj,  OPM, opm_coef)
@@ -248,7 +251,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dpd_V = dpd_value_stock(roe_mv, OPM, opm_coef)
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
-
+    print('ss3=')
     next_V0 = V
     total_share = code_info['total_share'] * 10000
 
@@ -263,7 +266,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
-
 
     # 普通股在资本总额中的占比
     share_ratio = round(total_mv * 100 / (balancesheets['oth_eqt_tools_p_shr'] + balancesheets['bond_payable'] + total_mv), 1)
@@ -283,7 +285,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     money_cap = round(balancesheets['money_cap'] * 100 / total_assets)
     holdernum_inc = round(holdernum.pct_change()*100, 1)
     # holdernum_inc = round(get_ratio(holdernum), 2)
-
     # 破产风险Z=0.717*X1 + 0.847*X2 + 3.11*X3 + 0.420*X4 + 0.998*X5，低于1.2：即将破产，1.2-2.9: 灰色区域，大于2.9:没有破产风险
     # X1= 营运资本/总资产
     X1 = round(oper_fun / total_assets, 2)
@@ -388,8 +389,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          rev_pct, total_turn_pctmv, tax_pct, income_pct,
          rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv, equity_pctmv, fix_asset_pctmv,
          LP, MP, HP, win_return, lose_return, odds,
-         ], axis=1)
-
+         ], axis=1, sort=True)
     return data
 
 def get_right_mean(v, l=0.9):

@@ -38,6 +38,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [range(1, 500), range(2920, 3670)]
     code_ids = range(1, 3668)
     # code_ids = range(3559, 3670)
+    # code_ids = [2]
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
@@ -87,14 +88,12 @@ def execute(start_date='', end_date=''):
 
             # 三看年报性价比
             nice = 0
-            if log['pp_adj'] > 0.5\
-                    and log['pp'] > 1.3 \
-                    and log['pp_sale'] > 1.5 \
+            if log['pp_adj'] > 1\
+                    and (log['pp'] + log['pp_sale']) > 3 \
                     and log['dpd_RR'] > 2:
                 nice = 1
-            elif log['pp_adj'] <= 0.5 \
-                or log['pp'] < 1 \
-                or log['pp_sale'] < 1 \
+            elif log['pp_adj'] < 0.5 \
+                or (log['pp'] + log['pp_sale']) < 1 \
                 or log['dpd_RR'] < 1:
                 nice = -1
 
