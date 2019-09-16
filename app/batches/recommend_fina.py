@@ -36,9 +36,9 @@ def execute(start_date='', end_date=''):
     # code_ids = range(1, 500)
     # code_ids = range(2920, 3670)
     # code_ids = [range(1, 500), range(2920, 3670)]
-    code_ids = range(1, 3670)
+    # code_ids = range(1, 3670)
     # code_ids = [2942, 2144, 3044, 2, 1768]
-    # code_ids = [878]
+    code_ids = [3558]
     for code_id in code_ids:
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
@@ -46,12 +46,14 @@ def execute(start_date='', end_date=''):
         logs['price_pct'] = round(logs['adj_close'].pct_change() * 100, 2)
         logs['v_inc'] = round(logs['MP'].pct_change() * 100, 2)
         logs.dropna(inplace=True)
+        print(logs)
         logs.reset_index(inplace=True, drop=True)
         audits = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_audit')
         logs = logs.join(audits[['end_date', 'audit_result', 'audit_fees', 'audit_agency']].set_index('end_date'), on='end_date')
         Y = logs['adj_close']
         point_args = np.diff(np.where(np.diff(Y) > 0, 0, 1))
         logs = logs.join(pd.Series(point_args, name='point').shift())
+        print(logs)
         for j in range(len(logs)):
             log = logs.iloc[j]
             print('code_id=', log['code_id'])
@@ -123,7 +125,7 @@ def execute(start_date='', end_date=''):
                 logs.at[index, 'result'] = result
                 logs.at[index, 'years'] = years
                 logs.at[index, 'return_yearly'] = round((result**(1/years) - 1)*100, 2)
-
+                print(log['total_mv'], log['holdernum'], today_close)
         new_rows = pd.concat([new_rows, logs], sort=False)
         # print(new_rows[['end_date', 'adj_close', 'holder_unit', 'price_pct', 'holdernum_inc', 'holdernum_2inc', 'flag', 'step', 'nice', 'result', 'years', 'return_yearly', ]])
         # os.ex
