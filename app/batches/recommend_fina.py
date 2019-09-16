@@ -107,7 +107,7 @@ def execute(start_date='', end_date=''):
             logs.at[index, 'nice'] = nice
             logs.at[index, 'holder_unit'] = holder_unit
             logs.at[index, 'price_pct'] = log['price_pct']
-            logs.at[index, 'holdernum_2inc'] = holdernum_2inc
+            logs.at[index, 'holdernum_2inc'] = round(holdernum_2inc, 1)
             logs.at[index, 'v_inc'] = log['v_inc']
 
             today = logs.iloc[j]['end_date']
