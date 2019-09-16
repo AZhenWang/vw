@@ -127,7 +127,7 @@ def execute(start_date='', end_date=''):
         new_rows = pd.concat([new_rows, logs], sort=False)
         # print(new_rows[['end_date', 'adj_close', 'holder_unit', 'price_pct', 'holdernum_inc', 'holdernum_2inc', 'flag', 'step', 'nice', 'result', 'years', 'return_yearly', ]])
         # os.ex
-
+    new_rows[new_rows.isin([np.inf, -np.inf])] = np.nan
     if not new_rows.empty:
         new_rows.to_sql('fina_recom_logs', DB.engine, index=False, if_exists='append', chunksize=1000)
 
