@@ -32,14 +32,15 @@ def execute(start_date='', end_date=''):
     # start_date = '19990101'
     end_date = end_date
     # start_date = '20180101'
-    start_date = '20180801'
+    # start_date = '20160801'
     # end_date = '20190501'
 
-    # code_ids = [2772]
+    # code_ids = [1950]
     # code_ids = [2772, 521]
     # code_ids = [521]
     # code_ids = [8]
     # code_ids = range(100, 200)
+    code_ids = range(1, 3667)
     TTBS = ['monthly', 'weekly']
     # TTBS = ['weekly']
     # TTBS = ['monthly']
@@ -51,9 +52,9 @@ def execute(start_date='', end_date=''):
     start_date_id = trade_cal.iloc[0]['date_id']
     end_date_id = trade_cal.iloc[-1]['date_id']
     #
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
-    code_ids = codes['code_id']
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=244, date_id=trade_cal.iloc[0]['date_id'])
+    # code_ids = codes['code_id']
     # code_ids = [1949, 1895, 376]
     # code_ids = [2020, 1423,378, 530, 1895, 2087]
     # code_ids = [1988, 2422, 1979, 2020, 1423, 1949, 1895, 376, 378, 530]
