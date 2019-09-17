@@ -38,7 +38,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [range(1, 500), range(2920, 3670)]
     code_ids = range(1, 3668)
     # code_ids = range(3559, 3670)
-    # code_ids = [878]
+    # code_ids = [214, 2]
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
@@ -76,21 +76,26 @@ def execute(start_date='', end_date=''):
             if j >= 1:
                 pre_roe = logs.iloc[j-1]['roe']
                 pre_roe_sale = logs.iloc[j-1]['roe_sale']
+                pre_roe_sale_mv = logs.iloc[j - 1]['roe_sale_mv']
+                pre_roe_mv = logs.iloc[j - 1]['roe_mv']
             else:
                 pre_roe = log['roe_mv']
                 pre_roe_sale = log['roe_sale_mv']
+                pre_roe_sale_mv = log['roe_sale_mv']
+                pre_roe_mv = log['roe_mv']
 
-            if (log['roe_sale'] >= log['roe_sale_mv'] or log['roe_sale'] >= pre_roe_sale)\
-                    and (log['roe'] >= log['roe_mv'] or log['roe'] >= pre_roe)\
+            if (log['roe_sale'] >= log['roe_sale_mv'] or log['roe_sale'] >= pre_roe_sale or log['roe_mv'] > pre_roe_mv)\
+                    and (log['roe'] >= log['roe_mv'] or log['roe'] >= pre_roe or log['roe_sale_mv'] > pre_roe_sale_mv)\
                     and log['rev_pct'] >= 18\
-                    and log['cash_act_in'] >= 18:
+                    and log['income_pct'] >= 10 \
+                    and log['cash_act_in'] >= 10:
                 step = 1
 
             # 三看年报性价比
             nice = 0
             if log['pp_adj'] > 1\
                     and (log['pp'] + log['pp_sale']) > 3 \
-                    and log['dpd_RR'] > 2:
+                    and log['dpd_RR'] > 1.8:
                 nice = 1
             elif log['pp_adj'] < 0.5 \
                 or (log['pp'] + log['pp_sale']) < 1 \
