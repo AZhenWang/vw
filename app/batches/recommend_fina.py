@@ -38,7 +38,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [range(1, 500), range(2920, 3670)]
     code_ids = range(1, 3668)
     # code_ids = range(3559, 3670)
-    # code_ids = [214, 2]
+    # code_ids = [1372]
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
@@ -105,14 +105,13 @@ def execute(start_date='', end_date=''):
             holdernum_2inc = log['holdernum_inc']
             if j >= 1 and logs.iloc[j-1]['holdernum_inc'] * holdernum_2inc > 0:
                 holdernum_2inc += logs.iloc[j-1]['holdernum_inc']
-
             holder_unit = round(log['total_mv'] / log['holdernum'], 1)
             logs.at[index, 'flag'] = flag
             logs.at[index, 'step'] = step
             logs.at[index, 'nice'] = nice
             logs.at[index, 'holder_unit'] = holder_unit
             logs.at[index, 'price_pct'] = log['price_pct']
-            logs.at[index, 'holdernum_2inc'] = round(holdernum_2inc, 1)
+            logs.at[index, 'holdernum_2inc'] = holdernum_2inc
             logs.at[index, 'v_inc'] = log['v_inc']
 
             today = logs.iloc[j]['end_date']
