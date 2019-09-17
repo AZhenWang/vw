@@ -38,17 +38,17 @@ def execute(start_date='', end_date=''):
     # code_ids = [range(1, 500), range(2920, 3670)]
     code_ids = range(1, 3668)
     # code_ids = range(3559, 3670)
-    # code_ids = [2]
+    # code_ids = [878]
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
-        if logs.empty or logs.dropna(subset=['total_mv']).empty:
+        logs = logs.dropna(subset=['total_mv'])
+        if logs.empty:
             continue
         logs['price_pct'] = round(logs['adj_close'].pct_change() * 100, 2)
         logs['v_inc'] = round(logs['MP'].pct_change() * 100, 2)
-        logs.dropna(inplace=True)
         logs.reset_index(inplace=True, drop=True)
         audits = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_audit')
         logs = logs.join(audits[['end_date', 'audit_result', 'audit_fees', 'audit_agency']].set_index('end_date'), on='end_date')
@@ -83,7 +83,7 @@ def execute(start_date='', end_date=''):
             if (log['roe_sale'] >= log['roe_sale_mv'] or log['roe_sale'] >= pre_roe_sale)\
                     and (log['roe'] >= log['roe_mv'] or log['roe'] >= pre_roe)\
                     and log['rev_pct'] >= 18\
-                    and log['equity_pct'] >= 18:
+                    and log['cash_act_in'] >= 18:
                 step = 1
 
             # 三看年报性价比
