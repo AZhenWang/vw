@@ -20,8 +20,8 @@ def execute(start_date='', end_date=''):
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
     new_rows = pd.DataFrame(columns=fields_map['fina_super'])
-    # code_ids = [2]
-    # code_ids = [2942]
+    # code_ids = [214]
+    # code_ids = [2381, 2, 214]
     # code_ids = range(2920, 3670)
     code_ids = range(1, 3667)
     for code_id in code_ids:
@@ -34,15 +34,18 @@ def execute(start_date='', end_date=''):
         dailys = DB.get_code_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='daily')
         logs['report_adj_factor'] = logs['adj_factor']
         logs['report_adj_close'] = logs['adj_close']
-        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LP', 'MP', 'HP', 'roe_mv', 'report_adj_factor', 'V', 'V_adj', 'V_sale', 'dpd_V', 'pe', 'pb', 'report_adj_close']].set_index('f_ann_date', drop=False), on='cal_date')
+        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct', 'roe_mv', 'report_adj_factor', 'V', 'V_adj', 'V_sale', 'dpd_V', 'pe', 'pb', 'report_adj_close']].set_index('f_ann_date', drop=False), on='cal_date')
         base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor', 'total_mv']], on='date_id')
         base.fillna(method='ffill', inplace=True)
         base.dropna(inplace=True)
-        base = base.join(recom_logs[['f_ann_date', 'flag', 'step', 'nice', 'v_inc', 'holdernum_2inc']].set_index('f_ann_date'),
+        base = base.join(recom_logs[['f_ann_date', 'flag', 'step', 'nice', 'holdernum_2inc']].set_index('f_ann_date'),
                          on='cal_date')
         base.fillna(method='ffill', inplace=True)
         base = base[base['cal_date'] >= start_date]
 
+        adj_close = base['close'] * base['adj_factor']
+        adj_high = base['high'] * base['adj_factor']
+        adj_low = base['low'] * base['adj_factor']
         d_dates = pd.Series(index=base.index)
         for i in range(len(base)):
             sd = datetime.strptime(base.iloc[i]['f_ann_date'], '%Y%m%d')
@@ -50,20 +53,23 @@ def execute(start_date='', end_date=''):
             d_dates.iloc[i] = (ed-sd).days
 
         had_benefit = (1 + base['roe_mv'] /100 * d_dates / 365)
-        adj_close = base['close'] * base['adj_factor']
 
-        adj_LP = round(had_benefit * base['LP'] , 2)
-        LP = round(adj_LP / base['adj_factor'], 2)
+        adj_LLP = round(base['LLP'], 2)
+        adj_LP = round(base['LP'], 2)
         adj_MP = round(had_benefit * base['MP'], 2)
+        adj_HP = round(base['HP'], 2)
+        adj_HHP = round(base['HHP'], 2)
+
+        LP = round(adj_LP / base['adj_factor'], 2)
         MP = round(adj_MP / base['adj_factor'], 2)
-        adj_HP = round(had_benefit * base['HP'], 2)
         HP = round(adj_HP / base['adj_factor'], 2)
 
-        win_base = pd.concat([adj_HP, adj_close], axis=1).min(axis=1)
-        lose_base = pd.concat([adj_LP, adj_close], axis=1).min(axis=1)
-        win_return = round((adj_HP - adj_close) * 100 / win_base, 2)
-        lose_return = round((adj_LP - adj_close) * 100 / lose_base, 2)
-        odds = round(win_return + lose_return, 2)
+
+        # win_base = pd.concat([adj_HP, adj_close], axis=1).min(axis=1)
+        # lose_base = pd.concat([adj_LP, adj_close], axis=1).min(axis=1)
+        # win_return = round((adj_HP - adj_close) * 100 / win_base, 2)
+        # lose_return = round((adj_LP - adj_close) * 100 / lose_base, 2)
+        # odds = round(win_return + lose_return, 2)
 
         data = pd.DataFrame()
         data['end_date'] = base['end_date']
@@ -75,19 +81,30 @@ def execute(start_date='', end_date=''):
         data['LP'] = LP
         data['MP'] = MP
         data['HP'] = HP
+        data['adj_LLP'] = adj_LLP
         data['adj_LP'] = adj_LP
         data['adj_MP'] = adj_MP
         data['adj_HP'] = adj_HP
+        data['adj_HHP'] = adj_HHP
+        data['MP_pct'] = base['MP_pct']
+
+        LP_level = pd.concat([data['adj_LLP'], data['adj_LP']/0.9], axis=1)
+        HP_level = pd.concat([data['adj_HHP'], data['adj_HP']/1.1], axis=1)
+        LP_max = LP_level.max(axis=1)
+        LP_min = LP_level.min(axis=1)
+        HP_max = HP_level.max(axis=1)
+        HP_min = HP_level.min(axis=1)
+
+        win_base = pd.concat([HP_min, adj_close], axis=1).min(axis=1)
+        lose_base = pd.concat([LP_min, adj_close], axis=1).min(axis=1)
+        win_return = round((HP_min - adj_close) * 100 / win_base, 2)
+        lose_return = round((LP_min - adj_close) * 100 / lose_base, 2)
+        odds = round(win_return + lose_return, 2)
+
         data['adj_close'] = round(base['close'] * base['adj_factor'], 2)
-        data['adj_high'] = round(base['high'] * base['adj_factor'], 2)
-        data['adj_low'] = round(base['low'] * base['adj_factor'], 2)
         data['win_return'] = win_return
         data['lose_return'] = lose_return
         data['odds'] = odds
-        data['buy_p1'] = round(adj_LP / 0.8, 2)
-        data['buy_p2'] = round(adj_LP / 0.9, 2)
-        data['sell_p1'] = round(adj_HP / 1.2, 2)
-        data['sell_p2'] = round(adj_HP / 1.1, 2)
 
         pb = base['pb'] * adj_close / base['report_adj_close']
         pe = base['pe'] * adj_close / base['report_adj_close']
@@ -98,29 +115,27 @@ def execute(start_date='', end_date=''):
 
         data['flag'] = base['flag']
         data['step'] = base['step']
-
-        data['v_inc'] = base['v_inc']
         data['holdernum_2inc'] = base['holdernum_2inc']
 
         position = pd.Series(index=base.index)
         nice = pd.Series(index=base.index)
         for i in range(len(base)):
-            if data.iloc[i]['adj_high'] >= data.iloc[i]['adj_HP']:
+            if adj_high.iloc[i] >= HP_max.iloc[i]:
                 position.iloc[i] = 3
-            elif data.iloc[i]['adj_high'] >= data.iloc[i]['sell_p2']:
+            elif HP_min.iloc[i] <= adj_high.iloc[i] < HP_max.iloc[i]:
                 position.iloc[i] = 2
-            elif data.iloc[i]['adj_high'] >= data.iloc[i]['sell_p1']:
+            elif adj_MP.iloc[i] <= adj_high.iloc[i] < HP_min.iloc[i]:
                 position.iloc[i] = 1
-            elif data.iloc[i]['adj_low'] <= data.iloc[i]['adj_LP']:
+            elif adj_low.iloc[i] <= LP_min.iloc[i]:
                 position.iloc[i] = -3
-            elif data.iloc[i]['adj_low'] <= data.iloc[i]['buy_p2']:
+            elif LP_min.iloc[i] <= adj_low.iloc[i] < LP_max.iloc[i]:
                 position.iloc[i] = -2
-            elif data.iloc[i]['adj_low'] <= data.iloc[i]['buy_p1']:
+            elif LP_max.iloc[i] <= adj_low.iloc[i] < adj_MP.iloc[i]:
                 position.iloc[i] = -1
             else:
                 position.iloc[i] = 0
 
-            if (data.iloc[i]['pp'] + data.iloc[i]['pp_sale']) > 3 and data.iloc[i]['pp_adj'] > 1 and data.iloc[i]['dpd_RR'] > 2:
+            if (data.iloc[i]['pp'] + data.iloc[i]['pp_sale']) > 3 and data.iloc[i]['pp_adj'] > 1 and data.iloc[i]['dpd_RR'] > 1.8:
                 nice.iloc[i] = 1
             elif (data.iloc[i]['pp'] + data.iloc[i]['pp_sale']) < 1 and data.iloc[i]['pp_adj'] < 0.5 and data.iloc[i]['dpd_RR'] < 1:
                 nice.iloc[i] = -1

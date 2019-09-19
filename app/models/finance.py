@@ -185,12 +185,22 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     OPM = round(OPM, 2)
     opm_coef = get_opm_coef(OPM)
     op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv-income_pctmv.shift()], axis=1).min(axis=1)
-    op_pct[op_pct > 30] = 30
-    op_pct[op_pct < -30] = -30
+    op_pct[op_pct > 50] = 50
+    op_pct[op_pct < -50] = -50
     total_mv = round(code_info['total_mv'] * 10000, 2)
+
+    libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
+    i_debt = round(libwithinterest * 100 / total_assets, 2)
+    # 利息保障倍数
+    interst = pd.concat([fina_indicators['interst_income'], incomes['int_exp']], axis=1).max(axis=1)
+    IER = round((incomes['ebitda']) / (interst + 1), 2)
+    cash_act_in = get_mv_pct(cashflows['c_inf_fr_operate_a'].pct_change() * 100)
+    cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
+    cash_act_rate = round(cash_act_in / cash_act_out, 2)
+
     roe = round(incomes['n_income_attr_p'] * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
-    roe[roe > 30] = 30
-    roe[roe < -30] = -30
+    roe[roe > 50] = 50
+    roe[roe < -50] = -50
     print('ss1=')
     roe_std = round(get_rolling_std(roe, window=10), 2)
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
@@ -198,8 +208,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - goodwill
     pb = total_mv / normal_equity
     roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
-    roe_rd[roe_rd > 30] = 30
-    roe_rd[roe_rd < -100] = -100
+    roe_rd[roe_rd > 50] = 50
+    roe_rd[roe_rd < -50] = -50
     roe_rd_mv = get_mean_of_complex_rate(roe_rd, window=10)
 
     # roe_mv = get_mean_of_complex_rate(roe, window=10)
@@ -213,8 +223,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     roe_sale = round((incomes['operate_profit']) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
-    roe_sale[roe_sale > 30] = 30
-    roe_sale[roe_sale < -100] = -100
+    roe_sale[roe_sale > 50] = 50
+    roe_sale[roe_sale < -50] = -50
 
     roe_sale_mv = pd.Series(index=balancesheets.index)
     roe_sale_mv.fillna(0, inplace=True)
@@ -222,15 +232,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     for i in range(1, len(roe_rd)):
         roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 4) * (1 + roe_sale_mv.iloc[i - 1]) ** (3 / 4) - 1
     roe_sale_mv = round(roe_sale_mv * 100, 2)
-
-    libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
-    i_debt = round(libwithinterest * 100 / total_assets, 2)
-    # 利息保障倍数
-    interst = pd.concat([fina_indicators['interst_income'], incomes['int_exp']], axis=1).max(axis=1)
-    IER = round((incomes['ebitda']) / (interst + 1), 2)
-    cash_act_in = get_mv_pct(cashflows['c_inf_fr_operate_a'].pct_change() * 100)
-    cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
-    cash_act_rate = round(cash_act_in / cash_act_out, 2)
 
     print('ss2=')
     # 未来10年涨幅倍数
@@ -251,18 +252,47 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dpd_V = dpd_value_stock(roe_mv, OPM, opm_coef)
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
-    print('ss3=')
-    next_V0 = V
     total_share = code_info['total_share'] * 10000
 
-    LP = round(next_V0 / 2 * code_info['adj_factor'] * normal_equity / total_share, 2)
-    MP = round(next_V0 * code_info['adj_factor'] * normal_equity / total_share, 2)
-    HP = round(next_V0 * 2 * code_info['adj_factor'] * normal_equity / total_share, 2)
-    win_base = pd.concat([HP, code_info['adj_close']], axis=1).min(axis=1)
-    lose_base = pd.concat([LP, code_info['adj_close']], axis=1).min(axis=1)
-    win_return = round((HP - code_info['adj_close'])*100/win_base, 2)
-    lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
-    odds = win_return + lose_return
+    MP = round(V * code_info['adj_factor'] * normal_equity / total_share, 2)
+    MP_pct = MP.pct_change()
+    MP_pct[MP_pct > 0.62] = 0.62
+    MP_pct[MP_pct < -0.62] = -0.62
+    MP_pct_inc = MP_pct.diff()
+    # print(pd.concat([MP, MP_pct, MP_pct_inc], axis=1))
+    # os.ex
+    LLP = round((1 + (MP_pct + MP_pct_inc)/2) * MP / 2, 2)
+
+    HHP = round(2 * (1 + MP_pct + MP_pct_inc) * MP)
+
+    MP = round(MP * (1 + MP_pct), 2)
+    LP = round(MP / 2, 2)
+    HP = round(2 * MP, 2)
+
+    MP_pct = round(MP_pct * 100, 2)
+
+    LP_level = pd.concat([LLP, LP / 0.9], axis=1)
+    HP_level = pd.concat([HHP, HP / 1.1], axis=1)
+    LP_min = LP_level.min(axis=1)
+    HP_min = HP_level.min(axis=1)
+
+    win_base = pd.concat([HP_min, code_info['adj_close']], axis=1).min(axis=1)
+    lose_base = pd.concat([LP_min, code_info['adj_close']], axis=1).min(axis=1)
+    win_return = round((HP_min - code_info['adj_close']) * 100 / win_base, 2)
+    lose_return = round((LP_min - code_info['adj_close']) * 100 / lose_base, 2)
+    odds = round(win_return + lose_return, 2)
+
+    # win_base = pd.concat([HHP, code_info['adj_close']], axis=1).min(axis=1)
+    # lose_base = pd.concat([LLP, code_info['adj_close']], axis=1).min(axis=1)
+    # win_return = round((HHP - code_info['adj_close'])*100/win_base, 2)
+    # lose_return = round((LLP - code_info['adj_close']) * 100 / lose_base, 2)
+    # odds = win_return + lose_return
+
+    # win_base = pd.concat([HP, code_info['adj_close']], axis=1).min(axis=1)
+    # lose_base = pd.concat([LP, code_info['adj_close']], axis=1).min(axis=1)
+    # win_return = round((HP - code_info['adj_close']) * 100 / win_base, 2)
+    # lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
+    # odds = win_return + lose_return
 
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
@@ -372,9 +402,13 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     win_return.name = 'win_return'
     lose_return.name = 'lose_return'
     odds.name = 'odds'
+    LLP.name = 'LLP'
     LP.name = 'LP'
     MP.name = 'MP'
     HP.name = 'HP'
+    HHP.name = 'HHP'
+    MP_pct.name = 'MP_pct'
+
     data = pd.concat(
         [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, income_rate,
          roe, roe_adj, roe_sale, roe_mv, roe_sale_mv, pp, pp_adj, pp_sale, pp_tax,
@@ -388,7 +422,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          equity_pct, fix_asset_pct, tax_payable_pct, def_tax_ratio,
          rev_pct, total_turn_pctmv, tax_pct, income_pct,
          rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv, equity_pctmv, fix_asset_pctmv,
-         LP, MP, HP, win_return, lose_return, odds,
+         LLP, LP, MP, HP, HHP, MP_pct, win_return, lose_return, odds,
          ], axis=1, sort=True)
     return data
 
@@ -603,8 +637,8 @@ def value_stock2(IR, OPM, opm_coef, years=10):
         ir = IR.loc[k] / 100
 
         for i in range(1, years + 1):
-            if ir >= 0.3:
-                ir = 0.3
+            if ir >= 0.5:
+                ir = 0.5
             elif ir <= 0:
                 ir = 0
 
