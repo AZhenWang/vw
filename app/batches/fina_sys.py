@@ -17,10 +17,10 @@ def execute(start_date='', end_date=''):
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
     # new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
-    # code_ids = [2, 161]
+    # code_ids = [2381, 2, 214]
     # code_ids = range(2000, 3670)
     # code_ids = range(1, 500)
-    code_ids = range(1230, 2000)
+    code_ids = range(1, 3667)
 
     for ci in code_ids:
         print('code_id=', ci)
