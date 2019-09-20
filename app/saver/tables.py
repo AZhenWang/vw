@@ -160,8 +160,8 @@ fields_map = {
 
     'fina_sys': [
         'code_id', 'comp_type', 'end_date', 'f_ann_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc',
-        'roe',  'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'op_pct',  'mix_op_diff',
-        'V', 'V_adj', 'V_sale', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_tax', 'dpd_RR',
+        'roe',  'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'roe_ebitda', 'roe_ebitda_mv', 'op_pct',  'mix_op_diff',
+        'V', 'V_adj', 'V_sale', 'V_ebitda', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_ebitda', 'pp_tax', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'dyr', 'dyr_or', 'dyr_mean',
@@ -174,7 +174,7 @@ fields_map = {
     ],
     'fina_super': [
         'code_id', 'end_date', 'f_ann_date', 'cal_date', 'adj_factor',  'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds',
-        'adj_close', 'adj_high', 'adj_low', 'sell_p1', 'sell_p2', 'buy_p1', 'buy_p2', 'position', 'basis'
+        'adj_close', 'adj_high', 'adj_low', 'position', 'basis'
     ],
     'express': [
         'code_id', 'date_id', 'end_date', 'revenue', 'operate_profit', 'total_profit', 'n_income', 'total_assets', 'total_hldr_eqy_exc_min_int', 'is_audit'
