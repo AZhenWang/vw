@@ -20,10 +20,11 @@ def execute(start_date='', end_date=''):
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
     new_rows = pd.DataFrame(columns=fields_map['fina_super'])
-    # code_ids = [214]
-    # code_ids = [2381, 2, 214]
+    # code_ids = [214, 2381]
+    # code_ids = [2555, 214, 2, 132, 73, 2381]
+    # code_ids = [2381]
     # code_ids = range(2920, 3670)
-    code_ids = range(1, 3667)
+    code_ids = range(1, 3668)
     for code_id in code_ids:
         print('code_id=', code_id)
         Fina.delete_fina_super_logs(code_id, start_date=start_date, end_date=end_date)
@@ -34,7 +35,7 @@ def execute(start_date='', end_date=''):
         dailys = DB.get_code_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='daily')
         logs['report_adj_factor'] = logs['adj_factor']
         logs['report_adj_close'] = logs['adj_close']
-        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct', 'roe_mv', 'report_adj_factor', 'V', 'V_adj', 'V_sale', 'dpd_V', 'pe', 'pb', 'report_adj_close']].set_index('f_ann_date', drop=False), on='cal_date')
+        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct', 'roe_mv', 'report_adj_factor', 'V', 'V_adj', 'V_sale', 'V_ebitda', 'dpd_V', 'pe', 'pb', 'report_adj_close']].set_index('f_ann_date', drop=False), on='cal_date')
         base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor', 'total_mv']], on='date_id')
         base.fillna(method='ffill', inplace=True)
         base.dropna(inplace=True)
@@ -111,6 +112,7 @@ def execute(start_date='', end_date=''):
         data['pp'] = round(base['V'] / pb, 2)
         data['pp_adj'] = round(base['V_adj'] / pb, 2)
         data['pp_sale'] = round(base['V_sale'] / pb, 2)
+        data['pp_ebitda'] = round(base['V_ebitda'] / pb, 2)
         data['dpd_RR'] = round(base['dpd_V'] / pe, 2)
 
         data['flag'] = base['flag']

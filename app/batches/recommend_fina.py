@@ -12,7 +12,7 @@ def execute(start_date='', end_date=''):
     :return:
     """
     new_rows = pd.DataFrame(columns=['code_id', 'comp_type', 'end_date',
-                                     'f_ann_date', 'total_mv',  'adj_close', 'price_pct', 'holdernum', 'holdernum_inc', 'holdernum_2inc', 'holder_unit',
+                                     'f_ann_date', 'total_mv',  'holdernum', 'holdernum_inc', 'holdernum_2inc', 'holder_unit',
                                      'roe', 'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'op_pct',
                                      'mix_op_diff',
                                      'V', 'V_adj', 'V_sale', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_tax',
@@ -28,7 +28,7 @@ def execute(start_date='', end_date=''):
                                      'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
                                      'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv',
                                      'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
-                                     'LP', 'MP', 'HP', 'win_return', 'lose_return', 'odds', 'v_inc', 'adj_factor',
+                                     'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct',  'adj_close', 'price_pct', 'win_return', 'lose_return', 'odds', 'adj_factor',
         'flag', 'step', 'nice', 'years', 'result', 'return_yearly'])
 
     # codes = DB.get_code_list(list_status='')
@@ -38,7 +38,8 @@ def execute(start_date='', end_date=''):
     # code_ids = [range(1, 500), range(2920, 3670)]
     code_ids = range(1, 3668)
     # code_ids = range(3559, 3670)
-    # code_ids = [1372]
+    # code_ids = [2555, 214, 2, 132, 73, 2381]
+    # code_ids = [2381]
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
@@ -48,7 +49,6 @@ def execute(start_date='', end_date=''):
         if logs.empty:
             continue
         logs['price_pct'] = round(logs['adj_close'].pct_change() * 100, 2)
-        logs['v_inc'] = round(logs['MP'].pct_change() * 100, 2)
         logs.reset_index(inplace=True, drop=True)
         audits = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_audit')
         logs = logs.join(audits[['end_date', 'audit_result', 'audit_fees', 'audit_agency']].set_index('end_date'), on='end_date')
@@ -62,13 +62,13 @@ def execute(start_date='', end_date=''):
             flag = 0
 
             if log['liab_pctmv'] < log['rev_pctmv'] * 1.5 \
-                    and log['equity_pctmv'] > 18 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 10 and log['tax_payable_pctmv'] > 5 \
+                    and log['equity_pctmv'] > 10 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 18 and log['tax_payable_pctmv'] > 5 \
                     and log['receiv_pct'] < 25 and log['Z'] > 0.8 \
                     and log['cash_act_in'] > 8 \
                     and log['i_debt'] < 50 \
                     and log['roe_mv'] > 12 \
                     and log['roe_sale_mv'] > 15\
-                    and log['IER'] > 10:
+                    and log['IER'] > 8:
 
                 flag = 1
             # 再看这个企业的业务是不是在突飞猛进
@@ -112,7 +112,6 @@ def execute(start_date='', end_date=''):
             logs.at[index, 'holder_unit'] = holder_unit
             logs.at[index, 'price_pct'] = log['price_pct']
             logs.at[index, 'holdernum_2inc'] = holdernum_2inc
-            logs.at[index, 'v_inc'] = log['v_inc']
 
             today = logs.iloc[j]['end_date']
             later_logs = logs[logs.end_date > today]

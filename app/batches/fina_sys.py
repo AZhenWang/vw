@@ -17,9 +17,9 @@ def execute(start_date='', end_date=''):
     #     latest_open_days=244*2, date_id=date_id)
     # code_ids = codes['code_id']
     # new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
-    # code_ids = [1228]
-    # code_ids = [2381, 2, 214]
-    code_ids = range(1228, 3668)
+    # code_ids = [2381]
+    # code_ids = [2555, 214, 2, 132, 73, 2381]
+    code_ids = range(1, 3668)
     # code_ids = range(1, 500)
     # code_ids = range(1, 3667)
 
