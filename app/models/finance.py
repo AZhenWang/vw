@@ -149,6 +149,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     def_tax = cashflows['incr_def_inc_tax_liab'] + cashflows['decr_def_inc_tax_assets']
     def_tax.fillna(0, inplace=True)
     tax_payable = incomes['income_tax'] - def_tax
+    tax_payable[tax_payable.isna()] = 0
     tax_payable_pct = round(tax_payable.pct_change()*100, 2)
     tax_pct = round(incomes['income_tax'].pct_change()*100, 2)
 
@@ -171,6 +172,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     income_pct = incomes['n_income'].pct_change() * 100
     tax_payable_pct[tax_payable_pct > 100] = 100
     tax_payable_pct[tax_payable_pct < -50] = -50
+    tax_payable_pct[tax_payable_pct.isna()] = 0
     tax_payable_pctmv = get_mean_of_complex_rate(tax_payable_pct)
     rev_pctmv = get_mean_of_complex_rate(rev_pct)
     income_pctmv = get_mean_of_complex_rate(income_pct)
