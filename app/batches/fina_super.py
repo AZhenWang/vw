@@ -113,6 +113,7 @@ def execute(start_date='', end_date=''):
         data['pp_adj'] = round(base['V_adj'] / pb, 2)
         data['pp_sale'] = round(base['V_sale'] / pb, 2)
         data['pp_ebitda'] = round(base['V_ebitda'] / pb, 2)
+        data['pp_comp'] = round((data['pp'] + data['pp_ebitda'])/2, 2)
         data['dpd_RR'] = round(base['dpd_V'] / pe, 2)
 
         data['flag'] = base['flag']
