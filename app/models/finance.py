@@ -196,6 +196,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 利息保障倍数
     interst = pd.concat([fina_indicators['interst_income'], incomes['int_exp']], axis=1).max(axis=1)
     IER = round((incomes['ebitda']) / (interst + 1), 2)
+
     cash_act_in = get_mv_pct(cashflows['c_inf_fr_operate_a'].pct_change() * 100)
     cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
@@ -235,11 +236,25 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 4) * (1 + roe_sale_mv.iloc[i - 1]) ** (3 / 4) - 1
     roe_sale_mv = round(roe_sale_mv * 100, 2)
 
+    # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
+    TEV = total_assets - balancesheets['money_cap']
+    roe_ebitda = round((incomes['ebitda'] + roe_rd) * 100 / TEV, 2)
+    roe_ebitda[roe_ebitda > 50] = 50
+    roe_ebitda[roe_ebitda < -50] = -50
+
+    roe_ebitda_mv = pd.Series(index=balancesheets.index)
+    roe_ebitda_mv.fillna(0, inplace=True)
+    roe_ebitda_mv.iloc[0] = roe_ebitda.iloc[0] / 100
+    for i in range(1, len(roe_rd)):
+        roe_ebitda_mv.iloc[i] = (1 + roe_ebitda.iloc[i] / 100) ** (1 / 4) * (1 + roe_ebitda_mv.iloc[i - 1]) ** (3 / 4) - 1
+    roe_ebitda_mv = round(roe_ebitda_mv * 100, 2)
+
     print('ss2=')
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
     V_adj = value_stock2(roe_adj,  OPM, opm_coef)
     V_sale = value_stock2(roe_sale_mv, OPM, opm_coef)
+    V_ebitda = value_stock2(roe_ebitda_mv, OPM, opm_coef)
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
     total_turn_pctmv = round((rev_pctmv/ total_assets_pctmv).pct_change()*100, 2)
     # 赔率= 未来10年涨幅倍数/市现率
@@ -248,6 +263,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     pp_adj = round(V_adj / pb, 2)
     # 赔率，基于可持续的主营业务
     pp_sale = round(V_sale / pb, 2)
+
+    pp_ebitda = round(V_ebitda / pb, 2)
     # 税率验证：税的价值比总价值，要和税率相差无几，比如企业税率25%，那么这pp_tax的值不能离25太远
     pp_tax = round(V_tax * 100 / (V_tax + V_adj), 1)
     # 未来10年总营业增速
@@ -261,8 +278,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     MP_pct[MP_pct > 0.62] = 0.62
     MP_pct[MP_pct < -0.62] = -0.62
     MP_pct_inc = MP_pct.diff()
-    # print(pd.concat([MP, MP_pct, MP_pct_inc], axis=1))
-    # os.ex
+
     LLP = round((1 + (MP_pct + MP_pct_inc)/2) * MP / 2, 2)
 
     HHP = round(2 * (1 + MP_pct + MP_pct_inc) * MP)
@@ -295,6 +311,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # win_return = round((HP - code_info['adj_close']) * 100 / win_base, 2)
     # lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
     # odds = win_return + lose_return
+
+    # print(pd.concat([code_info['adj_close'], i_debt, roe, roe_sale, roe_rd, roe_ebitda, roe_ebitda_mv,  V_ebitda, pp, pp_sale, pp_adj, pp_ebitda], axis=1))
+    # os.ex
 
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
@@ -341,6 +360,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     pp.name = 'pp'
     pp_adj.name = 'pp_adj'
     pp_sale.name = 'pp_sale'
+    pp_ebitda.name = 'pp_ebitda'
     pp_tax.name = 'pp_tax'
     cash_gap.name = 'cash_gap'
 
@@ -349,6 +369,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_mv.name = 'roe_mv'
     roe_adj.name = 'roe_adj'
     roe_sale_mv.name = 'roe_sale_mv'
+    roe_ebitda.name = 'roe_ebitda'
+    roe_ebitda_mv.name = 'roe_ebitda_mv'
 
     ret.name = 'ret'
     em.name = 'em'
@@ -361,6 +383,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     V.name = 'V'
     V_adj.name = 'V_adj'
     V_sale.name = 'V_sale'
+    V_ebitda.name = 'V_ebitda'
     V_tax.name = 'V_tax'
     OPM.name = 'OPM'
     dpd_RR.name = 'dpd_RR'
@@ -413,9 +436,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     data = pd.concat(
         [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, income_rate,
-         roe, roe_adj, roe_sale, roe_mv, roe_sale_mv, pp, pp_adj, pp_sale, pp_tax,
+         roe, roe_adj, roe_sale, roe_ebitda, roe_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_sale, pp_ebitda, pp_tax,
          holdernum, holdernum_inc,
-         V, V_adj, V_sale, V_tax, dpd_V, dyr, dyr_or, dyr_mean,  dpd_RR,
+         V, V_adj, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
          pe, pb, i_debt, share_ratio, capital_turn, oper_pressure, OPM,
          Z, X1, X2, X3, X4, X5,
          receiv_pct, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
