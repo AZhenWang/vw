@@ -59,7 +59,7 @@ class Fina(Base):
         :param end_date_type: 0331：一季报， 0630：半年报， 0930：三季报， %1231: 年报，
         :return:
         """
-        sql_str = ' SELECT r.*' \
+        sql_str = ' SELECT  r.*' \
                   ' FROM ' + TTB + ' r ' \
                                    ' where r.code_id = :code_id ' \
                                    ' and r.end_date >= :sdi and r.end_date <= :edi'
@@ -79,26 +79,26 @@ class Fina(Base):
         return report_info
 
     @classmethod
-    def get_fina_sys_logs(cls, code_id, start_date='', end_date='', TTB=''):
+    def get_fina_logs(cls, code_id='', industry='', start_date='', end_date='', TTB=''):
         """
-        获取财务分析日志
+        获取财务分析指标
         :param code_id:
         :param start_date:
         :param end_date: 报告结束日期
-        :param TTB: 表名，income: 利润表， balancesheet: 资产负债表， cashflow：现金流量表
+        :param TTB: 表名，财务指标的表名
         :return:
         """
-        sql_str = ' SELECT r.* from fina_sys where r.code_id = :code_id ' \
-                                   ' and r.end_date >= :sdi and r.end_date <= :edi'
-        params = {'code_id': str(code_id), 'sdi': str(start_date), 'edi': str(end_date)}
+        sql_str = ' SELECT sb.name, sb.industry, sb.list_date, r.* from ' + TTB + ' r ' \
+                  ' left join stock_basic sb on sb.id = r.code_id' \
+                  ' where r.end_date >= :sdi and r.end_date <= :edi' \
 
-        if report_type != '':
-            sql_str += ' and r.report_type =:report_type'
-            params['report_type'] = report_type
-
-        if end_date_type != '':
-            sql_str += ' and r.end_date like ' + ':end_date_type'
-            params['end_date_type'] = end_date_type
+        params = {'sdi': str(start_date), 'edi': str(end_date)}
+        if code_id != '':
+            sql_str += ' and r.code_id = :code_id '
+            params['code_id'] = str(code_id)
+        elif industry != '':
+            sql_str += ' and sb.industry = :industry '
+            params['industry'] = industry
 
         sql_str += ' order by r.end_date asc '
 
@@ -107,8 +107,12 @@ class Fina(Base):
 
     @classmethod
     def delete_logs_by_end_date(cls, code_id='', start_date='', end_date='', tablename=''):
-        pd.io.sql.execute('delete from ' + tablename + ' where code_id = %s and end_date >= %s and end_date <= %s',
-                          cls.engine, params=[str(code_id), str(start_date), str(end_date)])
+        if code_id == '':
+            pd.io.sql.execute('delete from ' + tablename + ' where end_date >= %s and end_date <= %s',
+                              cls.engine, params=[str(start_date), str(end_date)])
+        else:
+            pd.io.sql.execute('delete from ' + tablename + ' where code_id = %s and end_date >= %s and end_date <= %s',
+                              cls.engine, params=[str(code_id), str(start_date), str(end_date)])
 
     @classmethod
     def delete_fina_super_logs(cls, code_id='', start_date='', end_date=''):
