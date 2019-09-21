@@ -71,8 +71,8 @@ def execute(start_date='', end_date=''):
         data['roe_Q20_pct'] = round(data['roe_Q20'].pct_change() * 100, 1)
         data['roe_mv_pct'] = round(data['roe_mv_mean'].pct_change() * 100, 1)
         data['roe_mv_Q20_pct'] = round(data['roe_mv_Q20'].pct_change() * 100, 1)
-
-        print(data)
+        data[data.isin([np.inf, -np.inf])] = np.nan
+        # print(data)
         if not data.empty:
             data.to_sql('industry_sys', DB.engine, index=False, if_exists='append', chunksize=1000)
 
