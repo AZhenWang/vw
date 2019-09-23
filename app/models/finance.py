@@ -211,7 +211,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_std = round(get_rolling_std(roe, window=10), 2)
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
-    normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - goodwill
+    normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - balancesheets['intan_assets']
     pb = total_mv / normal_equity
     roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe_rd[roe_rd > 50] = 50
