@@ -18,7 +18,7 @@ def execute(start_date='', end_date=''):
                                      'V', 'V_adj', 'V_sale', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_tax',
                                      'dpd_RR',
                                      'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
-                                     'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
+                                     'Z',
                                      'dyr', 'dyr_or', 'dyr_mean',
                                      'freecash_mv', 'cash_gap', 'cash_gap_r', 'receiv_pct', 'cash_act_in',
                                      'cash_act_out', 'cash_act_rate',
@@ -39,13 +39,15 @@ def execute(start_date='', end_date=''):
     code_ids = range(1, 3668)
     # code_ids = range(3559, 3670)
     # code_ids = [2555, 214, 2, 132, 73, 2381]
-    # code_ids = [2381]
+    # code_ids = [13, 214, 2]
+    # code_ids = [1486, 214,  161]
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
-        logs = logs.dropna(subset=['total_mv', 'holdernum'])
+        logs = logs.dropna(subset=['total_mv'])
+        logs['holdernum'].fillna(0, inplace=True)
         if logs.empty:
             continue
         logs['price_pct'] = round(logs['adj_close'].pct_change() * 100, 2)
@@ -61,9 +63,9 @@ def execute(start_date='', end_date=''):
             # 先判断这个企业是不是历史表现良好
             flag = 0
 
-            if log['liab_pctmv'] < log['rev_pctmv'] * 1.5 \
+            if log['liab_pctmv'] < log['rev_pctmv'] * 2 \
                     and log['equity_pctmv'] > 10 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 18 and log['tax_payable_pctmv'] > 5 \
-                    and log['receiv_pct'] < 25 and log['Z'] > 0.8 \
+                    and log['receiv_pct'] < 25 and log['Z'] > 1 \
                     and log['cash_act_in'] > 8 \
                     and log['i_debt'] < 50 \
                     and log['roe_mv'] > 12 \
@@ -71,6 +73,13 @@ def execute(start_date='', end_date=''):
                     and log['IER'] > 8:
 
                 flag = 1
+
+            elif log['receiv_pct'] > 25 or log['Z'] < 1 \
+                    or log['cash_act_in'] < -20 \
+                    or log['i_debt'] > 50 \
+                    or log['IER'] < 3:
+                flag = -1
+
             # 再看这个企业的业务是不是在突飞猛进
             step = 0
             if j >= 1:

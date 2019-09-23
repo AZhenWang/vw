@@ -156,6 +156,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     tax_diff = tax_payable - tax_payable.shift()
     tax_base = tax_payable.shift()[tax_diff >= 0].add(tax_payable[tax_diff < 0], fill_value=0.01)
     def_tax_ratio = round(def_tax * 100 / tax_base, 2)
+
     # 短期营业收入是否加速
     adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
     # adj_ebit = tax_payable
@@ -191,7 +192,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct[op_pct < -50] = -50
     total_mv = round(code_info['total_mv'] * 10000, 2)
 
-    libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
+    # libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
+    libwithinterest = balancesheets['st_borr'] + balancesheets['lt_borr'] + balancesheets['bond_payable'] + balancesheets['lt_payable'] + balancesheets['st_bonds_payable'] + balancesheets['non_cur_liab_due_1y'] + balancesheets['notes_payable']
+    # 短期借款＋一年内到期的长期负债＋长期借款＋应付债券＋长期应付款
     i_debt = round(libwithinterest * 100 / total_assets, 2)
     # 利息保障倍数
     interst = pd.concat([fina_indicators['interst_income'], incomes['int_exp']], axis=1).max(axis=1)
@@ -224,8 +227,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_mv = round(roe_mv * 100, 2)
     roe_adj = round(roe_mv - roe_std, 2)
 
-    # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
-    roe_sale = round((incomes['operate_profit']) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
+    roe_sale = round((incomes['operate_profit'] - tax_payable + roe_rd) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe_sale[roe_sale > 50] = 50
     roe_sale[roe_sale < -50] = -50
 
@@ -273,16 +275,19 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dpd_RR = round(dpd_V / pe, 2)
     total_share = code_info['total_share'] * 10000
 
-    MP = round(V * code_info['adj_factor'] * normal_equity / total_share, 2)
+    MP = round(V_sale * code_info['adj_factor'] * normal_equity / total_share, 2)
     MP_pct = MP.pct_change()
     MP_pct[MP_pct > 0.62] = 0.62
     MP_pct[MP_pct < -0.62] = -0.62
+    MP_pct.fillna(0, inplace=True)
     MP_pct_inc = MP_pct.diff()
+    MP_pct_pct = (MP_pct_inc + MP_pct_inc.shift())/2
+    LLP = round((1 + MP_pct + MP_pct_pct) * MP / 2, 2)
+    LLP[MP_pct > 0] = round((1 + (MP_pct + MP_pct_pct) / 2) * MP / 2, 2)
+    HHP = round(2 * (1 + MP_pct + MP_pct_pct) * MP)
+    HHP[MP_pct < 0] = round(2 * (1 + (MP_pct + MP_pct_pct) * 2) * MP)
 
-    LLP = round((1 + (MP_pct + MP_pct_inc)/2) * MP / 2, 2)
-
-    HHP = round(2 * (1 + MP_pct + MP_pct_inc) * MP)
-
+    # HHP = round(2 * (1 + MP_pct + MP_pct_inc) * MP)
     MP = round(MP * (1 + MP_pct), 2)
     LP = round(MP / 2, 2)
     HP = round(2 * MP, 2)
@@ -294,11 +299,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     LP_min = LP_level.min(axis=1)
     HP_min = HP_level.min(axis=1)
 
-    win_base = pd.concat([HP_min, code_info['adj_close']], axis=1).min(axis=1)
-    lose_base = pd.concat([LP_min, code_info['adj_close']], axis=1).min(axis=1)
-    win_return = round((HP_min - code_info['adj_close']) * 100 / win_base, 2)
-    lose_return = round((LP_min - code_info['adj_close']) * 100 / lose_base, 2)
-    odds = round(win_return + lose_return, 2)
+    win_return = (HP_min - code_info['adj_close']) / code_info['adj_close']
+    lose_return = (LP_min - code_info['adj_close']) / code_info['adj_close']
+    odds = round(((1 + win_return) * (1 + lose_return) - 1)*100, 1)
+    win_return = round(win_return*100, 1)
+    lose_return = round(lose_return*100, 1)
 
     # win_base = pd.concat([HHP, code_info['adj_close']], axis=1).min(axis=1)
     # lose_base = pd.concat([LLP, code_info['adj_close']], axis=1).min(axis=1)
@@ -345,8 +350,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # X3 = 息税前利润 / 总资产
     X3 = round(incomes['ebit'] / total_assets, 2)
     # X4 = 股东权益 / 负债
+    # X4 = round((balancesheets['total_assets'] - balancesheets['total_liab']) / balancesheets['total_liab'], 2)
     X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
-    # X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
     # X5 = 销售收入 / 总资产
     X5 = round(incomes['revenue'] / total_assets, 2)
     Z = round(0.717 * X1 + 0.847 * X2 + 3.11 * X3 + 0.420 * X4 + 0.998 * X5, 2)
@@ -440,7 +445,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          holdernum, holdernum_inc,
          V, V_adj, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
          pe, pb, i_debt, share_ratio, capital_turn, oper_pressure, OPM,
-         Z, X1, X2, X3, X4, X5,
+         Z,
          receiv_pct, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
