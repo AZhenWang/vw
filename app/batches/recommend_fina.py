@@ -13,22 +13,24 @@ def execute(start_date='', end_date=''):
     """
     new_rows = pd.DataFrame(columns=['code_id', 'comp_type', 'end_date',
                                      'f_ann_date', 'total_mv',  'holdernum', 'holdernum_inc', 'holdernum_2inc', 'holder_unit',
-                                     'roe', 'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'op_pct',
+                                     'roe',  'roe_rd', 'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_rd_mv', 'roe_sale_mv', 'op_pct',
                                      'mix_op_diff',
-                                     'V', 'V_adj', 'V_sale', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_tax',
+                                     'V', 'V_adj', 'V_rd', 'V_sale', 'V_tax', 'dpd_V', 'pp', 'pp_rd', 'pp_adj', 'pp_sale', 'pp_tax',
                                      'dpd_RR',
                                      'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
                                      'Z',
                                      'dyr', 'dyr_or', 'dyr_mean',
                                      'freecash_mv', 'cash_gap', 'cash_gap_r', 'receiv_pct', 'cash_act_in',
                                      'cash_act_out', 'cash_act_rate',
-                                     'equity_pct', 'fix_asset_pct', 'rev_pct',
+                                     'equity_pct', 'fix_asset_pct', 'rev_pct', 'gross_rate',
                                      'income_rate', 'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct',
                                      'def_tax_ratio',
                                      'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
                                      'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv',
                                      'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
-                                     'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct',  'adj_close', 'price_pct', 'win_return', 'lose_return', 'odds', 'adj_factor',
+                                     'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct',  'adj_close', 'price_pct',
+                                     'win_return', 'lose_return', 'odds', 'win_return2', 'lose_return2', 'odds2', 'odds_pp',
+                                     'adj_factor',
         'flag', 'step', 'nice', 'years', 'result', 'return_yearly'])
 
     # codes = DB.get_code_list(list_status='')
@@ -39,8 +41,8 @@ def execute(start_date='', end_date=''):
     code_ids = range(1, 3668)
     # code_ids = range(3559, 3670)
     # code_ids = [2555, 214, 2, 132, 73, 2381]
-    # code_ids = [13, 214, 2]
-    # code_ids = [1486, 214,  161]
+    # code_ids = [1486, 214, 2, 13, 161, 2381, 3012]
+    # code_ids = [3012, 2381, 161]
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
@@ -69,14 +71,16 @@ def execute(start_date='', end_date=''):
                     and log['cash_act_in'] > 8 \
                     and log['i_debt'] < 50 \
                     and log['roe_mv'] > 12 \
-                    and log['roe_sale_mv'] > 15\
+                    and log['roe_sale_mv'] > 12\
                     and log['IER'] > 8:
 
                 flag = 1
 
             elif log['receiv_pct'] > 25 or log['Z'] < 1 \
                     or log['cash_act_in'] < -20 \
-                    or log['i_debt'] > 50 \
+                    or (log['i_debt'] > 40 and log['IER'] < 8) \
+                    or log['i_debt'] > 60 \
+                    or log['roe_mv'] < 12 \
                     or log['IER'] < 3:
                 flag = -1
 
