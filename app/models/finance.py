@@ -122,6 +122,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     # 调整折旧费用
     gross = incomes['revenue'] - incomes['oper_cost']
+    gross_rate = round(gross * 100 / incomes['revenue'], 2)
     fix_assets = balancesheets['fix_assets'].fillna(method='ffill')
     dpba_of_assets = round(cashflows['depr_fa_coga_dpba'] * 100 / fix_assets, 2)
     dpba_of_gross = round(cashflows['depr_fa_coga_dpba'] * 100 / gross, 2)
@@ -135,7 +136,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 第四只眼： 所得税缴纳比例正常
 
     # 研发费用，除去某一年的突然研发费用干扰， 研发费用+营业利润的7年的平均值，作为利润的增长基础值
-    rd_exp = fina_indicators['rd_exp']
+    rd_exp = fina_indicators['rd_exp'] + cashflows['amort_intang_assets']
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
     pure_equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
     equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100/pure_equity.shift(), 1)
@@ -204,30 +205,42 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
 
+    normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - balancesheets[
+        'intan_assets'] - goodwill - balancesheets['r_and_d']
+
     roe = round(incomes['n_income_attr_p'] * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe[roe > 50] = 50
     roe[roe < -50] = -50
-    print('ss1=')
     roe_std = round(get_rolling_std(roe, window=10), 2)
-    ret = round(incomes['n_income'] * 100 / total_assets, 2)
-    pe = round(code_info['pe'], 2)
-    normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - balancesheets['intan_assets']
-    pb = total_mv / normal_equity
-    roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
-    roe_rd[roe_rd > 50] = 50
-    roe_rd[roe_rd < -50] = -50
-    roe_rd_mv = get_mean_of_complex_rate(roe_rd, window=10)
-
     # roe_mv = get_mean_of_complex_rate(roe, window=10)
     roe_mv = pd.Series(index=balancesheets.index)
     roe_mv.fillna(0, inplace=True)
-    roe_mv.iloc[0] = roe_rd.iloc[0] / 100
-    for i in range(1, len(roe_rd)):
-        roe_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 4) * (1 + roe_mv.iloc[i - 1]) ** (3 / 4) - 1
+    roe_mv.iloc[0] = roe.iloc[0] / 100
+    for i in range(1, len(roe)):
+        roe_mv.iloc[i] = (1 + roe.iloc[i] / 100) ** (1 / 4) * (1 + roe_mv.iloc[i - 1]) ** (3 / 4) - 1
     roe_mv = round(roe_mv * 100, 2)
-    roe_adj = round(roe_mv - roe_std, 2)
 
-    roe_sale = round((incomes['operate_profit'] - tax_payable + roe_rd) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
+    roe_adj = round(roe_mv - roe_std, 2)
+    ret = round(incomes['n_income'] * 100 / total_assets, 2)
+    pe = round(code_info['pe'], 2)
+    pb = round(code_info['pb'], 2)
+    # pb = total_mv / normal_equity
+
+    roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
+    roe_rd[roe_rd > 50] = 50
+    roe_rd[roe_rd < -50] = -50
+    # roe_rd_mv = get_mean_of_complex_rate(roe_rd, window=10)
+
+    # roe_mv = get_mean_of_complex_rate(roe, window=10)
+    roe_rd_mv = pd.Series(index=balancesheets.index)
+    roe_rd_mv.fillna(0, inplace=True)
+    roe_rd_mv.iloc[0] = roe_rd.iloc[0] / 100
+    for i in range(1, len(roe_rd)):
+        roe_rd_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 4) * (1 + roe_rd_mv.iloc[i - 1]) ** (3 / 4) - 1
+    roe_rd_mv = round(roe_rd_mv * 100, 2)
+
+
+    roe_sale = round((incomes['operate_profit'] - tax_payable + rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
     roe_sale[roe_sale > 50] = 50
     roe_sale[roe_sale < -50] = -50
 
@@ -240,7 +253,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
     TEV = total_assets - balancesheets['money_cap']
-    roe_ebitda = round((incomes['ebitda'] + roe_rd) * 100 / TEV, 2)
+    roe_ebitda = round((incomes['ebitda'] + rd_exp) * 100 / TEV, 2)
     roe_ebitda[roe_ebitda > 50] = 50
     roe_ebitda[roe_ebitda < -50] = -50
 
@@ -251,59 +264,63 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         roe_ebitda_mv.iloc[i] = (1 + roe_ebitda.iloc[i] / 100) ** (1 / 4) * (1 + roe_ebitda_mv.iloc[i - 1]) ** (3 / 4) - 1
     roe_ebitda_mv = round(roe_ebitda_mv * 100, 2)
 
-    print('ss2=')
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
     V_adj = value_stock2(roe_adj,  OPM, opm_coef)
+    V_rd = value_stock2(roe_rd_mv, OPM, opm_coef)
     V_sale = value_stock2(roe_sale_mv, OPM, opm_coef)
     V_ebitda = value_stock2(roe_ebitda_mv, OPM, opm_coef)
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
-    total_turn_pctmv = round((rev_pctmv/ total_assets_pctmv).pct_change()*100, 2)
+    total_turn_pctmv = round((rev_pctmv / total_assets_pctmv).pct_change()*100, 2)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     # 赔率，考虑roe_std波动
     pp_adj = round(V_adj / pb, 2)
     # 赔率，基于可持续的主营业务
+    pp_rd = round(V_rd / pb, 2)
     pp_sale = round(V_sale / pb, 2)
 
     pp_ebitda = round(V_ebitda / pb, 2)
     # 税率验证：税的价值比总价值，要和税率相差无几，比如企业税率25%，那么这pp_tax的值不能离25太远
     pp_tax = round(V_tax * 100 / (V_tax + V_adj), 1)
     # 未来10年总营业增速
-    dpd_V = dpd_value_stock(roe_mv, OPM, opm_coef)
+    dpd_V = dpd_value_stock(roe_sale_mv, OPM, opm_coef)
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
     total_share = code_info['total_share'] * 10000
-
-    MP = round(V_sale * code_info['adj_factor'] * normal_equity / total_share, 2)
+    # print(pd.concat([dpd_V, dpd_RR, pp_rd, pb, pe, code_info['pb'], code_info['total_share'], total_mv, normal_equity], axis=1))
+    # os.ex
+    # pb = total_mv / normal_equity
+    MP = round(code_info['adj_close'] * pp_sale, 2)
     MP_pct = MP.pct_change()
     MP_pct[MP_pct > 0.62] = 0.62
     MP_pct[MP_pct < -0.62] = -0.62
     MP_pct.fillna(0, inplace=True)
-    MP_pct_inc = MP_pct.diff()
-    MP_pct_pct = (MP_pct_inc + MP_pct_inc.shift())/2
-    LLP = round((1 + MP_pct + MP_pct_pct) * MP / 2, 2)
-    LLP[MP_pct > 0] = round((1 + (MP_pct + MP_pct_pct) / 2) * MP / 2, 2)
-    HHP = round(2 * (1 + MP_pct + MP_pct_pct) * MP)
-    HHP[MP_pct < 0] = round(2 * (1 + (MP_pct + MP_pct_pct) * 2) * MP)
+    LLP = round((1 + MP_pct) * MP / 2, 2)
+    HHP = round(2 * (1 + MP_pct) * MP)
 
     # HHP = round(2 * (1 + MP_pct + MP_pct_inc) * MP)
-    MP = round(MP * (1 + MP_pct), 2)
+    MP = round(MP, 2)
     LP = round(MP / 2, 2)
     HP = round(2 * MP, 2)
 
     MP_pct = round(MP_pct * 100, 2)
 
-    LP_level = pd.concat([LLP, LP / 0.9], axis=1)
-    HP_level = pd.concat([HHP, HP / 1.1], axis=1)
-    LP_min = LP_level.min(axis=1)
-    HP_min = HP_level.min(axis=1)
+    win = (2 * (code_info['adj_close'] * pp) - code_info['adj_close']) / code_info['adj_close']
+    lose = ((code_info['adj_close'] * pp) / 2 - code_info['adj_close']) / code_info['adj_close']
+    odds_pp = round(((1 + win) * (1 + lose) - 1) * 100, 1)
 
-    win_return = (HP_min - code_info['adj_close']) / code_info['adj_close']
-    lose_return = (LP_min - code_info['adj_close']) / code_info['adj_close']
+    win_return = (HP - code_info['adj_close']) / code_info['adj_close']
+    lose_return = (LP - code_info['adj_close']) / code_info['adj_close']
     odds = round(((1 + win_return) * (1 + lose_return) - 1)*100, 1)
     win_return = round(win_return*100, 1)
     lose_return = round(lose_return*100, 1)
+
+    win_return2 = (HHP - code_info['adj_close']) / code_info['adj_close']
+    lose_return2 = (LLP - code_info['adj_close']) / code_info['adj_close']
+    odds2 = round(((1 + win_return2) * (1 + lose_return2) - 1) * 100, 1)
+    win_return2 = round(win_return2 * 100, 1)
+    lose_return2 = round(lose_return2 * 100, 1)
 
     # win_base = pd.concat([HHP, code_info['adj_close']], axis=1).min(axis=1)
     # lose_base = pd.concat([LLP, code_info['adj_close']], axis=1).min(axis=1)
@@ -355,14 +372,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # X5 = 销售收入 / 总资产
     X5 = round(incomes['revenue'] / total_assets, 2)
     Z = round(0.717 * X1 + 0.847 * X2 + 3.11 * X3 + 0.420 * X4 + 0.998 * X5, 2)
-    X1.name = 'X1'
-    X2.name = 'X2'
-    X3.name = 'X3'
-    X4.name = 'X4'
-    X5.name = 'X5'
+
     Z.name = 'Z'
     cash_gap_r.name = 'cash_gap_r'
     pp.name = 'pp'
+    pp_rd.name = 'pp_rd'
     pp_adj.name = 'pp_adj'
     pp_sale.name = 'pp_sale'
     pp_ebitda.name = 'pp_ebitda'
@@ -371,14 +385,17 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     roe.name = 'roe'
     roe_sale.name = 'roe_sale'
+    roe_rd.name = 'roe_rd'
     roe_mv.name = 'roe_mv'
     roe_adj.name = 'roe_adj'
+    roe_rd_mv.name = 'roe_rd_mv'
     roe_sale_mv.name = 'roe_sale_mv'
     roe_ebitda.name = 'roe_ebitda'
     roe_ebitda_mv.name = 'roe_ebitda_mv'
 
     ret.name = 'ret'
     em.name = 'em'
+    gross_rate.name = 'gross_rate'
     income_rate.name = 'income_rate'
     total_turn.name = 'total_turn'
     pe.name = 'pe'
@@ -388,6 +405,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     V.name = 'V'
     V_adj.name = 'V_adj'
     V_sale.name = 'V_sale'
+    V_rd.name = 'V_rd'
     V_ebitda.name = 'V_ebitda'
     V_tax.name = 'V_tax'
     OPM.name = 'OPM'
@@ -432,6 +450,10 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     win_return.name = 'win_return'
     lose_return.name = 'lose_return'
     odds.name = 'odds'
+    win_return2.name = 'win_return2'
+    lose_return2.name = 'lose_return2'
+    odds2.name = 'odds2'
+    odds_pp.name = 'odds_pp'
     LLP.name = 'LLP'
     LP.name = 'LP'
     MP.name = 'MP'
@@ -440,10 +462,10 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     MP_pct.name = 'MP_pct'
 
     data = pd.concat(
-        [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, income_rate,
-         roe, roe_adj, roe_sale, roe_ebitda, roe_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_sale, pp_ebitda, pp_tax,
+        [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, gross_rate, income_rate,
+         roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax,
          holdernum, holdernum_inc,
-         V, V_adj, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
+         V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
          pe, pb, i_debt, share_ratio, capital_turn, oper_pressure, OPM,
          Z,
          receiv_pct, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
@@ -452,7 +474,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          equity_pct, fix_asset_pct, tax_payable_pct, def_tax_ratio,
          rev_pct, total_turn_pctmv, tax_pct, income_pct,
          rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv, equity_pctmv, fix_asset_pctmv,
-         LLP, LP, MP, HP, HHP, MP_pct, win_return, lose_return, odds,
+         LLP, LP, MP, HP, HHP, MP_pct, win_return, lose_return, odds, win_return2, lose_return2, odds2, odds_pp,
          ], axis=1, sort=True)
     return data
 
