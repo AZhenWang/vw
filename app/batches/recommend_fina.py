@@ -42,7 +42,7 @@ def execute(start_date='', end_date=''):
     # code_ids = range(3559, 3670)
     # code_ids = [2555, 214, 2, 132, 73, 2381]
     # code_ids = [1486, 214, 2, 13, 161, 2381, 3012]
-    # code_ids = [3012, 2381, 161]
+    # code_ids = [2352, 214]
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
@@ -66,7 +66,7 @@ def execute(start_date='', end_date=''):
             flag = 0
 
             if log['liab_pctmv'] < log['rev_pctmv'] * 2 \
-                    and log['equity_pctmv'] > 10 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 18 and log['tax_payable_pctmv'] > 5 \
+                    and log['equity_pctmv'] > 10 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > 12 and log['tax_payable_pctmv'] > 5 \
                     and log['receiv_pct'] < 25 and log['Z'] > 1 \
                     and log['cash_act_in'] > 8 \
                     and log['i_debt'] < 50 \
@@ -91,17 +91,17 @@ def execute(start_date='', end_date=''):
                 pre_roe_sale = logs.iloc[j-1]['roe_sale']
                 pre_roe_sale_mv = logs.iloc[j - 1]['roe_sale_mv']
                 pre_roe_mv = logs.iloc[j - 1]['roe_mv']
+                pre_capital_turn = logs.iloc[j - 1]['capital_turn']
             else:
                 pre_roe = log['roe_mv']
                 pre_roe_sale = log['roe_sale_mv']
                 pre_roe_sale_mv = log['roe_sale_mv']
                 pre_roe_mv = log['roe_mv']
+                pre_capital_turn = log['capital_turn']
 
             if (log['roe_sale'] >= log['roe_sale_mv'] or log['roe_sale'] >= pre_roe_sale or log['roe_mv'] > pre_roe_mv)\
                     and (log['roe'] >= log['roe_mv'] or log['roe'] >= pre_roe or log['roe_sale_mv'] > pre_roe_sale_mv)\
-                    and log['rev_pct'] >= 18\
-                    and log['income_pct'] >= 10 \
-                    and log['cash_act_in'] >= 10:
+                    and log['capital_turn'] > pre_capital_turn :
                 step = 1
 
             # 三看年报性价比
