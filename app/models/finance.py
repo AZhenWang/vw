@@ -137,6 +137,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     # 研发费用，除去某一年的突然研发费用干扰， 研发费用+营业利润的7年的平均值，作为利润的增长基础值
     rd_exp = fina_indicators['rd_exp'] + cashflows['amort_intang_assets']
+    rd_exp.fillna(0, inplace=True)
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
     pure_equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
     equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100/pure_equity.shift(), 1)
@@ -205,65 +206,58 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
 
-    normal_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - balancesheets[
-        'intan_assets'] - goodwill - balancesheets['r_and_d']
+    equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['intan_assets'] - goodwill - balancesheets['r_and_d']
+    normal_equity = equity - balancesheets['oth_eqt_tools_p_shr']
 
-    roe = round(incomes['n_income_attr_p'] * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
+    # 求每期收益率
+    roe = round(incomes['n_income_attr_p'] * 100 / equity.shift(), 2)
     roe[roe > 50] = 50
     roe[roe < -50] = -50
-    roe_std = round(get_rolling_std(roe, window=10), 2)
-    # roe_mv = get_mean_of_complex_rate(roe, window=10)
-    roe_mv = pd.Series(index=balancesheets.index)
-    roe_mv.fillna(0, inplace=True)
-    roe_mv.iloc[0] = roe.iloc[0] / 100
-    for i in range(1, len(roe)):
-        roe_mv.iloc[i] = (1 + roe.iloc[i] / 100) ** (1 / 4) * (1 + roe_mv.iloc[i - 1]) ** (3 / 4) - 1
-    roe_mv = round(roe_mv * 100, 2)
-
-    roe_adj = round(roe_mv - roe_std, 2)
-    ret = round(incomes['n_income'] * 100 / total_assets, 2)
-    pe = round(code_info['pe'], 2)
-    pb = round(code_info['pb'], 2)
-    # pb = total_mv / normal_equity
-
-    roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
+    roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / equity.shift(), 2)
     roe_rd[roe_rd > 50] = 50
     roe_rd[roe_rd < -50] = -50
-    # roe_rd_mv = get_mean_of_complex_rate(roe_rd, window=10)
-
-    # roe_mv = get_mean_of_complex_rate(roe, window=10)
-    roe_rd_mv = pd.Series(index=balancesheets.index)
-    roe_rd_mv.fillna(0, inplace=True)
-    roe_rd_mv.iloc[0] = roe_rd.iloc[0] / 100
-    for i in range(1, len(roe_rd)):
-        roe_rd_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 4) * (1 + roe_rd_mv.iloc[i - 1]) ** (3 / 4) - 1
-    roe_rd_mv = round(roe_rd_mv * 100, 2)
-
-
-    roe_sale = round((incomes['operate_profit'] - tax_payable + rd_exp) * 100 / balancesheets['total_hldr_eqy_exc_min_int'], 2)
+    roe_sale = round((incomes['operate_profit'] - tax_payable + rd_exp) * 100 / equity.shift(), 2)
     roe_sale[roe_sale > 50] = 50
     roe_sale[roe_sale < -50] = -50
-
-    roe_sale_mv = pd.Series(index=balancesheets.index)
-    roe_sale_mv.fillna(0, inplace=True)
-    roe_sale_mv.iloc[0] = roe_sale.iloc[0] / 100
-    for i in range(1, len(roe_rd)):
-        roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 4) * (1 + roe_sale_mv.iloc[i - 1]) ** (3 / 4) - 1
-    roe_sale_mv = round(roe_sale_mv * 100, 2)
-
-    # 投入资产回报率 = （营业利润 - 新增应收帐款 * 新增应收账款占收入比重）/总资产
-    TEV = total_assets - balancesheets['money_cap']
+    TEV = total_assets - balancesheets['money_cap'] - balancesheets['intan_assets'] - goodwill - balancesheets['r_and_d']
     roe_ebitda = round((incomes['ebitda'] + rd_exp) * 100 / TEV, 2)
     roe_ebitda[roe_ebitda > 50] = 50
     roe_ebitda[roe_ebitda < -50] = -50
 
+    # 求移动平均收益率
+    roe_mv = pd.Series(index=balancesheets.index)
+    roe_mv.fillna(0, inplace=True)
+    roe_mv.iloc[1] = roe.iloc[1] / 100
+    for i in range(2, len(roe)):
+        roe_mv.iloc[i] = (1 + roe.iloc[i] / 100) ** (1 / 4) * (1 + roe_mv.iloc[i - 1]) ** (3 / 4) - 1
+    roe_mv = round(roe_mv * 100, 2)
+
+    roe_rd_mv = pd.Series(index=balancesheets.index)
+    roe_rd_mv.fillna(0, inplace=True)
+    roe_rd_mv.iloc[1] = roe_rd.iloc[1] / 100
+    for i in range(2, len(roe_rd)):
+        roe_rd_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 4) * (1 + roe_rd_mv.iloc[i - 1]) ** (3 / 4) - 1
+    roe_rd_mv = round(roe_rd_mv * 100, 2)
+
+    roe_sale_mv = pd.Series(index=balancesheets.index)
+    roe_sale_mv.fillna(0, inplace=True)
+    roe_sale_mv.iloc[1] = roe_sale.iloc[1] / 100
+    for i in range(2, len(roe_rd)):
+        roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 4) * (1 + roe_sale_mv.iloc[i - 1]) ** (3 / 4) - 1
+    roe_sale_mv = round(roe_sale_mv * 100, 2)
+
     roe_ebitda_mv = pd.Series(index=balancesheets.index)
     roe_ebitda_mv.fillna(0, inplace=True)
-    roe_ebitda_mv.iloc[0] = roe_ebitda.iloc[0] / 100
-    for i in range(1, len(roe_rd)):
+    roe_ebitda_mv.iloc[1] = roe_ebitda.iloc[1] / 100
+    for i in range(2, len(roe_ebitda)):
         roe_ebitda_mv.iloc[i] = (1 + roe_ebitda.iloc[i] / 100) ** (1 / 4) * (1 + roe_ebitda_mv.iloc[i - 1]) ** (3 / 4) - 1
     roe_ebitda_mv = round(roe_ebitda_mv * 100, 2)
 
+    ret = round(incomes['n_income'] * 100 / total_assets, 2)
+    pe = round(code_info['pe'], 2)
+    pb = round(total_mv / normal_equity.shift(), 2)
+    roe_std = round(get_rolling_std(roe_sale_mv, window=10), 2)
+    roe_adj = round(roe_sale_mv - roe_std, 2)
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
     V_adj = value_stock2(roe_adj,  OPM, opm_coef)
@@ -287,14 +281,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dpd_V = dpd_value_stock(roe_sale_mv, OPM, opm_coef)
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
-    total_share = code_info['total_share'] * 10000
-    # print(pd.concat([dpd_V, dpd_RR, pp_rd, pb, pe, code_info['pb'], code_info['total_share'], total_mv, normal_equity], axis=1))
-    # os.ex
-    # pb = total_mv / normal_equity
+
     MP = round(code_info['adj_close'] * pp_sale, 2)
     MP_pct = MP.pct_change()
-    MP_pct[MP_pct > 0.62] = 0.62
-    MP_pct[MP_pct < -0.62] = -0.62
+    MP_pct[MP_pct > 1] = 1
+    MP_pct[MP_pct < -1] = -0.99
     MP_pct.fillna(0, inplace=True)
     LLP = round((1 + MP_pct) * MP / 2, 2)
     HHP = round(2 * (1 + MP_pct) * MP)
@@ -321,21 +312,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     odds2 = round(((1 + win_return2) * (1 + lose_return2) - 1) * 100, 1)
     win_return2 = round(win_return2 * 100, 1)
     lose_return2 = round(lose_return2 * 100, 1)
-
-    # win_base = pd.concat([HHP, code_info['adj_close']], axis=1).min(axis=1)
-    # lose_base = pd.concat([LLP, code_info['adj_close']], axis=1).min(axis=1)
-    # win_return = round((HHP - code_info['adj_close'])*100/win_base, 2)
-    # lose_return = round((LLP - code_info['adj_close']) * 100 / lose_base, 2)
-    # odds = win_return + lose_return
-
-    # win_base = pd.concat([HP, code_info['adj_close']], axis=1).min(axis=1)
-    # lose_base = pd.concat([LP, code_info['adj_close']], axis=1).min(axis=1)
-    # win_return = round((HP - code_info['adj_close']) * 100 / win_base, 2)
-    # lose_return = round((LP - code_info['adj_close']) * 100 / lose_base, 2)
-    # odds = win_return + lose_return
-
-    # print(pd.concat([code_info['adj_close'], i_debt, roe, roe_sale, roe_rd, roe_ebitda, roe_ebitda_mv,  V_ebitda, pp, pp_sale, pp_adj, pp_ebitda], axis=1))
-    # os.ex
 
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
@@ -768,3 +744,29 @@ def dpd_value_stock(IR, OPM, opm_coef):
     V = round(V, 2)
     return V
 
+
+def remove_outlier(roe):
+    # 对于每一个特征，找到值异常高或者是异常低的数据点
+    # 所有单特征有异常的行
+    print('roe=', roe)
+    logs = roe.dropna()
+    logs = logs.sort_values()
+    records = []
+    # TODO: 计算给定特征的Q1（数据的25th分位点）
+    Q1 = np.percentile(logs, 20)
+
+    # TODO: 计算给定特征的Q3（数据的75th分位点）
+    Q3 = np.percentile(logs, 80)
+
+    # TODO: 使用四分位范围计算异常阶（1.5倍的四分位距）
+    # step = (Q3 - Q1)
+    step = 0
+    outliers = logs[~((logs >= Q1 - step) & (logs <= Q3 + step))].index
+
+    # 显示异常点
+    print('异常点:Q1=',Q1, ', Q3=', Q3, ', records=', outliers)
+
+    # 以下代码会移除outliers中索引的数据点
+    logs[outliers] = np.nan
+    print(logs)
+    os.ex
