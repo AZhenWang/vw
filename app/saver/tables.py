@@ -159,7 +159,7 @@ fields_map = {
     ],
 
     'fina_sys': [
-        'code_id', 'comp_type', 'end_date', 'f_ann_date', 'adj_close', 'total_mv', 'holdernum', 'holdernum_inc',
+        'code_id', 'comp_type', 'end_date', 'f_ann_date', 'adj_close', 'total_mv', 'revenue', 'holdernum', 'holdernum_inc',
         'roe',  'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'roe_ebitda', 'roe_ebitda_mv', 'op_pct',  'mix_op_diff',
         'V', 'V_adj', 'V_sale', 'V_ebitda', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_ebitda', 'pp_tax', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',

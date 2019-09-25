@@ -219,38 +219,44 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_sale = round((incomes['operate_profit'] - tax_payable + rd_exp) * 100 / equity.shift(), 2)
     roe_sale[roe_sale > 50] = 50
     roe_sale[roe_sale < -50] = -50
-    TEV = total_assets - balancesheets['money_cap'] - balancesheets['intan_assets'] - goodwill - balancesheets['r_and_d']
-    roe_ebitda = round((incomes['ebitda'] + rd_exp) * 100 / TEV, 2)
+    TEV = total_assets - balancesheets['intan_assets'] - goodwill - balancesheets['r_and_d']
+    roe_ebitda = round((incomes['ebitda'] + rd_exp) * 100 / TEV.shift(), 2)
     roe_ebitda[roe_ebitda > 50] = 50
     roe_ebitda[roe_ebitda < -50] = -50
 
     # 求移动平均收益率
     roe_mv = pd.Series(index=balancesheets.index)
-    roe_mv.fillna(0, inplace=True)
-    roe_mv.iloc[1] = roe.iloc[1] / 100
-    for i in range(2, len(roe)):
-        roe_mv.iloc[i] = (1 + roe.iloc[i] / 100) ** (1 / 4) * (1 + roe_mv.iloc[i - 1]) ** (3 / 4) - 1
-    roe_mv = round(roe_mv * 100, 2)
-
     roe_rd_mv = pd.Series(index=balancesheets.index)
-    roe_rd_mv.fillna(0, inplace=True)
-    roe_rd_mv.iloc[1] = roe_rd.iloc[1] / 100
-    for i in range(2, len(roe_rd)):
-        roe_rd_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 4) * (1 + roe_rd_mv.iloc[i - 1]) ** (3 / 4) - 1
-    roe_rd_mv = round(roe_rd_mv * 100, 2)
-
     roe_sale_mv = pd.Series(index=balancesheets.index)
-    roe_sale_mv.fillna(0, inplace=True)
-    roe_sale_mv.iloc[1] = roe_sale.iloc[1] / 100
-    for i in range(2, len(roe_rd)):
-        roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 4) * (1 + roe_sale_mv.iloc[i - 1]) ** (3 / 4) - 1
-    roe_sale_mv = round(roe_sale_mv * 100, 2)
-
     roe_ebitda_mv = pd.Series(index=balancesheets.index)
+
+    roe_mv.fillna(0, inplace=True)
+    roe_rd_mv.fillna(0, inplace=True)
+    roe_sale_mv.fillna(0, inplace=True)
     roe_ebitda_mv.fillna(0, inplace=True)
+
+    roe_mv.iloc[1] = roe.iloc[1] / 100
+    roe_rd_mv.iloc[1] = roe_rd.iloc[1] / 100
+    roe_sale_mv.iloc[1] = roe_sale.iloc[1] / 100
     roe_ebitda_mv.iloc[1] = roe_ebitda.iloc[1] / 100
-    for i in range(2, len(roe_ebitda)):
-        roe_ebitda_mv.iloc[i] = (1 + roe_ebitda.iloc[i] / 100) ** (1 / 4) * (1 + roe_ebitda_mv.iloc[i - 1]) ** (3 / 4) - 1
+
+    for i in range(2, len(roe_sale)):
+        date_idx = roe_sale.index[i]
+        if equity_pct.loc[date_idx] == 100:
+            roe_mv.iloc[i] = roe_mv.iloc[i - 1]
+            roe_rd_mv.iloc[i] = roe_rd_mv.iloc[i - 1]
+            roe_sale_mv.iloc[i] = roe_sale_mv.iloc[i-1]
+            roe_ebitda_mv.iloc[i] = roe_ebitda_mv.iloc[i - 1]
+        else:
+            roe_mv.iloc[i] = (1 + roe.iloc[i] / 100) ** (1 / 4) * (1 + roe_mv.iloc[i - 1]) ** (3 / 4) - 1
+            roe_rd_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 4) * (1 + roe_rd_mv.iloc[i - 1]) ** (3 / 4) - 1
+            roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 4) * (1 + roe_sale_mv.iloc[i - 1]) ** (3 / 4) - 1
+            roe_ebitda_mv.iloc[i] = (1 + roe_ebitda.iloc[i] / 100) ** (1 / 4) * (1 + roe_ebitda_mv.iloc[i - 1]) ** (
+                        3 / 4) - 1
+
+    roe_mv = round(roe_mv * 100, 2)
+    roe_rd_mv = round(roe_rd_mv * 100, 2)
+    roe_sale_mv = round(roe_sale_mv * 100, 2)
     roe_ebitda_mv = round(roe_ebitda_mv * 100, 2)
 
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
@@ -438,7 +444,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     MP_pct.name = 'MP_pct'
 
     data = pd.concat(
-        [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, gross_rate, income_rate,
+        [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
          roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax,
          holdernum, holdernum_inc,
          V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
