@@ -36,7 +36,8 @@ fields_map = {
         'cal_date', 'is_open', 'pretrade_date',
     ],
     'new_share': [
-        'code_id', 'sub_code', 'name', 'ipo_date', 'issue_date', 'amount', 'market_amount', 'price', 'pe', 'limit_amount', 'funds', 'ballot'
+        'code_id', 'sub_code', 'name', 'ipo_date', 'issue_date', 'amount',
+        'market_amount', 'price', 'pe', 'limit_amount', 'funds', 'ballot'
     ],
 
     'mv_moneyflow': [

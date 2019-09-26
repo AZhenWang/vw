@@ -72,7 +72,7 @@ def get_reports(code_id, start_date='19900101', end_date='20190801'):
 
 
 def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs):
-    if incomes.empty or len(balancesheets) < 4:
+    if incomes.empty or len(balancesheets) < 3:
         nan_series = pd.Series()
         return nan_series
     incomes.fillna(method='backfill', inplace=True)
@@ -85,6 +85,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     goodwill = balancesheets['goodwill']
     goodwill.name = 'goodwill'
 
+    adj_close = code_info['adj_close']
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
     total_assets = balancesheets['total_assets']
 
@@ -217,8 +218,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     interst = pd.concat([fina_indicators['interst_income'], incomes['int_exp']], axis=1).max(axis=1)
     IER = round((incomes['ebitda']) / (interst + 1), 2)
 
-    cash_act_in = get_mv_pct(cashflows['c_inf_fr_operate_a'].pct_change() * 100)
-    cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
+    cash_act_in = get_mean_of_complex_rate(cashflows['c_inf_fr_operate_a'].pct_change() * 100)
+    cash_act_out = get_mean_of_complex_rate(cashflows['st_cash_out_act'].pct_change() * 100)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
 
     # 求每期收益率
@@ -269,6 +270,22 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
     pb = round(total_mv / normal_equity.shift(), 2)
+
+    # 更新刚IPO时的数据,
+    ipo_log = DB.get_new_share_log(incomes['code_id'].iloc[0])
+    if not ipo_log.empty:
+        ipo_before_equity = normal_equity[normal_equity.index < ipo_log.ipo_date]
+        ipo_lastest_date = ipo_before_equity.index[-1]
+        ipo_lastest_equity = ipo_before_equity.loc[ipo_lastest_date]
+
+        ipo_lastest_equity += ipo_log.price * ipo_log.amount * 10000
+        ipo_lastest_total_mv = ipo_log.price * (ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share'])
+
+        pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv/ipo_lastest_equity, 2)
+        total_mv.loc[ipo_lastest_date] = ipo_lastest_total_mv
+        pe.loc[ipo_lastest_date] = ipo_log.pe
+        adj_close.loc[ipo_lastest_date] = ipo_log.price
+
     roe_std = round(get_rolling_std(roe_sale_mv, window=10), 2)
     roe_adj = round(roe_sale_mv - roe_std, 2)
     # 未来10年涨幅倍数
@@ -295,7 +312,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
 
-    MP = round(code_info['adj_close'] * pp_sale, 2)
+    MP = round(adj_close * pp_sale, 2)
     MP_pct = MP.pct_change()
     MP_pct[MP_pct > 1] = 1
     MP_pct[MP_pct < -1] = -0.99
@@ -310,18 +327,18 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     MP_pct = round(MP_pct * 100, 2)
 
-    win = (2 * (code_info['adj_close'] * pp) - code_info['adj_close']) / code_info['adj_close']
-    lose = ((code_info['adj_close'] * pp) / 2 - code_info['adj_close']) / code_info['adj_close']
+    win = (2 * (adj_close * pp) - adj_close) / adj_close
+    lose = ((adj_close * pp) / 2 - adj_close) / adj_close
     odds_pp = round(((1 + win) * (1 + lose) - 1) * 100, 1)
 
-    win_return = (HP - code_info['adj_close']) / code_info['adj_close']
-    lose_return = (LP - code_info['adj_close']) / code_info['adj_close']
+    win_return = (HP - adj_close) / adj_close
+    lose_return = (LP - adj_close) / adj_close
     odds = round(((1 + win_return) * (1 + lose_return) - 1)*100, 1)
     win_return = round(win_return*100, 1)
     lose_return = round(lose_return*100, 1)
 
-    win_return2 = (HHP - code_info['adj_close']) / code_info['adj_close']
-    lose_return2 = (LLP - code_info['adj_close']) / code_info['adj_close']
+    win_return2 = (HHP - adj_close) / adj_close
+    lose_return2 = (LLP - adj_close) / adj_close
     odds2 = round(((1 + win_return2) * (1 + lose_return2) - 1) * 100, 1)
     win_return2 = round(win_return2 * 100, 1)
     lose_return2 = round(lose_return2 * 100, 1)
@@ -456,7 +473,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     MP_pct.name = 'MP_pct'
 
     data = pd.concat(
-        [round(code_info['adj_close'],2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
+        [round(adj_close,2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
          roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax,
          holdernum, holdernum_inc,
          V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
@@ -582,7 +599,9 @@ def get_mean_of_complex_rate(d, window=10):
     v.dropna(inplace=True)
     v = v/100
     data = pd.Series(index=v.index, name='data')
-    if len(v) == 1:
+    if len(v) < 1:
+        return base
+    elif len(v) == 1:
         data.iloc[0] = v.iloc[0]
         base = base.join(data)
         return base['data']
@@ -603,47 +622,6 @@ def get_mean_of_complex_rate(d, window=10):
         data.iloc[i] = round(t*100, 2)
     base = base.join(data)
     return base['data']
-
-
-def get_mv_pct(pct):
-    """
-    获取移动的平均变化比例
-    :param pct:
-    :return:
-    """
-    pct[pct.isin([np.inf, -np.inf])] = np.nan
-    pct.fillna(0, inplace=True)
-    pct = pct / 100
-    first_index = pct[pct != 0].index[0]
-    first_loc = pct.index.get_loc(first_index)
-    pct_mv = pd.Series(index=pct.index)
-    pct_mv.iloc[first_loc] = pct.iloc[first_loc]
-    for i in range(first_loc + 1, len(pct)):
-        pct_mv.iloc[i] = (1 + pct.iloc[i]) ** (1 / 8) * (1 + pct_mv.iloc[i - 1]) ** (
-                    7 / 8) - 1
-    pct_mv = round(pct_mv * 100, 2)
-    return pct_mv
-
-
-def get_sale_roe(total_turn, sale_rate, equity_times):
-    sale_rate_mv = get_rolling_mean(sale_rate, window=7, mtype=3)
-    total_turn_mv = get_rolling_mean(total_turn, window=7, mtype=3)
-
-    total_return = sale_rate_mv*total_turn_mv
-    sale_roe = round(get_rolling_mean(total_return * equity_times), 2)
-    # print(pd.concat([iocc, iocc_mv, equity_times, total_turn_mv, total_turn_pct, sale_roe], axis=1))
-    # import matplotlib.pylab as plt
-    # plt.plot(total_return, label='total_return')
-    # plt.plot(iocc_mv, label='iocc_mv')
-    # plt.plot(total_turn_mv, label='total_turn_mv')
-    # plt.plot(equity_times, label='equity_times')
-    # plt.plot(get_rolling_mean(total_return * equity_times), label='roe_mv')
-    #
-    # plt.legend()
-    # plt.show()
-    # os.ex
-
-    return sale_roe
 
 
 def get_rev_pct(revenue, cash_divs):

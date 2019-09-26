@@ -138,9 +138,9 @@ class DB(Base):
     def get_new_share_log(cls, code_id):
         log = pd.read_sql(
             sa.text(
-                'SELECT sb.ts_code FROM new_share  where code_id=:code_id'),
+                'SELECT * FROM new_share  where code_id=:code_id'),
             cls.engine,
-            params={'code_id': code_id}
+            params={'code_id': str(code_id)}
         )
         if not log.empty:
             return log.iloc[0]
