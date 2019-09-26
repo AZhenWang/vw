@@ -48,7 +48,6 @@ class Ts(Interface):
 
         code_list = DB.get_code_list(list_status='L')
         new_share_list = DB.get_code_list(list_status='N')
-        print('new_share_list+code_list=', pd.concat([code_list, new_share_list], ignore_index=True))
         self.code_list = pd.concat([code_list, new_share_list], ignore_index=True)
 
     def update_stock_basic(self):
@@ -123,7 +122,6 @@ class Ts(Interface):
         avail_recorders = avail_recorders[['ts_code', 'name']]
         # N: ipo中，还未上市
         avail_recorders['list_status'] = 'N'
-        print(avail_recorders)
 
         avail_recorders.to_sql('stock_basic', DB.engine, index=False, if_exists='append', chunksize=1000)
 
