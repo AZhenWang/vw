@@ -86,6 +86,23 @@ class Ts(Interface):
                 stock_name = update_rows.iloc[i]['name']
                 DB.update_stock_name(stock_name, ts_code)
 
+        # 更新新股ipo通过后的信息
+        new_shares = existed_code_list[existed_code_list['list_status'] == 'N']
+        if not new_shares.empty and not new_rows.empty:
+            ipo_done_rows = new_shares[new_shares['ts_code'].isin(new_rows['ts_code'])]
+            if not ipo_done_rows.empty:
+                for i in range(len(ipo_done_rows)):
+                    ts_code = ipo_done_rows.iloc[i]['ts_code']
+                    name = ipo_done_rows.iloc[i]['name']
+                    area = ipo_done_rows.iloc[i]['area']
+                    industry = ipo_done_rows.iloc[i]['industry']
+                    market = ipo_done_rows.iloc[i]['market']
+                    curr_type = ipo_done_rows.iloc[i]['curr_type']
+                    list_status = ipo_done_rows.iloc[i]['list_status']
+                    list_date = ipo_done_rows.iloc[i]['list_date']
+                    delist_date = ipo_done_rows.iloc[i]['delist_date']
+                    is_hs = ipo_done_rows.iloc[i]['is_hs']
+                    DB.update_stock_basic_info(ts_code, name, area, industry, market, curr_type, list_status, list_date, delist_date, is_hs)
 
     def update_new_share(self):
         """
