@@ -35,6 +35,9 @@ fields_map = {
     'trade_cal': [
         'cal_date', 'is_open', 'pretrade_date',
     ],
+    'new_share': [
+        'ts_code', 'sub_code', 'name', 'ipo_date', 'issue_date', 'amount', 'market_amount', 'price', 'pe', 'limit_amount', 'funds', 'ballot'
+    ],
 
     'mv_moneyflow': [
         'code_id', 'date_id', 'trf2', 'max1_trf2', 'max6_trf2', 'trf2_a', 'trf2_v',

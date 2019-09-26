@@ -78,3 +78,24 @@ create table trade_cal(
    UNIQUE `cal_date_idx`  (`cal_date`)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'交易日历';
 
+create table new_share(
+   id INT NOT NULL AUTO_INCREMENT,
+   ts_code	varchar(9)	not null comment'TS股票代码',
+   sub_code varchar(9)	not null comment'申购代码',
+   name	varchar(20)	not null comment'名称',
+   ipo_date	varchar(8)	not null comment'上网发行日期',
+   issue_date varchar(8)	not null comment'上市日期',
+   amount float  null comment'发行总量（万股）',
+   market_amount	float	 null comment'上网发行总量（万股）',
+   price	float	null comment'发行价格',
+   pe	float	 null comment'市盈率',
+   limit_amount	float null comment'个人申购上限（万股）',
+   funds	float null comment'募集资金（亿元）',
+   ballot	float null comment'中签率',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   UNIQUE `ts_code`  (`ts_code`),
+   index(ipo_date)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'ipo新股列表';
+
+
