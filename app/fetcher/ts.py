@@ -353,8 +353,13 @@ class Ts(Interface):
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
 
             if not existed_reports.empty:
+                print('new_rows=', new_rows['end_date'])
+                print('existed_reports=', existed_reports['end_date'])
+
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
+
                 new_rows.drop_duplicates('end_date', inplace=True)
+                print('remove_new_rows=', new_rows)
             new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
