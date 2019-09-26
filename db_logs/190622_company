@@ -475,6 +475,8 @@ create table fina_sys (
    fix_asset_pct float null comment'固定资产增长比例',
    rev_pct float null comment'营业收入增长比率',
    equity_pct float null comment'净资产变化比例',
+   pure_equity_pct float null comment'除去无形资金以及商誉之后的净资产变化比例',
+   pure_equity_pctmv float null comment'除去无形资金以及商誉之后的净资产平均变化比例',
    dpba_of_assets float null comment'折旧费用占固定资产的比例',
    dpba_of_gross  float null comment'折旧费用占毛利润的比例',
    rd_exp_or float null comment'平均研发费用占收入的比例',

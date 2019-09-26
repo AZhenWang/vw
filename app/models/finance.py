@@ -148,9 +148,14 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     rd_exp = fina_indicators['rd_exp'] + cashflows['amort_intang_assets']
     rd_exp.fillna(0, inplace=True)
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
-    pure_equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
-    equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100/pure_equity.shift(), 1)
+    equity = balancesheets['total_assets'] - balancesheets['total_liab']
+    pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['intan_assets'] - goodwill - balancesheets[
+        'r_and_d']
+    normal_equity = pure_equity - balancesheets['oth_eqt_tools_p_shr']
+    equity_pct = round((equity - equity.shift() + cash_divs.shift()) * 100/equity.shift(), 1)
     equity_pctmv = get_mean_of_complex_rate(equity_pct)
+    pure_equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100 / pure_equity.shift(), 1)
+    pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct)
     fix_asset_pct = round(fix_assets.pct_change()*100, 2)
     freecash = cashflows['free_cashflow'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 2)
@@ -216,9 +221,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     cash_act_out = get_mv_pct(cashflows['st_cash_out_act'].pct_change() * 100)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
 
-    equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['intan_assets'] - goodwill - balancesheets['r_and_d']
-    normal_equity = equity - balancesheets['oth_eqt_tools_p_shr']
-
     # 求每期收益率
     roe = round(incomes['n_income_attr_p'] * 100 / equity.shift(), 2)
     roe[roe > 50] = 50
@@ -252,7 +254,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     for i in range(2, len(roe_sale)):
         date_idx = roe_sale.index[i]
-        if equity_pct.loc[date_idx] >= 100:
+        if pure_equity_pct.loc[date_idx] >= 100:
             roe_mv.iloc[i] = roe_mv.iloc[i - 1]
             roe_rd_mv.iloc[i] = roe_rd_mv.iloc[i - 1]
             roe_sale_mv.iloc[i] = roe_sale_mv.iloc[i-1]
@@ -416,6 +418,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     holdernum.name = 'holdernum'
     freecash_mv.name = 'freecash_mv'
     equity_pct.name = 'equity_pct'
+    pure_equity_pct.name = 'pure_equity_pct'
+    pure_equity_pctmv.name = 'pure_equity_pctmv'
     tax_rate.name = 'tax_rate'
     mix_op_diff.name = 'mix_op_diff'
     dpba_of_assets.name = 'dpba_of_assets'
@@ -466,9 +470,10 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          receiv_pct, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
-         equity_pct, fix_asset_pct, tax_payable_pct, def_tax_ratio,
+         fix_asset_pct, tax_payable_pct, def_tax_ratio,
          rev_pct, total_turn_pctmv, tax_pct, income_pct,
-         rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv, equity_pctmv, fix_asset_pctmv,
+         rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv,
+         pure_equity_pct, pure_equity_pctmv, equity_pct,  equity_pctmv, fix_asset_pctmv,
          LLP, LP, MP, HP, HHP, MP_pct, win_return, lose_return, odds, win_return2, lose_return2, odds2, odds_pp,
          ], axis=1, sort=True)
     return data
@@ -579,6 +584,7 @@ def get_mean_of_complex_rate(d, window=10):
     v[v < -100] = np.nan
     v[v > 100] = np.nan
     v.fillna(method='ffill', inplace=True)
+    v.dropna(inplace=True)
     v = v/100
     data = pd.Series(index=v.index, name='data')
     if len(v) == 1:
@@ -589,7 +595,8 @@ def get_mean_of_complex_rate(d, window=10):
     mv = (1 + v.iloc[0]) * (1 + v.iloc[1])
 
     for i in range(2, len(data)):
-        mv = mv * (1 + v.iloc[i])
+        date_idx = data.index[i]
+        mv = mv * (1 + v.loc[date_idx])
         if i < window:
             max_v = v[0:i+1].max()
             min_v = v[0:i+1].min()
