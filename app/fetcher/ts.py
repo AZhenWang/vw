@@ -297,8 +297,7 @@ class Ts(Interface):
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def query_fina_mainbz(self, api):
-        # codes = self.code_list['ts_code']
-        codes = ['603786.SH', '688368.SH', '688036.SH', '688068.SH', '688030.SH', '300792.SZ']
+        codes = self.code_list['ts_code']
         type = 'P'
         for ts_code in codes:
             flag = True
@@ -323,8 +322,7 @@ class Ts(Interface):
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] >= 210]['ts_code']
-        # codes = self.code_list['ts_code']
-        codes = ['603786.SH', '688368.SH', '688036.SH', '688068.SH', '688030.SH', '300792.SZ']
+        codes = self.code_list['ts_code']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
