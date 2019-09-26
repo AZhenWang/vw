@@ -127,9 +127,8 @@ class Ts(Interface):
 
         existed_new_share_list = DB.get_code_list(list_status='N')
         new_rows = existed_new_share_list.merge(new_rows, on='ts_code')
-        avail_recorders = new_rows[fields_map[api]]
-        avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
-        new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+        avail_recorders2 = new_rows[fields_map[api]]
+        avail_recorders2.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def update_fut_basic(self):
         """
