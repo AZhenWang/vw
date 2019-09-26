@@ -97,7 +97,7 @@ class Ts(Interface):
         api = 'new_share'
         DB.delete_by_date(table_name=api, field_name='ipo_date', start_date=self.start_date, end_date=self.end_date)
 
-        new_rows = self.pro.query(api=api, fields=fields_map[api])
+        new_rows = self.pro.query(api, fields=fields_map[api])
         new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
         existed_code_list = DB.get_code_list()
