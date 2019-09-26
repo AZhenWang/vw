@@ -26,8 +26,10 @@ class Fina(Base):
     @classmethod
     def get_existed_reports(cls, table_name, ts_code, start_date, end_date, report_type=''):
         sql = ' SELECT end_date FROM ' + table_name + ' as api ' \
-                                                      ' where api.ts_code = :ts_code ' \
-                                                      ' and api.ann_date >= :start_date and api.ann_date <= :end_date'
+                                                      ' left join stock_basic sb on sb.id = api.code_id' \
+                                                      ' left join trade_cal tc on tc.id = api.date_id ' \
+                                                      ' where sb.ts_code = :ts_code ' \
+                                                      ' and tc.cal_date >= :start_date and tc.cal_date <= :end_date'
 
         params = {'ts_code': ts_code, 'start_date': start_date, 'end_date': end_date}
 
@@ -35,7 +37,7 @@ class Fina(Base):
             sql += ' and api.report_type = :report_type '
             params['report_type'] = report_type
 
-        sql += ' order by api.ann_date desc'
+        sql += ' order by api.date_id desc'
 
         existed_reports = pd.read_sql(
             sa.text(sql),
