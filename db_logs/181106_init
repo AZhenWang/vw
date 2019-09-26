@@ -80,7 +80,7 @@ create table trade_cal(
 
 create table new_share(
    id INT NOT NULL AUTO_INCREMENT,
-   ts_code	varchar(9)	not null comment'TS股票代码',
+   code_id	int	not null comment'',
    sub_code varchar(9)	not null comment'申购代码',
    name	varchar(20)	not null comment'名称',
    ipo_date	varchar(8)	not null comment'上网发行日期',
@@ -94,7 +94,7 @@ create table new_share(
    ballot	float null comment'中签率',
    created_at timestamp not null default CURRENT_TIMESTAMP,
    PRIMARY KEY(id),
-   UNIQUE `ts_code`  (`ts_code`),
+   UNIQUE `code_id`  (`code_id`),
    index(ipo_date)
 )ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'ipo新股列表';
 

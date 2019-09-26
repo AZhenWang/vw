@@ -114,18 +114,22 @@ class Ts(Interface):
         """
 
         api = 'new_share'
-        DB.delete_by_date(table_name=api, field_name='ipo_date', start_date=self.start_date, end_date=self.end_date)
-
         new_rows = self.pro.query(api, fields=fields_map[api], start_date=self.start_date, end_date=self.end_date)
-        new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
         existed_code_list = DB.get_code_list()
         avail_recorders = new_rows[~new_rows['ts_code'].isin(existed_code_list['ts_code'])]
         avail_recorders = avail_recorders[['ts_code', 'name']]
         # N: ipo中，还未上市
         avail_recorders['list_status'] = 'N'
-
         avail_recorders.to_sql('stock_basic', DB.engine, index=False, if_exists='append', chunksize=1000)
+
+        DB.delete_by_date(table_name=api, field_name='ipo_date', start_date=self.start_date, end_date=self.end_date)
+
+        existed_new_share_list = DB.get_code_list(list_status='N')
+        new_rows = existed_new_share_list.merge(new_rows, on='ts_code')
+        avail_recorders = new_rows[fields_map[api]]
+        avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+        new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def update_fut_basic(self):
         """
