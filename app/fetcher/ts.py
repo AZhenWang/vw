@@ -48,9 +48,8 @@ class Ts(Interface):
 
         code_list = DB.get_code_list(list_status='L')
         new_share_list = DB.get_code_list(list_status='N')
-        print('new_share_list=', new_share_list)
-        print('new_share_list+code_list=', pd.concat([code_list, new_share_list]))
-        self.code_list = code_list
+        print('new_share_list+code_list=', pd.concat([code_list, new_share_list], ignore_index=True))
+        self.code_list = pd.concat([code_list, new_share_list], ignore_index=True)
 
     def update_stock_basic(self):
 
