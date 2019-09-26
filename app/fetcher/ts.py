@@ -88,8 +88,10 @@ class Ts(Interface):
 
         # 更新新股ipo通过后的信息
         new_shares = existed_code_list[existed_code_list['list_status'] == 'N']
-        if not new_shares.empty and not new_rows.empty:
+        print(new_shares)
+        if not new_shares.empty:
             ipo_done_rows = new_shares[new_shares['ts_code'].isin(new_rows['ts_code'])]
+            print('ipo_done_rows=', ipo_done_rows)
             if not ipo_done_rows.empty:
                 for i in range(len(ipo_done_rows)):
                     ts_code = ipo_done_rows.iloc[i]['ts_code']
