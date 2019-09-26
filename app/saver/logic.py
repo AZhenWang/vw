@@ -134,6 +134,18 @@ class DB(Base):
         )
         return existed_codes
 
+    @classmethod
+    def get_new_share_log(cls, code_id):
+        log = pd.read_sql(
+            sa.text(
+                'SELECT sb.ts_code FROM new_share  where code_id=:code_id'),
+            cls.engine,
+            params={'code_id': code_id}
+        )
+        if not log.empty:
+            return log.iloc[0]
+        else:
+            return pd.Series()
 
     @classmethod
     def get_existed_index(cls, table_name, index_id, start_date, end_date):
