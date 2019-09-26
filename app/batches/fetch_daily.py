@@ -24,7 +24,7 @@ def execute(start_date='', end_date=''):
 
         ts_apis = ['new_share']
         for api in ts_apis:
-            worker.query(api)
+            worker.query_new_share(api)
 
         # idx_apis = ['index_daily', 'index_dailybasic']
         # for idx_api in idx_apis:
