@@ -192,6 +192,14 @@ class Ts(Interface):
 
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
+    def query_new_share(self, api):
+        # 按start_date, end_date这样的时间区间，拉取信息，原样存储
+        new_rows = self.pro.query(api, start_date=self.start_date, end_date=self.end_date)
+        if not new_rows.empty:
+            DB.delete_by_date(table_name=api, field_name='ipo_date', start_date=self.start_date, end_date=self.end_date)
+            avail_recorders = new_rows[fields_map[api]]
+            avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
+
     def query(self, api):
         # 按trade_date依次拉取所有股票信息
         for date_id, cal_date in self.trade_dates[['date_id', 'cal_date']].values:

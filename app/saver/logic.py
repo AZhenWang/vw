@@ -416,6 +416,12 @@ class DB(Base):
                           params=[classified_v_id])
 
     @classmethod
+    def delete_by_date(cls, table_name='', field_name='', start_date='', end_date=''):
+        pd.io.sql.execute('delete from ' + table_name + ' where ' + field_name + ' >=%s and ' + field_name + ' <= %s',
+                          cls.engine,
+                          params=[start_date, end_date])
+
+    @classmethod
     def batch_delete_classified_v(cls, classified_v_ids):
         if len(classified_v_ids) >= 1:
             pd.io.sql.execute(
