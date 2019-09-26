@@ -44,10 +44,14 @@ class Ts(Interface):
             new_rows.sort_values(by='cal_date', inplace=True)
             new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
-    def set_code_list(self):
-
-        code_list = DB.get_code_list(list_status='L')
-        new_share_list = DB.get_code_list(list_status='N')
+    def set_code_list(self, list_status='L'):
+        """
+        设置处理的股票列表
+        :param list_status: L:已经上市股， N:正在ipo，还未上市股
+        :return:
+        """
+        code_list = DB.get_code_list(list_status=list_status)
+        new_share_list = DB.get_code_list(list_status=list_status)
         self.code_list = pd.concat([code_list, new_share_list], ignore_index=True)
 
     def update_stock_basic(self):
@@ -87,10 +91,8 @@ class Ts(Interface):
 
         # 更新新股ipo通过后的信息
         new_shares = existed_code_list[existed_code_list['list_status'] == 'N']
-        print(new_shares)
         if not new_shares.empty:
             ipo_done_rows = new_rows[new_rows['ts_code'].isin(new_shares['ts_code'])]
-            print('ipo_done_rows=', ipo_done_rows)
             if not ipo_done_rows.empty:
                 for i in range(len(ipo_done_rows)):
                     ts_code = ipo_done_rows.iloc[i]['ts_code']
