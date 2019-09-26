@@ -114,7 +114,7 @@ class Ts(Interface):
         """
 
         api = 'new_share'
-        new_rows = self.pro.query(api, fields=fields_map[api], start_date=self.start_date, end_date=self.end_date)
+        new_rows = self.pro.query(api, start_date=self.start_date, end_date=self.end_date)
 
         existed_code_list = DB.get_code_list()
         avail_recorders = new_rows[~new_rows['ts_code'].isin(existed_code_list['ts_code'])]
