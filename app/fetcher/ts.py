@@ -110,7 +110,7 @@ class Ts(Interface):
     def update_new_share(self):
         """
         更新新股ipo，并在stock_basic 中生成一条记录
-        :return:
+        :return: 是否有更新
         """
 
         api = 'new_share'
@@ -127,8 +127,13 @@ class Ts(Interface):
 
         existed_new_share_list = DB.get_code_list(list_status='N')
         new_rows = existed_new_share_list.merge(new_rows, on='ts_code')
-        avail_recorders2 = new_rows[fields_map[api]]
-        avail_recorders2.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+        new_shares = new_rows[fields_map[api]]
+        new_shares.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+
+        if not new_shares.empty:
+            return True
+        else:
+            return False
 
     def update_fut_basic(self):
         """
