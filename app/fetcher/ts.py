@@ -6,6 +6,7 @@ from app.saver.service.fina import Fina
 
 import tushare as ts
 import time
+import pandas as pd
 
 
 class Ts(Interface):
@@ -44,14 +45,21 @@ class Ts(Interface):
             new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def set_code_list(self):
+
         code_list = DB.get_code_list(list_status='L')
+        new_share_list = DB.get_code_list(list_status='N')
+        print('new_share_list=', new_share_list)
+        print('new_share_list+code_list=', pd.concat([code_list, new_share_list]))
         self.code_list = code_list
 
     def update_stock_basic(self):
+
+        # 更新基础信息库
         api = 'stock_basic'
         existed_code_list = DB.get_code_list()
         new_rows = self.pro.query(api, list_status='L', fields=fields_map[api])
         disappear_rows = self.pro.query(api, list_status='D', fields=fields_map[api])
+
         if not existed_code_list.empty:
             avail_recorders = new_rows[~new_rows['ts_code'].isin(existed_code_list['ts_code'])]
         else:
@@ -78,6 +86,28 @@ class Ts(Interface):
                 ts_code = update_rows.iloc[i]['ts_code']
                 stock_name = update_rows.iloc[i]['name']
                 DB.update_stock_name(stock_name, ts_code)
+
+
+    def update_new_share(self):
+        """
+        更新新股ipo，并在stock_basic 中生成一条记录
+        :return:
+        """
+
+        api = 'new_share'
+        DB.delete_by_date(table_name=api, field_name='ipo_date', start_date=self.start_date, end_date=self.end_date)
+
+        new_rows = self.pro.query(api=api, fields=fields_map[api])
+        new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+
+        existed_code_list = DB.get_code_list()
+        avail_recorders = new_rows[~new_rows['ts_code'].isin(existed_code_list['ts_code'])]
+        avail_recorders = avail_recorders[['ts_code', 'name']]
+        # N: ipo中，还未上市
+        avail_recorders['list_status'] = 'N'
+        print(avail_recorders)
+
+        avail_recorders.to_sql('stock_basic', DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def update_fut_basic(self):
         """
