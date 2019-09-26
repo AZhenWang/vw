@@ -91,6 +91,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 营运资金
     oper_fun = balancesheets['total_cur_assets'] - balancesheets['total_cur_liab']
 
+
     # 4、资金周转率：平均准备期+平均收账期-平均付账期
     # 存货周转天数：360*存货平均余额/主营成本
     inventories_days = 360 * balancesheets['inventories'] / incomes['revenue']
@@ -107,6 +108,14 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
                            - balancesheets['oth_payable'] - balancesheets['notes_payable'])
                           / equity, 2)
     capital_turn.name = 'capital_turn'
+
+    # 如果货币资金与短期借款同步增加，且资金周转率下降，表示企业货币资金有无法动用之处，或者未来有大笔开支，且已经传导到经营层面，影响到供应商的信用授信，形成压力
+    money_cap_pct = round(balancesheets['money_cap'].pct_change() * 100, 1)
+    st_borr_pct = round(balancesheets['st_borr'].pct_change() * 100, 1)
+
+    money_cap_pct.name = 'money_cap_pct'
+    st_borr_pct.name = 'st_borr_pct'
+
     capital_tdays.name = 'capital_tdays'
     oper_fun.name = 'oper_fun'
     oper_pressure.name = 'oper_pressure'
@@ -242,7 +251,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     for i in range(2, len(roe_sale)):
         date_idx = roe_sale.index[i]
-        if equity_pct.loc[date_idx] == 100:
+        if equity_pct.loc[date_idx] >= 100:
             roe_mv.iloc[i] = roe_mv.iloc[i - 1]
             roe_rd_mv.iloc[i] = roe_rd_mv.iloc[i - 1]
             roe_sale_mv.iloc[i] = roe_sale_mv.iloc[i-1]
@@ -321,6 +330,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
+    # 其他应收款存放关联交易或者保证金之类的杂项，超过5%，有妖
+    oth_receiv_rate = round(balancesheets['oth_receiv'] * 100 / TEV, 1)
+    oth_receiv_rate.name = 'oth_receiv_rate'
 
     # 普通股在资本总额中的占比
     share_ratio = round(total_mv * 100 / (balancesheets['oth_eqt_tools_p_shr'] + balancesheets['bond_payable'] + total_mv), 1)
@@ -448,7 +460,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax,
          holdernum, holdernum_inc,
          V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
-         pe, pb, i_debt, share_ratio, capital_turn, oper_pressure, OPM,
+         pe, pb, i_debt, share_ratio, oth_receiv_rate, money_cap_pct, st_borr_pct,  capital_turn, oper_pressure, OPM,
          Z,
          receiv_pct, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
@@ -551,19 +563,21 @@ def get_rolling_median(v, window=7):
     return data
 
 
-def get_mean_of_complex_rate(v, window=10):
+def get_mean_of_complex_rate(data, window=10):
     """
     移动复合率的平均值
     :param v:
     :param window:
     :return:
     """
+    v = data.copy()
     base = pd.DataFrame(index=v.index)
     if v.isna().all():
         return v
     v.dropna(0, inplace=True)
-    v[v <= -100] = -99
-    v[v > 100] = 100
+    v[v < -100] = np.nan
+    v[v > 100] = np.nan
+    v.fillna(method='ffill', inplace=True)
     v = v/100
     data = pd.Series(index=v.index, name='data')
     if len(v) == 1:
