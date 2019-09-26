@@ -86,8 +86,41 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     goodwill.name = 'goodwill'
 
     adj_close = code_info['adj_close']
+    adj_factor = code_info['adj_factor']
+    total_mv = round(code_info['total_mv'] * 10000, 2)
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
     total_assets = balancesheets['total_assets']
+
+    equity = balancesheets['total_assets'] - balancesheets['total_liab']
+    pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['intan_assets'] - goodwill - \
+                  balancesheets[
+                      'r_and_d']
+    normal_equity = pure_equity - balancesheets['oth_eqt_tools_p_shr']
+    equity_pct = round((equity - equity.shift() + cash_divs.shift()) * 100 / equity.shift(), 1)
+    equity_pctmv = get_mean_of_complex_rate(equity_pct)
+    pure_equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100 / pure_equity.shift(), 1)
+    pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct)
+
+    ret = round(incomes['n_income'] * 100 / total_assets, 2)
+    pe = round(code_info['pe'], 2)
+    pb = round(total_mv / normal_equity.shift(), 2)
+
+    # 更新刚IPO时的数据,
+    ipo_log = DB.get_new_share_log(incomes['code_id'].iloc[0])
+    if not ipo_log.empty:
+        ipo_before_equity = normal_equity[normal_equity.index < ipo_log.ipo_date]
+        ipo_lastest_date = ipo_before_equity.index[-1]
+        ipo_lastest_equity = ipo_before_equity.loc[ipo_lastest_date]
+
+        ipo_lastest_equity += ipo_log.price * ipo_log.amount * 10000
+        ipo_lastest_total_mv = ipo_log.price * (
+                    ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share'])
+
+        pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / ipo_lastest_equity, 2)
+        total_mv.loc[ipo_lastest_date] = ipo_lastest_total_mv
+        pe.loc[ipo_lastest_date] = ipo_log.pe
+        adj_close.loc[ipo_lastest_date] = ipo_log.price
+        adj_factor.loc[ipo_lastest_date] = 1
 
     # 营运资金
     oper_fun = balancesheets['total_cur_assets'] - balancesheets['total_cur_liab']
@@ -149,14 +182,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     rd_exp = fina_indicators['rd_exp'] + cashflows['amort_intang_assets']
     rd_exp.fillna(0, inplace=True)
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
-    equity = balancesheets['total_assets'] - balancesheets['total_liab']
-    pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['intan_assets'] - goodwill - balancesheets[
-        'r_and_d']
-    normal_equity = pure_equity - balancesheets['oth_eqt_tools_p_shr']
-    equity_pct = round((equity - equity.shift() + cash_divs.shift()) * 100/equity.shift(), 1)
-    equity_pctmv = get_mean_of_complex_rate(equity_pct)
-    pure_equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100 / pure_equity.shift(), 1)
-    pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct)
+
     fix_asset_pct = round(fix_assets.pct_change()*100, 2)
     freecash = cashflows['free_cashflow'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 2)
@@ -208,7 +234,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv-income_pctmv.shift()], axis=1).min(axis=1)
     op_pct[op_pct > 50] = 50
     op_pct[op_pct < -50] = -50
-    total_mv = round(code_info['total_mv'] * 10000, 2)
+
 
     # libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
     libwithinterest = balancesheets['st_borr'] + balancesheets['lt_borr'] + balancesheets['bond_payable'] + balancesheets['lt_payable'] + balancesheets['st_bonds_payable'] + balancesheets['non_cur_liab_due_1y'] + balancesheets['notes_payable']
@@ -267,24 +293,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_sale_mv = round(roe_sale_mv * 100, 2)
     roe_ebitda_mv = round(roe_ebitda_mv * 100, 2)
 
-    ret = round(incomes['n_income'] * 100 / total_assets, 2)
-    pe = round(code_info['pe'], 2)
-    pb = round(total_mv / normal_equity.shift(), 2)
-
-    # 更新刚IPO时的数据,
-    ipo_log = DB.get_new_share_log(incomes['code_id'].iloc[0])
-    if not ipo_log.empty:
-        ipo_before_equity = normal_equity[normal_equity.index < ipo_log.ipo_date]
-        ipo_lastest_date = ipo_before_equity.index[-1]
-        ipo_lastest_equity = ipo_before_equity.loc[ipo_lastest_date]
-
-        ipo_lastest_equity += ipo_log.price * ipo_log.amount * 10000
-        ipo_lastest_total_mv = ipo_log.price * (ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share'])
-
-        pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv/ipo_lastest_equity, 2)
-        total_mv.loc[ipo_lastest_date] = ipo_lastest_total_mv
-        pe.loc[ipo_lastest_date] = ipo_log.pe
-        adj_close.loc[ipo_lastest_date] = ipo_log.price
 
     roe_std = round(get_rolling_std(roe_sale_mv, window=10), 2)
     roe_adj = round(roe_sale_mv - roe_std, 2)
@@ -473,7 +481,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     MP_pct.name = 'MP_pct'
 
     data = pd.concat(
-        [round(adj_close,2), round(code_info['adj_factor'], 2), balancesheets['f_ann_date'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
+        [round(adj_close,2), round(adj_factor, 2), balancesheets['f_ann_date'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
          roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax,
          holdernum, holdernum_inc,
          V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
