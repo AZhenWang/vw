@@ -160,6 +160,12 @@ class DB(Base):
         return trade_codes
 
     @classmethod
+    def update_stock_basic_info(cls,  ts_code, name, area, industry, market, curr_type, list_status, list_date, delist_date, is_hs):
+        pd.io.sql.execute('update stock_basic set name=%s, area=%s, industry=%s, market=%s, curr_type=%s, '
+                          'list_status=%s, list_date=%s, delist_date=%s, is_hs=%s where ts_code=%s',
+                          cls.engine, params=['D', name, area, industry, market, curr_type, list_status, list_date, delist_date, is_hs, ts_code])
+
+    @classmethod
     def update_delist_date(cls, delist_date, ts_code):
         pd.io.sql.execute('update stock_basic set list_status=%s, delist_date=%s where ts_code=%s',
                           cls.engine, params=['D', delist_date, ts_code])
