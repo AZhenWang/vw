@@ -40,17 +40,8 @@ if file_name:
             today = now.strftime('%Y%m%d')
             if not start_date:
                 start_date = init_date
-            if not end_date or end_date >= today:
-                yesterday = (now - timedelta(1)).strftime('%Y%m%d')
-                hour = now.hour
-                if hour < 15:
-                    if start_date == end_date:
-                        start_date = yesterday
-                    end_date = yesterday
-                else:
-                    if start_date == end_date:
-                        start_date = today
-                    end_date = today
+            if not end_date:
+                end_date = today
             executor.execute(start_date, end_date)
         else:
             print('此文件没有execute函数')
