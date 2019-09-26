@@ -150,6 +150,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
     pure_equity = balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill
     equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100/pure_equity.shift(), 1)
+    equity_pctmv = get_mean_of_complex_rate(equity_pct)
     fix_asset_pct = round(fix_assets.pct_change()*100, 2)
     freecash = cashflows['free_cashflow'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 2)
@@ -188,7 +189,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     tax_payable_pctmv = get_mean_of_complex_rate(tax_payable_pct)
     rev_pctmv = get_mean_of_complex_rate(rev_pct)
     income_pctmv = get_mean_of_complex_rate(income_pct)
-    equity_pctmv = get_mean_of_complex_rate(equity_pct)
+
     fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct)
     income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['revenue'], 2)
     total_turn = round(incomes['revenue'] / total_assets, 2)
@@ -563,14 +564,14 @@ def get_rolling_median(v, window=7):
     return data
 
 
-def get_mean_of_complex_rate(data, window=10):
+def get_mean_of_complex_rate(d, window=10):
     """
     移动复合率的平均值
     :param v:
     :param window:
     :return:
     """
-    v = data.copy()
+    v = d.copy()
     base = pd.DataFrame(index=v.index)
     if v.isna().all():
         return v
