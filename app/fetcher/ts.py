@@ -90,7 +90,7 @@ class Ts(Interface):
         new_shares = existed_code_list[existed_code_list['list_status'] == 'N']
         print(new_shares)
         if not new_shares.empty:
-            ipo_done_rows = new_shares[new_shares['ts_code'].isin(new_rows['ts_code'])]
+            ipo_done_rows = new_rows[new_rows['ts_code'].isin(new_shares['ts_code'])]
             print('ipo_done_rows=', ipo_done_rows)
             if not ipo_done_rows.empty:
                 for i in range(len(ipo_done_rows)):
