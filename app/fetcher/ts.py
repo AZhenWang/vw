@@ -125,8 +125,8 @@ class Ts(Interface):
 
         DB.delete_by_date(table_name=api, field_name='ipo_date', start_date=self.start_date, end_date=self.end_date)
 
-        existed_new_share_list = DB.get_code_list(list_status='N')
-        new_rows = existed_new_share_list.merge(new_rows, on='ts_code')
+        existed_code_list = DB.get_code_list()
+        new_rows = existed_code_list.merge(new_rows, on='ts_code')
         new_shares = new_rows[fields_map[api]]
         new_shares.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
