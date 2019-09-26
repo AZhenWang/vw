@@ -242,11 +242,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_sale_mv = pd.Series(index=balancesheets.index)
     roe_ebitda_mv = pd.Series(index=balancesheets.index)
 
-    roe_mv.fillna(0, inplace=True)
-    roe_rd_mv.fillna(0, inplace=True)
-    roe_sale_mv.fillna(0, inplace=True)
-    roe_ebitda_mv.fillna(0, inplace=True)
-
     roe_mv.iloc[1] = roe.iloc[1] / 100
     roe_rd_mv.iloc[1] = roe_rd.iloc[1] / 100
     roe_sale_mv.iloc[1] = roe_sale.iloc[1] / 100
