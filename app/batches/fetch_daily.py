@@ -14,12 +14,12 @@ def execute(start_date='', end_date=''):
     worker.update_new_share()
     worker.set_code_list()
     #
-    # worker.update_trade_cal()
-    # worker.set_trade_dates()
+    worker.update_trade_cal()
+    worker.set_trade_dates()
 
-    if not worker.trade_dates.empty:
-        ts_apis = ['daily', 'daily_basic', 'adj_factor',
-                   'moneyflow', 'weekly', 'monthly', 'block_trade' ]
+    # if not worker.trade_dates.empty:
+    #     ts_apis = ['daily', 'daily_basic', 'adj_factor',
+    #                'moneyflow', 'weekly', 'monthly', 'block_trade' ]
         # for api in ts_apis:
         #     worker.query(api)
 
