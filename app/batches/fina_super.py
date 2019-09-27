@@ -36,8 +36,8 @@ def execute(start_date='', end_date=''):
         dailys = DB.get_code_info(code_id=code_id, start_date=init_start_date, end_date=end_date, TTB='daily')
         logs['report_adj_factor'] = logs['adj_factor']
         logs['report_adj_close'] = logs['adj_close']
-        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct', 'roe_mv', 'roe_sale_mv', 'report_adj_factor', 'V', 'V_adj', 'V_rd', 'V_sale', 'V_ebitda', 'dpd_V', 'report_adj_close']].set_index('f_ann_date', drop=False), on='cal_date')
-        base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor', 'total_mv', 'pb', 'pe']], on='date_id')
+        base = trade_cal.join(logs[['f_ann_date', 'end_date', 'pb', 'pe', 'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct', 'roe_mv', 'roe_sale_mv', 'report_adj_factor', 'V', 'V_adj', 'V_rd', 'V_sale', 'V_ebitda', 'dpd_V', 'report_adj_close']].set_index('f_ann_date', drop=False), on='cal_date')
+        base = base.join(dailys[['close', 'high', 'low', 'open', 'adj_factor', 'total_mv']], on='date_id')
         base.fillna(method='ffill', inplace=True)
         base.dropna(subset=['report_adj_close', 'V', 'V_sale', 'V_ebitda'], inplace=True)
 
@@ -65,8 +65,8 @@ def execute(start_date='', end_date=''):
         data['total_mv'] = base['total_mv']
         data['adj_factor'] = base['adj_factor']
 
-        pb = base['pb']
-        pe = base['pe']
+        pb = base['pb'] * adj_close/ base['report_adj_close']
+        pe = base['pe'] * adj_close / base['report_adj_close']
         data['pp'] = round(base['V'] / pb, 2)
         data['pp_adj'] = round(base['V_adj'] / pb, 2)
         data['pp_rd'] = round(base['V_rd'] / pb, 2)

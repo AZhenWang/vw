@@ -103,7 +103,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
-    pb = round(code_info['pb'], 2)
+    pb = round(total_mv/normal_equity, 2)
 
     # 更新刚IPO时的数据,
     ipo_log = DB.get_new_share_log(incomes['code_id'].iloc[0])
@@ -119,6 +119,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / ipo_lastest_equity, 2)
         total_mv.loc[ipo_lastest_date] = ipo_lastest_total_mv
         pe.loc[ipo_lastest_date] = ipo_log.pe
+        pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / normal_equity.loc[ipo_lastest_date],2)
         adj_close.loc[ipo_lastest_date] = ipo_log.price
         adj_factor.loc[ipo_lastest_date] = 1
 
