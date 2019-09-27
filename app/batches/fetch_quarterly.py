@@ -34,8 +34,8 @@ def execute(start_date='', end_date=''):
         ts_apis = ['fina_mainbz']
         for api in ts_apis:
             worker.query_fina_mainbz(api)
-
-        ts_apis = ['dividend']
-        for api in ts_apis:
-            worker.query_by_ann_date(api)
+        #
+        # ts_apis = ['dividend']
+        # for api in ts_apis:
+        #     worker.query_by_ann_date(api)
 
