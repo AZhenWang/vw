@@ -92,7 +92,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_assets = balancesheets['total_assets']
 
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
-    pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['intan_assets'] - goodwill - \
+    pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - goodwill - \
                   balancesheets[
                       'r_and_d']
     normal_equity = pure_equity - balancesheets['oth_eqt_tools_p_shr']
@@ -179,7 +179,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 第四只眼： 所得税缴纳比例正常
 
     # 研发费用，除去某一年的突然研发费用干扰， 研发费用+营业利润的7年的平均值，作为利润的增长基础值
-    rd_exp = fina_indicators['rd_exp'] + cashflows['amort_intang_assets']
+    rd_exp = fina_indicators['rd_exp']
     rd_exp.fillna(0, inplace=True)
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
 
@@ -258,8 +258,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_sale = round((incomes['operate_profit'] - tax_payable + rd_exp) * 100 / equity.shift(), 2)
     roe_sale[roe_sale > 50] = 50
     roe_sale[roe_sale < -50] = -50
-    TEV = total_assets - balancesheets['intan_assets'] - goodwill - balancesheets['r_and_d']
-    roe_ebitda = round((incomes['ebitda'] + rd_exp) * 100 / TEV.shift(), 2)
+
+    roe_ebitda = round((incomes['ebitda'] + rd_exp) * 100 / total_assets.shift(), 2)
     roe_ebitda[roe_ebitda > 50] = 50
     roe_ebitda[roe_ebitda < -50] = -50
 
@@ -354,6 +354,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
     # 其他应收款存放关联交易或者保证金之类的杂项，超过5%，有妖
+    TEV = total_assets - goodwill - balancesheets['r_and_d']
     oth_receiv_rate = round(balancesheets['oth_receiv'] * 100 / TEV, 1)
     oth_receiv_rate.name = 'oth_receiv_rate'
 
@@ -384,8 +385,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # X3 = 息税前利润 / 总资产
     X3 = round(incomes['ebit'] / total_assets, 2)
     # X4 = 股东权益 / 负债
-    # X4 = round((balancesheets['total_assets'] - balancesheets['total_liab']) / balancesheets['total_liab'], 2)
-    X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
+    X4 = round((balancesheets['total_assets'] - balancesheets['total_liab']) / balancesheets['total_liab'], 2)
+    # X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
     # X5 = 销售收入 / 总资产
     X5 = round(incomes['revenue'] / total_assets, 2)
     Z = round(0.717 * X1 + 0.847 * X2 + 3.11 * X3 + 0.420 * X4 + 0.998 * X5, 2)
@@ -601,8 +602,8 @@ def get_mean_of_complex_rate(d, window=10):
     if v.isna().all():
         return v
     v.dropna(0, inplace=True)
-    v[v < -100] = np.nan
-    v[v > 100] = np.nan
+    v[v < -100] = -99
+    # v[v > 100] = np.nan
     v.fillna(method='ffill', inplace=True)
     v.dropna(inplace=True)
     v = v/100
