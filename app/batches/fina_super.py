@@ -23,9 +23,9 @@ def execute(start_date='', end_date=''):
     # code_ids = [214, 2381]
     # code_ids = [2555, 214, 2, 132, 73, 2381]
     # code_ids = [1486, 214, 2, 13, 161, 2381, 3012]
-    # code_ids = [214]
+    # code_ids = [2460, 247, 534]
     # code_ids = range(2920, 3670)
-    code_ids = range(1, 3668)
+    code_ids = range(1, 3820)
     for code_id in code_ids:
         print('code_id=', code_id)
         Fina.delete_fina_super_logs(code_id, start_date=start_date, end_date=end_date)
@@ -72,7 +72,7 @@ def execute(start_date='', end_date=''):
         data['pp_rd'] = round(base['V_rd'] / pb, 2)
         data['pp_sale'] = round(base['V_sale'] / pb, 2)
         data['pp_ebitda'] = round(base['V_ebitda'] / pb, 2)
-        data['pp_comp'] = round((data['pp'] + data['pp_ebitda']) / 2, 2)
+        data['pp_comp'] = round((data['pp_sale'] + data['pp_ebitda']) / 2, 2)
         data['dpd_RR'] = round(base['dpd_V'] / pe, 2)
 
         adj_MP = round(adj_close * data['pp_sale'], 2)
