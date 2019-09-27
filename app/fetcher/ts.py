@@ -306,8 +306,7 @@ class Ts(Interface):
 
     def query_fina_mainbz(self, api):
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
-        # codes = self.code_list['ts_code']
-        codes =['000866.SZ', '000916.SZ']
+        codes = self.code_list['ts_code']
         type = 'P'
         for ts_code in codes:
             flag = True
@@ -332,8 +331,7 @@ class Ts(Interface):
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
-        # codes = self.code_list['ts_code']
-        codes= ['000866.SZ', '000916.SZ']
+        codes = self.code_list['ts_code']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
