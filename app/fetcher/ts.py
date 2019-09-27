@@ -305,7 +305,8 @@ class Ts(Interface):
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def query_fina_mainbz(self, api):
-        codes = self.code_list['ts_code']
+        codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
+        # codes = self.code_list['ts_code']
         type = 'P'
         for ts_code in codes:
             flag = True
