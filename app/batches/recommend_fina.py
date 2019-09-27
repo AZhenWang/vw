@@ -17,12 +17,13 @@ def execute(start_date='', end_date=''):
                                      'mix_op_diff',
                                      'V', 'V_adj', 'V_rd', 'V_sale', 'V_tax', 'dpd_V', 'pp', 'pp_rd', 'pp_adj', 'pp_sale', 'pp_tax',
                                      'dpd_RR',
-                                     'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'capital_turn', 'oper_pressure', 'OPM',
+                                     'pe', 'pb', 'i_debt', 'share_ratio', 'IER',
+                                     'oth_receiv_rate', 'money_cap_pct', 'st_borr_pct',  'capital_turn', 'oper_pressure', 'OPM',
                                      'Z',
                                      'dyr', 'dyr_or', 'dyr_mean',
                                      'freecash_mv', 'cash_gap', 'cash_gap_r', 'receiv_pct', 'cash_act_in',
                                      'cash_act_out', 'cash_act_rate',
-                                     'equity_pct', 'fix_asset_pct', 'rev_pct', 'gross_rate',
+                                     'equity_pct', 'fix_asset_pct', 'revenue', 'rev_pct', 'gross_rate',
                                      'income_rate', 'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct',
                                      'def_tax_ratio',
                                      'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
@@ -38,17 +39,18 @@ def execute(start_date='', end_date=''):
     # code_ids = range(1, 500)
     # code_ids = range(2920, 3670)
     # code_ids = [range(1, 500), range(2920, 3670)]
-    code_ids = range(1, 3668)
+    code_ids = range(1, 3820)
     # code_ids = range(3559, 3670)
     # code_ids = [2555, 214, 2, 132, 73, 2381]
     # code_ids = [1486, 214, 2, 13, 161, 2381, 3012]
-    # code_ids = [2352, 214]
+    # code_ids = [2460, 247, 534]
+    # code_ids = range(3800, 3820)
     for code_id in code_ids:
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='fina_sys',
                                     end_date_type='%1231%')
-        logs = logs.dropna(subset=['total_mv', 'holdernum'])
+        logs = logs.dropna(subset=['total_mv'])
         logs.fillna(0, inplace=True)
         if logs.empty:
             continue
@@ -72,7 +74,8 @@ def execute(start_date='', end_date=''):
                     and log['i_debt'] < 50 \
                     and log['roe_mv'] > 12 \
                     and log['roe_sale_mv'] > 12\
-                    and log['IER'] > 8:
+                    and log['IER'] > 8\
+                    and log['oth_receiv_rate'] < 10:
 
                 flag = 1
 
@@ -81,7 +84,9 @@ def execute(start_date='', end_date=''):
                     or (log['i_debt'] > 40 and log['IER'] < 8) \
                     or log['i_debt'] > 60 \
                     or log['roe_mv'] < 12 \
-                    or log['IER'] < 3:
+                    or log['IER'] < 3\
+                    or log['oth_receiv_rate'] > 20 \
+                    or (log['st_borr_pct'] > 50 and log['money_cap_pct'] > 50):
                 flag = -1
 
             # 再看这个企业的业务是不是在突飞猛进
@@ -118,7 +123,11 @@ def execute(start_date='', end_date=''):
             holdernum_2inc = log['holdernum_inc']
             if j >= 1 and logs.iloc[j-1]['holdernum_inc'] * holdernum_2inc > 0:
                 holdernum_2inc += logs.iloc[j-1]['holdernum_inc']
-            holder_unit = round(log['total_mv'] / log['holdernum'], 1)
+            if log['holdernum'] > 0:
+                holder_unit = round(log['total_mv'] / log['holdernum'], 1)
+            else:
+                holder_unit = np.nan
+
             logs.at[index, 'flag'] = flag
             logs.at[index, 'step'] = step
             logs.at[index, 'nice'] = nice
