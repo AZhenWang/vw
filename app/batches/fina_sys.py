@@ -18,12 +18,12 @@ def execute(start_date='', end_date=''):
     # code_ids = codes['code_id']
     # new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
     # code_ids = [2352, 1648]
-    # code_ids = [1707]
-    # code_ids = [214, 2, 13, 161, 3012]
+    # code_ids = [3772]
+    # code_ids = [214,  2, 13, 161, 3012]
     # code_ids = [2555, 214, 2, 132, 73, 2381]
-    # code_ids = range(3800, 3820)
+    code_ids = range(3772, 3820)
     # code_ids = range(3807, 3819)
-    code_ids = range(1, 3820)
+    # code_ids = range(1, 3820)
     # 1648：尔康制药，2352：恒瑞制药
 
     for ci in code_ids:
