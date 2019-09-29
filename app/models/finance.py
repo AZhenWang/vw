@@ -84,7 +84,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     fina_indicators.fillna(value=0, inplace=True)
     goodwill = balancesheets['goodwill']
     goodwill.name = 'goodwill'
-
+    print('ss1')
     adj_close = code_info['adj_close']
     adj_factor = code_info['adj_factor']
     total_mv = round(code_info['total_mv'] * 10000, 2)
@@ -104,7 +104,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
     pb = round(total_mv/normal_equity, 2)
-
+    print('ss2')
     # 更新刚IPO时的数据,
     ipo_log = DB.get_new_share_log(incomes['code_id'].iloc[0])
     if not ipo_log.empty:
@@ -163,7 +163,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
     receiv_inc = receiv - receiv.shift()
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
-
+    print('ss3')
     # 调整折旧费用
     gross = incomes['revenue'] - incomes['oper_cost']
     gross_rate = round(gross * 100 / incomes['revenue'], 2)
@@ -183,11 +183,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     rd_exp = fina_indicators['rd_exp']
     rd_exp.fillna(0, inplace=True)
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
-
     fix_asset_pct = round(fix_assets.pct_change()*100, 2)
     freecash = cashflows['free_cashflow'] + fina_indicators['rd_exp'].fillna(0)
     freecash_rate = round(freecash * 100 / (equity), 2)
+    print(freecash_rate)
     freecash_mv = round(get_mean_of_complex_rate(freecash_rate, window=10), 1)
+    print(freecash_mv)
     # 所得税缴纳基数
     tax_rate = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
     # 应纳税额
@@ -197,11 +198,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     tax_payable[tax_payable.isna()] = 0
     tax_payable_pct = round(tax_payable.pct_change()*100, 2)
     tax_pct = round(incomes['income_tax'].pct_change()*100, 2)
-
     tax_diff = tax_payable - tax_payable.shift()
     tax_base = tax_payable.shift()[tax_diff >= 0].add(tax_payable[tax_diff < 0], fill_value=0.01)
     def_tax_ratio = round(def_tax * 100 / tax_base, 2)
-
     # 短期营业收入是否加速
     adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
     # adj_ebit = tax_payable
@@ -210,7 +209,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     ebit_mv_short_pct = round((ebit_mv_short - ebit_mv_short.shift()) * 100 / ebit_mv_short.shift(), 2)
     ebit_mv_pct = round((ebit_mv - ebit_mv.shift()) * 100 / ebit_mv.shift(), 2)
     mix_op_diff = ebit_mv_short_pct - ebit_mv_pct
-    print('ss1=')
+    print('ss5=')
     # 收入，利润，负债，税的长期率
     rev_pct = get_rev_pct(incomes['revenue'], cash_divs)
     liab_pct = balancesheets['total_liab'].pct_change()*100
@@ -617,19 +616,26 @@ def get_mean_of_complex_rate(d, window=10):
         return base['data']
 
     mv = (1 + v.iloc[0]) * (1 + v.iloc[1])
-
+    print('mv=', mv)
     for i in range(2, len(data)):
         date_idx = data.index[i]
+        print('date_idx=', date_idx)
         mv = mv * (1 + v.loc[date_idx])
+        print('mv=', mv)
         if i < window:
             max_v = v[0:i+1].max()
+            print('max_v', max_v)
             min_v = v[0:i+1].min()
+            print('min_v', min_v)
             t = mv / ((1+max_v) * (1+min_v))
             t = t**(1/(i-1)) - 1
+            print('t=', t)
+
         else:
             mv = mv / (1+v.iloc[i - window])
             t = mv**( 1 / window) - 1
         data.iloc[i] = round(t*100, 2)
+    print('data',data)
     base = base.join(data)
     return base['data']
 
