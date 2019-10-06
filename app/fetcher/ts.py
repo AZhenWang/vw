@@ -51,8 +51,7 @@ class Ts(Interface):
         :return:
         """
         code_list = DB.get_code_list(list_status=list_status)
-        new_share_list = DB.get_code_list(list_status=list_status)
-        self.code_list = pd.concat([code_list, new_share_list], ignore_index=True)
+        self.code_list = code_list
 
     def update_stock_basic(self):
 
