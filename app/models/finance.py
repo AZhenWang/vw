@@ -599,6 +599,7 @@ def get_mean_of_complex_rate(d, window=10):
     """
     v = d.copy()
     base = pd.DataFrame(index=v.index)
+    v[v.isin([np.inf, -np.inf])] = np.nan
     if v.isna().all():
         return v
     v.dropna(0, inplace=True)
@@ -608,21 +609,23 @@ def get_mean_of_complex_rate(d, window=10):
     v.dropna(inplace=True)
     v = v/100
     data = pd.Series(index=v.index, name='data')
-    if len(v) < 1:
-        return base
-    elif len(v) == 1:
-        data.iloc[0] = v.iloc[0]
-        base = base.join(data)
-        return base['data']
+    # if len(v) < 1:
+    #     return base
+    # elif len(v) == 1:
+    #     data.iloc[0] = v.iloc[0]
+    #     base = base.join(data)
+    #     return base['data']
 
-    mv = (1 + v.iloc[0]) * (1 + v.iloc[1])
-    print('mv=', mv)
-    for i in range(2, len(data)):
+    # mv = (1 + v.iloc[0]) * (1 + v.iloc[1])
+    mv = (1 + v.iloc[0])
+    for i in range(1, len(data)):
         date_idx = data.index[i]
         print('date_idx=', date_idx)
         mv = mv * (1 + v.loc[date_idx])
         print('mv=', mv)
-        if i < window:
+        if i < 2:
+            t = mv**(1 / (i+1)) - 1
+        elif 2 <= i < window:
             max_v = v[0:i+1].max()
             print('max_v', max_v)
             min_v = v[0:i+1].min()
@@ -635,7 +638,6 @@ def get_mean_of_complex_rate(d, window=10):
             mv = mv / (1+v.iloc[i - window])
             t = mv**( 1 / window) - 1
         data.iloc[i] = round(t*100, 2)
-    print('data',data)
     base = base.join(data)
     return base['data']
 
