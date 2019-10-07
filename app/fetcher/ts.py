@@ -306,7 +306,6 @@ class Ts(Interface):
     def query_fina_mainbz(self, api):
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
         codes = self.code_list['ts_code']
-        print(codes)
         type = 'P'
         for ts_code in codes:
             flag = True
@@ -322,7 +321,6 @@ class Ts(Interface):
 
     def update_fina_mainbz(self, api, ts_code, type, start_date, end_date):
         new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date, type=type)
-        print(new_rows)
         if not new_rows.empty:
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             new_rows['type'] = type
