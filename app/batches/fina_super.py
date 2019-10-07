@@ -67,6 +67,8 @@ def execute(start_date='', end_date=''):
 
         pb = base['pb'] * adj_close/ base['report_adj_close']
         pe = base['pe'] * adj_close / base['report_adj_close']
+        data['pb'] = pb
+        data['pe'] = pe
         data['pp'] = round(base['V'] / pb, 2)
         data['pp_adj'] = round(base['V_adj'] / pb, 2)
         data['pp_rd'] = round(base['V_rd'] / pb, 2)
