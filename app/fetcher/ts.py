@@ -226,8 +226,8 @@ class Ts(Interface):
         #     '1067': 'h20344.CSI',
         # }
         index_ts_code = {
-            '1066': 'h20343.CSI',
-            '1067': 'h20344.CSI',
+            '1750': 'h30344.CSI',
+            '2965': '399812.SZ',
         }
 
         for index_id in index_ts_code:
