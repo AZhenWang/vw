@@ -454,6 +454,7 @@ create table fina_sys (
    oth_receiv_rate float null comment'其他应收款占总资产的比例，超过5%有问题',
    money_cap_pct	float	NULL comment'货币资金增长比率',
    st_borr_pct	float	NULL comment'短期借款增长比率',
+   st_borr_rate float null comment '短期借款占总有效资产TEV比例',
    capital_turn float null comment'资金周转率',
    oper_pressure float NULL comment'经营压力，应收-应付，值越小，经营压力越小',
    OPM float NULL comment'经营压力平均值',
