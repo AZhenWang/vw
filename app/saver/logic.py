@@ -135,6 +135,16 @@ class DB(Base):
         return existed_codes
 
     @classmethod
+    def get_ipoing(cls):
+        logs = pd.read_sql(
+            sa.text(
+                'SELECT * FROM new_share n '
+                ' where n.price > 0 and n.issue_date  = "nan"'),
+            cls.engine,
+        )
+        return logs
+
+    @classmethod
     def get_new_share_log(cls, code_id):
         log = pd.read_sql(
             sa.text(

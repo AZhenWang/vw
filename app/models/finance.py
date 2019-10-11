@@ -90,6 +90,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_mv = round(code_info['total_mv'] * 10000, 2)
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
     total_assets = balancesheets['total_assets']
+    TEV = total_assets - goodwill - balancesheets['r_and_d']
 
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
     pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - goodwill - \
@@ -143,13 +144,17 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
                            - balancesheets['oth_payable'] - balancesheets['notes_payable'])
                           / equity, 2)
     capital_turn.name = 'capital_turn'
+    inventory_turn = round(incomes['revenue'] / balancesheets['inventories'], 2)
+    inventory_turn.name = 'inventory_turn'
 
     # 如果货币资金与短期借款同步增加，且资金周转率下降，表示企业货币资金有无法动用之处，或者未来有大笔开支，且已经传导到经营层面，影响到供应商的信用授信，形成压力
     money_cap_pct = round(balancesheets['money_cap'].pct_change() * 100, 1)
     st_borr_pct = round(balancesheets['st_borr'].pct_change() * 100, 1)
+    st_borr_rate = round(balancesheets['st_borr'] * 100 / pure_equity, 1)
 
     money_cap_pct.name = 'money_cap_pct'
     st_borr_pct.name = 'st_borr_pct'
+    st_borr_rate.name = 'st_borr_rate'
 
     capital_tdays.name = 'capital_tdays'
     oper_fun.name = 'oper_fun'
@@ -163,6 +168,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
     receiv_inc = receiv - receiv.shift()
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
+    receiv_rate = round(receiv * 100 / incomes['revenue'])
     print('ss3')
     # 调整折旧费用
     gross = incomes['revenue'] - incomes['oper_cost']
@@ -354,7 +360,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
     # 其他应收款存放关联交易或者保证金之类的杂项，超过5%，有妖
-    TEV = total_assets - goodwill - balancesheets['r_and_d']
+
     oth_receiv_rate = round(balancesheets['oth_receiv'] * 100 / TEV, 1)
     oth_receiv_rate.name = 'oth_receiv_rate'
 
@@ -431,6 +437,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     dpd_V.name = 'dpd_V'
     i_debt.name = 'i_debt'
     receiv_pct.name = 'receiv_pct'
+    receiv_rate.name = 'receiv_rate'
     money_cap.name = 'money_cap'
     dyr_or.name = 'dyr_or'
     dyr_mean.name = 'dyr_mean'
@@ -486,9 +493,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax,
          holdernum, holdernum_inc,
          V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
-         pe, pb, i_debt, share_ratio, oth_receiv_rate, money_cap_pct, st_borr_pct,  capital_turn, oper_pressure, OPM,
+         pe, pb, i_debt, share_ratio, oth_receiv_rate, money_cap_pct, st_borr_pct, st_borr_rate,  capital_turn, inventory_turn, oper_pressure, OPM,
          Z,
-         receiv_pct, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
+         receiv_pct, receiv_rate, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
          fix_asset_pct, tax_payable_pct, def_tax_ratio,
