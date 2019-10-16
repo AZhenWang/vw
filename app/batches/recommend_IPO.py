@@ -43,7 +43,7 @@ def execute(start_date='', end_date=''):
     if not recommend_stocks.empty:
         msgs = []
         recommend_stocks.sort_values(by=['code_id', 'end_date'],
-                                     ascending=[True, True], inplace=True)
+                                     ascending=[False, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
 
