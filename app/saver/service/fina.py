@@ -128,7 +128,7 @@ class Fina(Base):
               ' and tc.cal_date >= :start_date and tc.cal_date <= :end_date' \
               ' order by api.end_date asc'
 
-        params = {'ci': code_id, 'start_date': start_date, 'end_date': end_date}
+        params = {'ci': str(code_id), 'start_date': str(start_date), 'end_date': str(end_date)}
 
         existed_reports = pd.read_sql(
             sa.text(sql),
