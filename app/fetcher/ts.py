@@ -287,7 +287,7 @@ class Ts(Interface):
                 try:
                     self.update_dividend(api, date_id, cal_date)
                     flag = False
-                    time.sleep(5)
+                    # time.sleep(5)
                 except BaseException as e:
                     time.sleep(5)
                     self.update_dividend(api, date_id, cal_date)
