@@ -41,5 +41,5 @@ def execute(start_date='', end_date=''):
 
         ts_apis = ['dividend']
         for api in ts_apis:
-            worker.query_by_ann_date(api)
+            worker.query_dividend(api)
 
