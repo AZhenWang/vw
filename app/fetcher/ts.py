@@ -279,21 +279,22 @@ class Ts(Interface):
             avail_recorders = new_rows[fields_map[api]]
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
-    def query_by_ann_date(self, api):
-        # 按trade_date依次拉取所有股票信息
+    def query_dividend(self, api):
+        # 按trade_date依次拉取所有实施的分红信息
         for date_id, cal_date in self.all_dates[['date_id', 'cal_date']].values:
             flag = True
             while flag:
                 try:
-                    self.update_by_ann_date(api, date_id, cal_date)
+                    self.update_dividend(api, date_id, cal_date)
                     flag = False
                     time.sleep(5)
                 except BaseException as e:
                     time.sleep(5)
-                    self.update_by_ann_date(api, date_id, cal_date)
+                    self.update_dividend(api, date_id, cal_date)
 
-    def update_by_ann_date(self, api, date_id, cal_date):
+    def update_dividend(self, api, date_id, cal_date):
         new_rows = self.pro.query(api, ann_date=cal_date)
+        new_rows = new_rows[new_rows['div_proc'].isin(['实施'])]
         print('new_rows0=', new_rows)
         if not new_rows.empty:
             existed_codes = DB.get_existed_codes(table_name=api, date_id=date_id)
