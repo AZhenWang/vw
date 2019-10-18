@@ -294,10 +294,13 @@ class Ts(Interface):
 
     def update_by_ann_date(self, api, date_id, cal_date):
         new_rows = self.pro.query(api, ann_date=cal_date)
+        print('new_rows0=', new_rows)
         if not new_rows.empty:
             existed_codes = DB.get_existed_codes(table_name=api, date_id=date_id)
+            print('existed_codes=', existed_codes)
             if not existed_codes.empty:
                 new_rows = new_rows[~new_rows['ts_code'].isin(existed_codes['ts_code'])]
+                print('new_rows1=', new_rows)
             new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]

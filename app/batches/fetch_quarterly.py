@@ -10,34 +10,34 @@ def execute(start_date='', end_date=''):
     worker.set_trade_dates()
 
     if not worker.trade_dates.empty:
-
-        ts_apis = ['balancesheet']
-        for api in ts_apis:
-            worker.query_finance(api, report_type='1')
-
-        ts_apis = ['income', 'cashflow', 'balancesheet']
-        for api in ts_apis:
-            worker.query_finance(api, report_type='1')
-
-        ts_apis = ['income', 'cashflow']
-        for api in ts_apis:
-            worker.query_finance(api, report_type='2')
-
-        ts_apis = ['fina_indicator']
-        for api in ts_apis:
-            worker.query_finance(api=api, need_fields=True)
-
-        ts_apis = ['fina_audit', 'stk_holdernumber']
-        for api in ts_apis:
-            worker.query_finance(api=api, need_fields=True)
-
-        ts_apis = ['express']
-        for api in ts_apis:
-            worker.query_finance(api=api, need_fields=True)
-
-        ts_apis = ['fina_mainbz']
-        for api in ts_apis:
-            worker.query_fina_mainbz(api)
+        #
+        # ts_apis = ['balancesheet']
+        # for api in ts_apis:
+        #     worker.query_finance(api, report_type='1')
+        #
+        # ts_apis = ['income', 'cashflow', 'balancesheet']
+        # for api in ts_apis:
+        #     worker.query_finance(api, report_type='1')
+        #
+        # ts_apis = ['income', 'cashflow']
+        # for api in ts_apis:
+        #     worker.query_finance(api, report_type='2')
+        #
+        # ts_apis = ['fina_indicator']
+        # for api in ts_apis:
+        #     worker.query_finance(api=api, need_fields=True)
+        #
+        # ts_apis = ['fina_audit', 'stk_holdernumber']
+        # for api in ts_apis:
+        #     worker.query_finance(api=api, need_fields=True)
+        #
+        # ts_apis = ['express']
+        # for api in ts_apis:
+        #     worker.query_finance(api=api, need_fields=True)
+        #
+        # ts_apis = ['fina_mainbz']
+        # for api in ts_apis:
+        #     worker.query_fina_mainbz(api)
 
         ts_apis = ['dividend']
         for api in ts_apis:
