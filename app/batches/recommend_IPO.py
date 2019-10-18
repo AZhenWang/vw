@@ -17,7 +17,7 @@ def execute(start_date='', end_date=''):
     """
     code_list = DB.get_ipoing()
 
-    recommend_stocks = pd.DataFrame(columns=['code_id', 'cname', 'end_date', 'roe', 'roe_sale', 'roe_mv', 'pp', 'pp_sale', 'dpd_RR',
+    recommend_stocks = pd.DataFrame(columns=['ipo_date', 'code_id', 'cname', 'end_date', 'roe', 'roe_sale', 'roe_mv', 'pp', 'pp_sale', 'dpd_RR',
                                      'pe', 'pb', 'IER', 'oth_receiv_rate', 'Z', 'rev_pct', 'odds',  'odds2', 'odds_pp'])
     # code_ids = [3820, 3819]
     for i in range(len(code_list)):
@@ -42,7 +42,7 @@ def execute(start_date='', end_date=''):
         recommend_stocks = recommend_stocks.append(data[recommend_stocks.columns])
     if not recommend_stocks.empty:
         msgs = []
-        recommend_stocks.sort_values(by=['code_id', 'end_date'],
+        recommend_stocks.sort_values(by=['ipo_date', 'end_date'],
                                      ascending=[False, False], inplace=True)
         recommend_stocks.reset_index(drop=True, inplace=True)
         recommend_text = recommend_stocks.to_string(index=False)
