@@ -286,6 +286,7 @@ class Ts(Interface):
             while flag:
                 try:
                     self.update_dividend(api, date_id, cal_date)
+                    time.sleep(1)
                     flag = False
                 except BaseException as e:
                     time.sleep(5)
