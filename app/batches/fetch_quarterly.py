@@ -11,9 +11,9 @@ def execute(start_date='', end_date=''):
 
     if not worker.trade_dates.empty:
         #
-        ts_apis = ['balancesheet']
-        for api in ts_apis:
-            worker.query_finance(api, report_type='1')
+        # ts_apis = ['balancesheet']
+        # for api in ts_apis:
+        #     worker.query_finance(api, report_type='1')
         #
         # ts_apis = ['income', 'cashflow', 'balancesheet']
         # for api in ts_apis:
@@ -39,7 +39,7 @@ def execute(start_date='', end_date=''):
         # for api in ts_apis:
         #     worker.query_fina_mainbz(api)
 
-        # ts_apis = ['dividend']
-        # for api in ts_apis:
-        #     worker.query_dividend(api)
+        ts_apis = ['dividend']
+        for api in ts_apis:
+            worker.query_dividend(api)
 
