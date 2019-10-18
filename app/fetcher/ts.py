@@ -287,9 +287,9 @@ class Ts(Interface):
                 try:
                     self.update_by_ann_date(api, date_id, cal_date)
                     flag = False
-                    time.sleep(10)
+                    time.sleep(5)
                 except BaseException as e:
-                    time.sleep(10)
+                    time.sleep(5)
                     self.update_by_ann_date(api, date_id, cal_date)
 
     def update_by_ann_date(self, api, date_id, cal_date):
@@ -306,6 +306,7 @@ class Ts(Interface):
     def query_fina_mainbz(self, api):
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
         codes = self.code_list['ts_code']
+        codes = ['002901.SZ', '002932.SZ', '300326.SZ', '600276.SH', '603387.SH']
         type = 'P'
         for ts_code in codes:
             flag = True
@@ -331,6 +332,7 @@ class Ts(Interface):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
         codes = self.code_list['ts_code']
+        codes = ['002901.SZ','002932.SZ','300326.SZ','600276.SH','603387.SH']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
