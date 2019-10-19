@@ -295,13 +295,10 @@ class Ts(Interface):
     def update_dividend(self, api, date_id, cal_date):
         new_rows = self.pro.query(api, ann_date=cal_date)
         new_rows = new_rows[new_rows['div_proc'].isin(['实施'])]
-        print('new_rows0',new_rows)
         if not new_rows.empty:
             existed_codes = DB.get_existed_codes(table_name=api, date_id=date_id)
-            print('existed_codes=', existed_codes)
             if not existed_codes.empty:
                 new_rows = new_rows[~new_rows['ts_code'].isin(existed_codes['ts_code'])]
-            print('new_rows1', new_rows)
             new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
             new_rows = self.code_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
@@ -309,9 +306,9 @@ class Ts(Interface):
 
     def query_fina_mainbz(self, api):
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
-        # codes = self.code_list['ts_code']
+        codes = self.code_list['ts_code']
         # codes = ['002901.SZ', '002932.SZ', '300326.SZ', '600276.SH', '603387.SH']
-        codes = ['002901.SZ']
+        # codes = ['002901.SZ']
         type = 'P'
         for ts_code in codes:
             flag = True
@@ -336,9 +333,8 @@ class Ts(Interface):
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
-        # codes = self.code_list['ts_code']
+        codes = self.code_list['ts_code']
         # codes = ['002901.SZ','002932.SZ','300326.SZ','600276.SH','603387.SH']
-        codes = ['002901.SZ']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
@@ -364,12 +360,9 @@ class Ts(Interface):
             new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
         else:
             new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
-        print('new_rows0', new_rows)
         new_rows.drop_duplicates('end_date', inplace=True)
-        print('new_rows1', new_rows)
         if not new_rows.empty:
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
-            print('existed_reports', existed_reports)
             if not existed_reports.empty:
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
                 new_rows.drop_duplicates('end_date', inplace=True)
@@ -377,7 +370,6 @@ class Ts(Interface):
 
                 new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
                 new_rows = self.code_list.merge(new_rows, on='ts_code')
-                print('new_rows2', new_rows)
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
 
