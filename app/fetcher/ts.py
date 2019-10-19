@@ -295,6 +295,7 @@ class Ts(Interface):
     def update_dividend(self, api, date_id, cal_date):
         new_rows = self.pro.query(api, ann_date=cal_date)
         new_rows = new_rows[new_rows['div_proc'].isin(['实施'])]
+        new_rows.drop_duplicates('ts_code', inplace=True)
         if not new_rows.empty:
             existed_codes = DB.get_existed_codes(table_name=api, date_id=date_id)
             if not existed_codes.empty:
