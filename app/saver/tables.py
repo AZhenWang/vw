@@ -163,7 +163,7 @@ fields_map = {
     ],
 
     'fina_sys': [
-        'code_id', 'comp_type', 'end_date', 'f_ann_date', 'adj_close', 'total_mv', 'revenue', 'holdernum', 'holdernum_inc',
+        'code_id', 'date_id', 'comp_type', 'end_date',  'adj_close', 'total_mv', 'share_pct', 'revenue', 'holdernum', 'holdernum_inc',
         'roe',  'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'roe_ebitda', 'roe_ebitda_mv', 'op_pct',  'mix_op_diff',
         'V', 'V_adj', 'V_sale', 'V_ebitda', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_ebitda', 'pp_tax', 'dpd_RR',
         'pe', 'pb', 'i_debt', 'share_ratio', 'IER', 'oth_receiv_rate', 'money_cap_pct', 'st_borr_pct', 'st_borr_rate',
@@ -171,7 +171,7 @@ fields_map = {
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'dyr', 'dyr_or', 'dyr_mean',
         'freecash_mv', 'cash_gap', 'cash_gap_r',  'receiv_pct', 'receiv_rate', 'cash_act_in', 'cash_act_out', 'cash_act_rate',
-        'pure_equity_pct', 'pure_equity_pctmv', 'equity_pct', 'fix_asset_pct', 'rev_pct',
+        'pure_equity_pct', 'pure_equity_pctmv', 'equity_pct', 'fix_asset_pct', 'rev_pct', 'rev_pct_yearly',
         'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio',
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
         'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv', 'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',

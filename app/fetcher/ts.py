@@ -333,8 +333,8 @@ class Ts(Interface):
 
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
-        # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
-        codes = self.code_list['ts_code']
+        codes = self.code_list[self.code_list['code_id'] >= 1382]['ts_code']
+        # codes = self.code_list['ts_code']
         # codes = ['002901.SZ','002932.SZ','300326.SZ','600276.SH','603387.SH']
         if need_fields != '':
             fields = fields_map[api].copy()
@@ -350,10 +350,10 @@ class Ts(Interface):
                 try:
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
                     flag = False
-                    time.sleep(5)
+                    time.sleep(6)
                 except BaseException as e:
                     # print(e)
-                    time.sleep(5)
+                    time.sleep(6)
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
 
     def update_finance_by_code(self, api, ts_code, fields, start_date, end_date, report_type):
