@@ -13,7 +13,7 @@ def execute(start_date='', end_date=''):
     # for api in ts_apis:
     #     worker.query_finance(api, report_type='1')
 
-    ts_apis = ['income']
+    ts_apis = ['cashflow']
     for api in ts_apis:
         worker.query_finance(api, report_type='2')
 
