@@ -361,7 +361,9 @@ class Ts(Interface):
             new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
         else:
             new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
+        print('new_rows0=', new_rows[['end_date', 'f_ann_date']])
         new_rows.drop_duplicates('end_date', inplace=True)
+        print('new_rows1=', new_rows[['end_date', 'f_ann_date']])
         if not new_rows.empty:
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
             if not existed_reports.empty:
