@@ -333,7 +333,7 @@ class Ts(Interface):
 
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
-        codes = self.code_list[self.code_list['code_id'] >= 3672]['ts_code']
+        codes = self.code_list[self.code_list['code_id'] >= 3671]['ts_code']
         # codes = self.code_list['ts_code']
         # codes = ['002901.SZ','002932.SZ','300326.SZ','600276.SH','603387.SH', '300685.SZ']
         if need_fields != '':
@@ -365,12 +365,17 @@ class Ts(Interface):
         if not new_rows.empty:
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
             if not existed_reports.empty:
+
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
                 new_rows.drop_duplicates('end_date', inplace=True)
             if not new_rows.empty:
 
                 new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
                 new_rows = self.code_list.merge(new_rows, on='ts_code')
+                new_rows.sort_values(by='end_date', inplace=True)
+
+                Fina.delete_logs_in_end_dates(code_id=new_rows.iloc[0]['code_id'], end_dates=new_rows['end_date'], tablename=api)
+
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
 
