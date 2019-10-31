@@ -124,7 +124,7 @@ class Fina(Base):
                               cls.engine, params=[str(code_id), str(start_date), str(end_date)])
 
     @classmethod
-    def delete_logs_in_end_dates(cls, end_dates, code_id='', tablename=''):
+    def delete_logs_in_end_dates(cls, end_dates='', code_id='', tablename=''):
         if len(end_dates) >= 1:
             print('进来了')
             pd.io.sql.execute(
