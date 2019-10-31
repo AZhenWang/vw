@@ -128,7 +128,7 @@ class Fina(Base):
         if len(end_dates) >= 1:
             print('进来了')
             pd.io.sql.execute(
-                'delete from ' + tablename + ' where code_id = ' + code_id + ' and end_date in (' + ('%s,' * len(end_dates)).strip(',') + ')',
+                'delete from ' + tablename + ' where code_id = ' + str(code_id) + ' and end_date in (' + ('%s,' * len(end_dates)).strip(',') + ')',
                 cls.engine,
                 params=end_dates)
             print('出去了')
