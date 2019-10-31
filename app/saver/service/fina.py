@@ -127,10 +127,10 @@ class Fina(Base):
     def delete_logs_in_end_dates(cls, end_dates, code_id='', tablename=''):
         if len(end_dates) >= 1:
             pd.io.sql.execute(
-                'delete from ' + tablename + ' where code_id = %s and end_date in (' + ('%s,' * len(end_dates)).strip(
+                'delete from ' + tablename + ' where code_id = ' + code_id + ' and end_date in (' + ('%s,' * len(end_dates)).strip(
                     ',') + ')',
                 cls.engine,
-                params=[str(code_id), end_dates])
+                params=[end_dates])
 
     @classmethod
     def delete_fina_by_f_ann_date(cls, code_id='', start_date='', end_date='', tablename=''):
