@@ -156,8 +156,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     print('ss2')
     # 更新刚IPO时的数据,
     ipo_log = DB.get_new_share_log(balancesheets['code_id'].iloc[0])
-    if not ipo_log.empty:
-        ipo_before_equity = normal_equity[normal_equity.index < ipo_log.issue_date]
+    ipo_before_equity = normal_equity[normal_equity.index < ipo_log.issue_date]
+    if not ipo_log.empty and not ipo_before_equity.empty:
+
         ipo_lastest_date = ipo_before_equity.index[-1]
         ipo_lastest_equity = ipo_before_equity.loc[ipo_lastest_date]
 

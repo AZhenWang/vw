@@ -14,9 +14,9 @@ def execute(start_date='', end_date=''):
     """
     start_date_id = DB.get_date_id(start_date)
     end_date_id = DB.get_date_id(end_date)
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=244*2, date_id=end_date_id)
-    code_ids = codes['code_id']
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=244*2, date_id=end_date_id)
+    # code_ids = codes['code_id']
     # new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
     # code_ids = [1398,2760,1386,1861,1707,2352,885,2344,2543,1524,1504,1975,2283,1392,1563,3242,2095,3192,3682,1273,1743,3315,1728,1783,]
     # code_ids = [2, 214,132, 3,56,63,65,78,94,103,104,110,111,115,132,138,156,171,177,198,208,213,220,239,250,256,259,284
@@ -31,7 +31,7 @@ def execute(start_date='', end_date=''):
     #             1635,1636,1648,1654,1670,1675,1679,1695,1699,1707,1728,1738,1739,
     #             3839, 3843, 3842,]
     # code_ids = [494, 1142]
-    # code_ids = [2352]
+    # code_ids = [1261]
     # 智飞生物：1504
     # 康泰生物： 1975
     # 沃森生物： 1524
@@ -39,7 +39,7 @@ def execute(start_date='', end_date=''):
     # code_ids = [494,1670,1785,1818,2057]
     # code_ids = [1348, 1376, 3304, 1707]
     # code_ids = range(3807, 3820)
-    # code_ids = range(3772, 3820)
+    code_ids = range(1262, 3868)
     # code_ids = range(3807, 3819)
     # code_ids = range(1, 3820)
     # 1648：尔康制药，2352：恒瑞制药, 2543:华海药业
