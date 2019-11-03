@@ -52,6 +52,39 @@ class Base:
         return trade_cal
 
     @classmethod
+    def get_cal_date_by_id(cls, start_date_id='', end_date_id='', period=''):
+        if start_date_id == '':
+            trade_cal = pd.read_sql(
+                sa.text(
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where id <= :edi'
+                    ' order by cal_date desc limit :period'),
+                cls.engine,
+                params={'edi': str(end_date_id), 'period': period}
+            )
+
+        elif end_date_id == '':
+            trade_cal = pd.read_sql(
+                sa.text(
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where id >= :sdi'
+                    ' order by cal_date asc limit :period'),
+                cls.engine,
+                params={'sdi': str(start_date_id), 'period': period}
+            )
+        else:
+            trade_cal = pd.read_sql(
+                sa.text(
+                    'SELECT id as date_id, cal_date FROM trade_cal '
+                    ' where id between :sdi and :edi'
+                    ' order by cal_date desc'),
+                cls.engine,
+                params={'sdi': str(start_date_id), 'edi': str(end_date_id), 'period': period}
+            )
+        trade_cal.sort_values(by='cal_date', inplace=True)
+        return trade_cal
+
+    @classmethod
     def get_open_cal_date(cls, start_date='', end_date='', period=''):
         if start_date == '':
             trade_cal = pd.read_sql(

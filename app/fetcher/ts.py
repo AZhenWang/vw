@@ -171,7 +171,7 @@ class Ts(Interface):
                     flag = False
                 except BaseException as e:
                     # print(e)
-                    time.sleep(10)
+                    time.sleep(5)
                     self.update_fut_by_trade_date(api, date_id, cal_date)
 
     def update_fut_by_trade_date(self, api, date_id, cal_date):
@@ -232,7 +232,7 @@ class Ts(Interface):
                     self.update_index_by_trade_date(api, index_id, ts_code, start_date, end_date)
                     flag = False
                 except BaseException as e:
-                    time.sleep(10)
+                    time.sleep(5)
                     self.update_index_by_trade_date(api, index_id, ts_code, start_date, end_date)
 
     def update_index_by_trade_date(self, api, index_id, ts_code, start_date, end_date):
@@ -265,7 +265,7 @@ class Ts(Interface):
                     flag = False
                 except BaseException as e:
                     # print(e)
-                    time.sleep(10)
+                    time.sleep(5)
                     self.update_by_trade_date(api, date_id, cal_date)
 
     def update_by_trade_date(self, api, date_id, cal_date):
@@ -350,10 +350,10 @@ class Ts(Interface):
                 try:
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
                     flag = False
-                    time.sleep(6)
+                    time.sleep(5)
                 except BaseException as e:
                     # print(e)
-                    time.sleep(6)
+                    time.sleep(5)
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
 
     def update_finance_by_code(self, api, ts_code, fields, start_date, end_date, report_type):

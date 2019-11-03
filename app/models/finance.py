@@ -6,68 +6,116 @@ from app.saver.logic import DB
 from app.common.function import get_ratio
 
 
-def get_reports(code_id, start_date='19900101', end_date='20190801'):
+def get_reports(code_id, start_date_id='', end_date_id=''):
 
-    balancesheets = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='balancesheet',
-                                         report_type='1', end_date_type='%1231')
-    incomes = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='income',
+    balancesheets = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='balancesheet',
+                                         report_type='1')
+    incomes = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='income',
+                                   report_type='2')
+    incomes12 = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='income',
                                    report_type='1', end_date_type='%1231')
-    cashflows = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date, TTB='cashflow',
-                                     report_type='1', end_date_type='%1231')
+    cashflows= Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='cashflow',
+                                     report_type='2')
+    cashflows12 = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='cashflow',
+                                     report_type='1',  end_date_type='%1231')
+    fina_indicators = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id,
+                                           TTB='fina_indicator', end_date_type='%1231')
+    stk_holdernumbers = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id,
+                                             TTB='stk_holdernumber')
 
-    balancesheets = balancesheets[balancesheets['end_date'].isin(incomes.end_date)]
-    cashflows = cashflows[cashflows['end_date'].isin(incomes.end_date)]
+    fina_indicators.set_index('end_date', inplace=True)
+    stk_holdernumbers.set_index('end_date', inplace=True)
+
+    incomes.set_index('end_date', inplace=True)
+    incomes12.set_index('end_date', inplace=True)
+    balancesheets.set_index('end_date', inplace=True)
+    cashflows.set_index('end_date', inplace=True)
+    cashflows12.set_index('end_date', inplace=True)
+
+    # 组装incomes
+    incomes = incomes[
+        ['n_income', 'revenue', 'oper_cost', 'income_tax', 'total_profit', 'operate_profit', 'n_income_attr_p',
+         'int_exp', 'ebitda']].rolling(window=4).sum()
+
+    for i in range(len(incomes12)):
+        ed = incomes12.index[i]
+        incomes.loc[ed] = incomes12.loc[ed]
+    incomes.sort_index(inplace=True)
+    incomes.dropna(subset=['n_income', 'revenue'], inplace=True)
+
+    oneyearago = pd.Series()
+    for i in range(len(incomes)):
+        ed = incomes.index[i]
+        oneyearago.loc[ed] = str(int(ed) - 10000)
+        # print('ed=', ed, 'str(int(ed) - 10000)=', str(int(ed) - 10000))
+    incomes['oneyearago'] = oneyearago
+
+    # 组装cashflow
+    cashflows = cashflows[
+        ['depr_fa_coga_dpba', 'free_cashflow', 'incr_def_inc_tax_liab', 'end_bal_cash',
+                                        'decr_def_inc_tax_assets','c_inf_fr_operate_a', 'st_cash_out_act', 'n_cashflow_act']].rolling(window=4).sum()
+
+    for i in range(len(cashflows12)):
+        ed = cashflows12.index[i]
+        cashflows.loc[ed] = cashflows12.loc[ed]
+    cashflows.sort_index(inplace=True)
+    cashflows.dropna(subset=['c_inf_fr_operate_a', 'st_cash_out_act'], inplace=True)
+    cashflows.fillna(method='ffill', inplace=True)
+
+    balancesheets = balancesheets[balancesheets.index.isin(incomes.index)]
+    cashflows = cashflows[cashflows.index.isin(incomes.index)]
 
     if balancesheets.empty or incomes.empty or cashflows.empty:
         nan_series = pd.Series()
         return nan_series, nan_series, nan_series, nan_series, nan_series, nan_series,  nan_series
 
-    dividends = Fina.get_divdends(code_id=code_id, start_date=start_date, end_date=end_date)
+    # 组装股价
+    sd = balancesheets.iloc[0]['date_id'] - 10
+    ed = balancesheets.iloc[-1]['date_id']
+    daily_basics = DB.get_table_logs(code_id=code_id, start_date_id=sd,
+                                     end_date_id=ed, table_name='daily_basic')
+    dailys = DB.get_table_logs(code_id=code_id, start_date_id=sd,
+                               end_date_id=ed, table_name='daily')
+    adj_factors = DB.get_table_logs(code_id=code_id, start_date_id=sd,
+                                    end_date_id=ed, table_name='adj_factor')
 
-    dividends['div_count'] = dividends['total_share'] * dividends['cash_div_tax'] * 10000
-    dividends.div_count.astype = 'float64'
-    dividends.fillna(0)
-    cash_divs = pd.Series(index=incomes['end_date'], name='cash_divs')
-    dividends.set_index('end_date', inplace=True)
-    for i in range(len(balancesheets)):
-        ed = balancesheets.iloc[i]['end_date']
-        sd = (datetime.strptime(ed, '%Y%m%d') - timedelta(days=364)).strftime('%Y%m%d')
-        current_div = np.float(dividends.loc[sd:ed]['div_count'].sum())
-        cash_divs.loc[ed] = current_div
-
-    fina_indicators = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
-                                           TTB='fina_indicator', end_date_type='%1231')
-    stk_holdernumbers = Fina.get_report_info(code_id=code_id, start_date=start_date, end_date=end_date,
-                                           TTB='stk_holdernumber', end_date_type='%1231')
-    daily_basics = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
-                                     end_date_id=incomes.iloc[-1]['date_id'], table_name='daily_basic')
-    dailys = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
-                               end_date_id=incomes.iloc[-1]['date_id'], table_name='daily')
-    adj_factors = DB.get_table_logs(code_id=code_id, start_date_id=incomes.iloc[0]['date_id'],
-                                    end_date_id=incomes.iloc[-1]['date_id'], table_name='adj_factor')
-
-    base_date_id = np.sort(np.unique(np.concatenate((daily_basics.cal_date.values, incomes['end_date'].values))))
-    base = pd.DataFrame(index=base_date_id)
+    cal_dates = DB.get_cal_date_by_id(start_date_id=start_date_id, end_date_id=end_date_id)
+    # base_date_id = np.sort(np.unique(np.concatenate((daily_basics.index, balancesheets.date_id.values))))
+    base = pd.DataFrame(index=cal_dates.cal_date.values)
     dailys['adj_close'] = dailys['close'] * adj_factors['adj_factor']
     base = base.join(adj_factors[['cal_date', 'adj_factor']].set_index('cal_date'))
     base = base.join(dailys[['cal_date', 'close', 'adj_close']].set_index('cal_date'))
     base = base.join(daily_basics[['cal_date', 'pe', 'pb', 'total_mv', 'total_share']].set_index('cal_date'))
     base.fillna(method='ffill', inplace=True)
-    code_info = base.loc[incomes['end_date']]
-
-    incomes.set_index('end_date', inplace=True)
-    balancesheets.set_index('end_date', inplace=True)
-    cashflows.set_index('end_date', inplace=True)
-    fina_indicators.set_index('end_date', inplace=True)
-    stk_holdernumbers.set_index('end_date', inplace=True)
+    code_info = base.loc[balancesheets.f_ann_date]
+    code_info['end_date'] = balancesheets.index
+    code_info.set_index('end_date', inplace=True)
 
     dates_base = pd.DataFrame(index=balancesheets.index)
     incomes = dates_base.join(incomes)
     cashflows = dates_base.join(cashflows)
-    fina_indicators = dates_base.join(fina_indicators)
-    stk_holdernumbers = dates_base.join(stk_holdernumbers)
 
+    stk_holdernumbers = dates_base.join(stk_holdernumbers)
     holdernum = stk_holdernumbers['holder_num']
+    fina_indicators = dates_base.join(fina_indicators)
+    fina_indicators = fina_indicators[['rd_exp', 'interst_income']]
+
+
+    # 组装分红
+    dividends = Fina.get_divdends(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id)
+    dividends.dropna(subset=['pay_date'])
+    dividends['div_count'] = dividends['total_share'] * dividends['cash_div_tax'] * 10000
+    dividends.div_count.astype = 'float64'
+    dividend_dates = np.sort(np.unique(np.concatenate((dividends.pay_date.values, incomes.index))))
+    dividend_base = pd.DataFrame(index=dividend_dates)
+    dividend_base = dividend_base.join(dividends[['pay_date', 'div_count']].set_index('pay_date'))
+    cash_divs = pd.Series(index=incomes.index, name='cash_divs')
+    for i in range(1, len(incomes)):
+        ed = incomes.index[i]
+        sd = incomes.index[i-1]
+        current_div = np.float(dividend_base.loc[sd:ed]['div_count'].sum())
+        cash_divs.loc[ed] = current_div
+
     return incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs
 
 
@@ -75,41 +123,41 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     if incomes.empty or len(balancesheets) < 3:
         nan_series = pd.Series()
         return nan_series
+    incomes.fillna(method='ffill', inplace=True)
     incomes.fillna(method='backfill', inplace=True)
     incomes.fillna(value=0, inplace=True)
     balancesheets.fillna(method='ffill', inplace=True)
     balancesheets.fillna(method='backfill', inplace=True)
     balancesheets.fillna(value=0, inplace=True)
+    cashflows.fillna(method='ffill',  inplace=True)
     cashflows.fillna(value=0, inplace=True)
+    fina_indicators.fillna(method='ffill', inplace=True)
     fina_indicators.fillna(value=0, inplace=True)
+    # cash_divs.fillna(method='ffill', inplace=True)
+    cash_divs.fillna(value=0, inplace=True)
     goodwill = balancesheets['goodwill']
     goodwill.name = 'goodwill'
-    print('ss1')
+
     adj_close = code_info['adj_close']
     adj_factor = code_info['adj_factor']
     total_mv = round(code_info['total_mv'] * 10000, 2)
-    equity = balancesheets['total_assets'] - balancesheets['total_liab']
+
     total_assets = balancesheets['total_assets']
     TEV = total_assets - goodwill - balancesheets['r_and_d']
-
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
-    pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - goodwill - \
-                  balancesheets[
-                      'r_and_d']
+    pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - goodwill
     normal_equity = pure_equity - balancesheets['oth_eqt_tools_p_shr']
-    equity_pct = round((equity - equity.shift() + cash_divs.shift()) * 100 / equity.shift(), 1)
-    equity_pctmv = get_mean_of_complex_rate(equity_pct)
-    pure_equity_pct = round((pure_equity - pure_equity.shift() + cash_divs.shift()) * 100 / pure_equity.shift(), 1)
-    pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct)
 
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
     pb = round(total_mv/normal_equity, 2)
+    total_share = balancesheets['total_share']
+
     print('ss2')
     # 更新刚IPO时的数据,
-    ipo_log = DB.get_new_share_log(incomes['code_id'].iloc[0])
+    ipo_log = DB.get_new_share_log(balancesheets['code_id'].iloc[0])
     if not ipo_log.empty:
-        ipo_before_equity = normal_equity[normal_equity.index < ipo_log.ipo_date]
+        ipo_before_equity = normal_equity[normal_equity.index < ipo_log.issue_date]
         ipo_lastest_date = ipo_before_equity.index[-1]
         ipo_lastest_equity = ipo_before_equity.loc[ipo_lastest_date]
 
@@ -123,10 +171,17 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / normal_equity.loc[ipo_lastest_date],2)
         adj_close.loc[ipo_lastest_date] = ipo_log.price
         adj_factor.loc[ipo_lastest_date] = 1
+        total_share.loc[ipo_lastest_date] = ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share']
+        equity.loc[ipo_lastest_date] = ipo_lastest_equity
+
+    equity_pct = round((equity + cash_divs - equity.shift()) * 100 / equity.shift(), 1)
+    equity_pctmv = get_mean_of_complex_rate(equity_pct)
+    pure_equity_pct = round((pure_equity + cash_divs - pure_equity.shift()) * 100 / pure_equity.shift(), 1)
+    pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct)
+    share_pct = round(total_share.pct_change() * 100, 2)
 
     # 营运资金
     oper_fun = balancesheets['total_cur_assets'] - balancesheets['total_cur_liab']
-
 
     # 4、资金周转率：平均准备期+平均收账期-平均付账期
     # 存货周转天数：360*存货平均余额/主营成本
@@ -168,7 +223,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
     receiv_inc = receiv - receiv.shift()
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
-    receiv_rate = round(receiv * 100 / incomes['revenue'])
+    receiv_rate = round(receiv * 100 / incomes['revenue'].shift())
     print('ss3')
     # 调整折旧费用
     gross = incomes['revenue'] - incomes['oper_cost']
@@ -190,11 +245,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     rd_exp.fillna(0, inplace=True)
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
     fix_asset_pct = round(fix_assets.pct_change()*100, 2)
-    freecash = cashflows['free_cashflow'] + fina_indicators['rd_exp'].fillna(0)
+    freecash = cashflows['free_cashflow']
     freecash_rate = round(freecash * 100 / (equity), 2)
-    print(freecash_rate)
     freecash_mv = round(get_mean_of_complex_rate(freecash_rate, window=10), 1)
-    print(freecash_mv)
     # 所得税缴纳基数
     tax_rate = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
     # 应纳税额
@@ -210,8 +263,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 短期营业收入是否加速
     adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
     # adj_ebit = tax_payable
-    ebit_mv = get_rolling_mean(adj_ebit, mtype=3,  window=7)
-    ebit_mv_short = get_rolling_mean(adj_ebit, mtype=3,  window=4)
+    ebit_mv = get_mean_of_complex_rate(adj_ebit, window=7)
+    ebit_mv_short = get_mean_of_complex_rate(adj_ebit,  window=4)
     ebit_mv_short_pct = round((ebit_mv_short - ebit_mv_short.shift()) * 100 / ebit_mv_short.shift(), 2)
     ebit_mv_pct = round((ebit_mv - ebit_mv.shift()) * 100 / ebit_mv.shift(), 2)
     mix_op_diff = ebit_mv_short_pct - ebit_mv_pct
@@ -219,8 +272,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 收入，利润，负债，税的长期率
     rev_pct = get_rev_pct(incomes['revenue'], cash_divs)
     liab_pct = balancesheets['total_liab'].pct_change()*100
-    liab_pctmv = get_mean_of_complex_rate(liab_pct)
-    income_pct = incomes['n_income'].pct_change() * 100
+    liab_pctmv = get_mean_of_complex_rate(liab_pct, remove_noise=False)
+    income_pct = round((incomes['n_income_attr_p'] + rd_exp).pct_change() * 100,2)
     tax_payable_pct[tax_payable_pct > 100] = 100
     tax_payable_pct[tax_payable_pct < -50] = -50
     tax_payable_pct[tax_payable_pct.isna()] = 0
@@ -229,7 +282,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     income_pctmv = get_mean_of_complex_rate(income_pct)
 
     fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct)
-    income_rate = round((incomes['n_income_attr_p']) * 100 / incomes['revenue'], 2)
+    income_rate = round((incomes['n_income_attr_p'] + rd_exp) * 100 / incomes['revenue'], 2)
     total_turn = round(incomes['revenue'] / total_assets, 2)
     total_assets_pct = round(total_assets.pct_change()*100, 2)
     total_assets_pctmv = get_mean_of_complex_rate(total_assets_pct)
@@ -241,61 +294,103 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     op_pct[op_pct > 50] = 50
     op_pct[op_pct < -50] = -50
 
-
     # libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
     libwithinterest = balancesheets['st_borr'] + balancesheets['lt_borr'] + balancesheets['bond_payable'] + balancesheets['lt_payable'] + balancesheets['st_bonds_payable'] + balancesheets['non_cur_liab_due_1y'] + balancesheets['notes_payable']
     # 短期借款＋一年内到期的长期负债＋长期借款＋应付债券＋长期应付款
     i_debt = round(libwithinterest * 100 / total_assets, 2)
     # 利息保障倍数
     interst = pd.concat([fina_indicators['interst_income'], incomes['int_exp']], axis=1).max(axis=1)
-    IER = round((incomes['ebitda']) / (interst + 1), 2)
+    IER = round((adj_ebit) / (interst + 1), 2)
 
     cash_act_in = get_mean_of_complex_rate(cashflows['c_inf_fr_operate_a'].pct_change() * 100)
     cash_act_out = get_mean_of_complex_rate(cashflows['st_cash_out_act'].pct_change() * 100)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
 
     # 求每期收益率
-    roe = round(incomes['n_income_attr_p'] * 100 / equity.shift(), 2)
+    # print('oneyearago=', incomes['oneyearago'])
+    # print('end_date', incomes.index)
+    # base_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - incomes['n_income_attr_p']
+    base_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] + cash_divs
+    equity_mean = pd.Series(index=incomes.index)
+    # base_e.iloc[0] = base_equity1 - incomes['n_income_attr_p']
+    for i in range(len(incomes)):
+        ed = incomes.index[i]
+        equity_mean.loc[ed] = base_equity[incomes.loc[ed]['oneyearago']:ed].mean()
+        # oneyearago_equity_loc = base_equity1.index[base_equity1.index <= incomes.loc[ed]['oneyearago']][-1]
+        # base_e.loc[ed] = base_equity1.loc[oneyearago_equity_loc]
+    roe = round(incomes['n_income_attr_p'] * 100 / equity_mean, 2)
+    # base_equity = equity - balancesheets['oth_eqt_tools_p_shr'] + cash_divs - incomes['n_income_attr_p']
+    # roe = round(incomes['n_income_attr_p'] * 100 / base_equity, 2)
     roe[roe > 50] = 50
     roe[roe < -50] = -50
-    roe_rd = round((incomes['n_income_attr_p']+rd_exp) * 100 / equity.shift(), 2)
+    roe_rd_pure = round((rd_exp) * 100 / equity_mean, 2)
+    roe_rd_pure[roe_rd_pure > 50] = 50
+    roe_rd_pure[roe_rd_pure < -50] = -50
+    roe_rd = round((incomes['n_income_attr_p'] + rd_exp) * 100 / equity_mean, 2)
     roe_rd[roe_rd > 50] = 50
     roe_rd[roe_rd < -50] = -50
-    roe_sale = round((incomes['operate_profit'] - tax_payable + rd_exp) * 100 / equity.shift(), 2)
+    roe_sale = round((incomes['operate_profit'] - tax_payable + rd_exp) * 100 / equity_mean, 2)
     roe_sale[roe_sale > 50] = 50
     roe_sale[roe_sale < -50] = -50
 
-    roe_ebitda = round((incomes['ebitda'] + rd_exp) * 100 / total_assets.shift(), 2)
+    roe_ebitda = round((adj_ebit) * 100 / (total_assets - incomes['n_income_attr_p']), 2)
     roe_ebitda[roe_ebitda > 50] = 50
     roe_ebitda[roe_ebitda < -50] = -50
 
     # 求移动平均收益率
     roe_mv = pd.Series(index=balancesheets.index)
     roe_rd_mv = pd.Series(index=balancesheets.index)
+    roe_rd_pure_mv = pd.Series(index=balancesheets.index)
     roe_sale_mv = pd.Series(index=balancesheets.index)
     roe_ebitda_mv = pd.Series(index=balancesheets.index)
 
-    roe_mv.iloc[1] = roe.iloc[1] / 100
-    roe_rd_mv.iloc[1] = roe_rd.iloc[1] / 100
-    roe_sale_mv.iloc[1] = roe_sale.iloc[1] / 100
-    roe_ebitda_mv.iloc[1] = roe_ebitda.iloc[1] / 100
 
-    for i in range(2, len(roe_sale)):
-        date_idx = roe_sale.index[i]
-        if pure_equity_pct.loc[date_idx] >= 100:
-            roe_mv.iloc[i] = roe_mv.iloc[i - 1]
-            roe_rd_mv.iloc[i] = roe_rd_mv.iloc[i - 1]
-            roe_sale_mv.iloc[i] = roe_sale_mv.iloc[i-1]
-            roe_ebitda_mv.iloc[i] = roe_ebitda_mv.iloc[i - 1]
-        else:
-            roe_mv.iloc[i] = (1 + roe.iloc[i] / 100) ** (1 / 4) * (1 + roe_mv.iloc[i - 1]) ** (3 / 4) - 1
-            roe_rd_mv.iloc[i] = (1 + roe_rd.iloc[i] / 100) ** (1 / 4) * (1 + roe_rd_mv.iloc[i - 1]) ** (3 / 4) - 1
-            roe_sale_mv.iloc[i] = (1 + roe_sale.iloc[i] / 100) ** (1 / 4) * (1 + roe_sale_mv.iloc[i - 1]) ** (3 / 4) - 1
-            roe_ebitda_mv.iloc[i] = (1 + roe_ebitda.iloc[i] / 100) ** (1 / 4) * (1 + roe_ebitda_mv.iloc[i - 1]) ** (
-                        3 / 4) - 1
+    rev_pct_yearly = pd.Series(index=balancesheets.index)
+
+    adj_close_pure = adj_close.dropna()
+    pre_date_idx = adj_close_pure.index[0]
+    pre_date = datetime.strptime(pre_date_idx, '%Y%m%d')
+    # print(adj_close_pure)
+    # print('pre_date_idx=', pre_date_idx)
+    roe_mv.loc[pre_date_idx] = roe.loc[pre_date_idx] / 100
+    roe_rd_mv.loc[pre_date_idx] = roe_rd.loc[pre_date_idx] / 100
+    roe_rd_pure_mv.loc[pre_date_idx] = roe_rd_pure.loc[pre_date_idx] / 100
+    roe_sale_mv.loc[pre_date_idx] = roe_sale.loc[pre_date_idx] / 100
+    roe_ebitda_mv.loc[pre_date_idx] = roe_ebitda.loc[pre_date_idx] / 100
+
+    for i in range(1, len(adj_close_pure)):
+        date_idx = adj_close_pure.index[i]
+        c_date = datetime.strptime(date_idx, '%Y%m%d')
+        oneyearago = (c_date - timedelta(days=368*2)).strftime('%Y%m%d')
+        date_delta = c_date - pre_date
+        pre_date = c_date
+        # print('date_delta.days=', date_delta.days, ',c_date=', date_idx, ', ')
+        date_coef = 365 / date_delta.days
+
+        rev_oneyearago = incomes['revenue'].loc[oneyearago:date_idx]
+        # print(' rev_oneyearago[0]=',  rev_oneyearago[0])
+        rev_pct_yearly.loc[date_idx] = round(((1+(incomes['revenue'].loc[date_idx] - rev_oneyearago[0])/rev_oneyearago[0])**(1/2) - 1)*100, 2)
+        # rev_pct_yearly.loc[date_idx] = rev_pct.loc[oneyearago:date_idx].sum()
+        c1 = round(1 / date_coef, 2)
+        c2 = 2 - c1
+
+        # if equity_pct.loc[oneyearago:date_idx].max() >= 100:
+        #     roe_mv.iloc[i] = roe_mv.iloc[i-1]
+        #     roe_rd_mv.iloc[i] = roe_rd_mv.iloc[i - 1]
+        #     roe_rd_pure_mv.iloc[i] = roe_rd_pure_mv.iloc[i - 1]
+        #     roe_sale_mv.iloc[i] = roe_sale_mv.iloc[i - 1]
+        #     roe_ebitda_mv.iloc[i] = roe_ebitda_mv.iloc[i - 1]
+        roe_mv.loc[date_idx] = ((1 + roe.loc[date_idx] / 100) ** c1 * (1 + roe_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
+        roe_rd_mv.loc[date_idx] = ((1 + roe_rd.loc[date_idx] / 100) ** c1 * (1 + roe_rd_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
+        roe_rd_pure_mv.loc[date_idx] = ((1 + roe_rd_pure.loc[date_idx] / 100) ** c1 * (1 + roe_rd_pure_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
+        roe_sale_mv.loc[date_idx] = ((1 + roe_sale.loc[date_idx] / 100) ** c1 * (1 + roe_sale_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
+        roe_ebitda_mv.loc[date_idx] = ((1 + roe_ebitda.loc[date_idx] / 100) ** c1 * (1 + roe_ebitda_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
+
+        pre_date_idx = date_idx
 
     roe_mv = round(roe_mv * 100, 2)
     roe_rd_mv = round(roe_rd_mv * 100, 2)
+    roe_rd_pure_mv = round(roe_rd_pure_mv * 100, 2)
     roe_sale_mv = round(roe_sale_mv * 100, 2)
     roe_ebitda_mv = round(roe_ebitda_mv * 100, 2)
 
@@ -304,6 +399,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_adj = round(roe_sale_mv - roe_std, 2)
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
+    V_rd_pure = value_stock2(roe_rd_pure_mv, OPM, opm_coef)
     V_adj = value_stock2(roe_adj,  OPM, opm_coef)
     V_rd = value_stock2(roe_rd_mv, OPM, opm_coef)
     V_sale = value_stock2(roe_sale_mv, OPM, opm_coef)
@@ -357,6 +453,40 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     win_return2 = round(win_return2 * 100, 1)
     lose_return2 = round(lose_return2 * 100, 1)
 
+    # 以收入和收入增速，来确定未来10年的净资产增长幅度
+    # rev_pct_yearly_mv = get_mean_of_complex_rate(rev_pct, window=4)
+    rev_pct_yearly_mv = pd.Series(index=balancesheets.index)
+    # rev_pct_yearly_mv = rev_pct_yearly
+    V_hat = value_stock(roe, rev_pct_yearly_mv, OPM, opm_coef)
+    V_hat_rd = value_stock(roe_rd, rev_pct_yearly_mv, OPM, opm_coef)
+    V_hat_rd_pure = value_stock(roe_rd_pure_mv, rev_pct_yearly_mv, OPM, opm_coef)
+
+    pure_cash_flow = get_mean_of_complex_rate(cashflows['n_cashflow_act'].pct_change()*100)
+    V_hat_2 = value_stock3(rev_pct_yearly, incomes['n_income_attr_p'], equity, OPM, opm_coef)
+    # V_hat_rd = value_stock3(rev_pct_yearly, incomes['n_income_attr_p']+rd_exp, equity, OPM, opm_coef)
+    EE1 = round((total_mv + balancesheets['total_liab']) / incomes['ebitda'], 1)
+    EE1.name = 'EE1'
+    EE = round((total_assets - balancesheets['trad_asset'] - balancesheets['money_cap']) / incomes['ebitda'], 1)
+    EE.name = 'EE'
+    ee_pct = round(EE.pct_change()*100, 1)
+    capital_turn_pct = round(capital_turn.pct_change() * 100, 1)
+    capital_turn_pct.name = 'ctp'
+
+    y0 = round(V_hat / pb, 1)
+    y0.name = 'y0'
+    y = round((V_hat + V_hat ** V_hat_rd_pure) / pb - 1, 1)
+    y.name = 'y'
+
+    # print(pd.concat([adj_close, capital_turn,capital_turn_pct,  pb, pe,  EE, ee_pct,  share_pct, equity_pct, rev_pct,  rev_pct_yearly, rev_pct_yearly_mv, roe, roe_rd_pure, roe_rd_pure_mv,
+    #                  V, pb,  V_hat, V_hat_1, V_hat_2, V_hat_rd, y], axis=1))
+    # print(pd.concat(
+    #     [adj_close, adj_factor, pb, pe, EE, rev_pct_yearly_mv,
+    #      roe, roe_mv, roe_rd_pure, roe_rd_pure_mv, roe_rd, roe_rd_mv,rev_pct_yearly_mv,
+    #      V, V_rd_pure, V_rd, rev_pct_yearly_mv,
+    #      V_hat, V_hat_rd_pure, (V_hat + V_hat ** V_hat_rd_pure), (V_hat + V_hat * V_hat_rd_pure), V_hat_rd,
+    #      pp,  y0,  y
+    #      ], axis=1))
+    # os.ex
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
     # 其他应收款存放关联交易或者保证金之类的杂项，超过5%，有妖
@@ -389,7 +519,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     X2 = round((balancesheets['special_rese'] + balancesheets['surplus_rese'] + balancesheets[
         'undistr_porfit']) / total_assets, 2)
     # X3 = 息税前利润 / 总资产
-    X3 = round(incomes['ebit'] / total_assets, 2)
+    X3 = round(adj_ebit / total_assets, 2)
     # X4 = 股东权益 / 负债
     X4 = round((balancesheets['total_assets'] - balancesheets['total_liab']) / balancesheets['total_liab'], 2)
     # X4 = round((balancesheets['total_assets'] - balancesheets['total_liab'] - goodwill) / libwithinterest, 2)
@@ -426,6 +556,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     pb.name = 'pb'
     dyr.name = 'dyr'
     receiv_income.name = 'receiv_income'
+    rev_pct_yearly.name = 'rev_pct_yearly'
     V.name = 'V'
     V_adj.name = 'V_adj'
     V_sale.name = 'V_sale'
@@ -446,6 +577,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     holdernum.name = 'holdernum'
     freecash_mv.name = 'freecash_mv'
     equity_pct.name = 'equity_pct'
+    share_pct.name = 'share_pct'
     pure_equity_pct.name = 'pure_equity_pct'
     pure_equity_pctmv.name = 'pure_equity_pctmv'
     tax_rate.name = 'tax_rate'
@@ -462,6 +594,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     fix_asset_pct.name = 'fix_asset_pct'
     rev_pct.name = 'rev_pct'
     tax_pct.name = 'tax_pct'
+
     tax_payable_pct.name = 'tax_payable_pct'
     rev_pctmv.name = 'rev_pctmv'
     total_turn_pctmv.name = 'total_turn_pctmv'
@@ -489,17 +622,17 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     MP_pct.name = 'MP_pct'
 
     data = pd.concat(
-        [round(adj_close,2), round(adj_factor, 2), balancesheets['f_ann_date'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
+        [round(adj_close,2), round(adj_factor, 3), balancesheets['date_id'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
          roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax,
          holdernum, holdernum_inc,
          V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
-         pe, pb, i_debt, share_ratio, oth_receiv_rate, money_cap_pct, st_borr_pct, st_borr_rate,  capital_turn, inventory_turn, oper_pressure, OPM,
+         pe, pb, EE, i_debt, share_ratio, oth_receiv_rate, money_cap_pct, st_borr_pct, st_borr_rate,  capital_turn, inventory_turn, oper_pressure, OPM,
          Z,
          receiv_pct, receiv_rate, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
          fix_asset_pct, tax_payable_pct, def_tax_ratio,
-         rev_pct, total_turn_pctmv, tax_pct, income_pct,
+         rev_pct, share_pct,  rev_pct_yearly, total_turn_pctmv, tax_pct, income_pct,
          rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv,
          pure_equity_pct, pure_equity_pctmv, equity_pct,  equity_pctmv, fix_asset_pctmv,
          LLP, LP, MP, HP, HHP, MP_pct, win_return, lose_return, odds, win_return2, lose_return2, odds2, odds_pp,
@@ -597,10 +730,11 @@ def get_rolling_median(v, window=7):
     return data
 
 
-def get_mean_of_complex_rate(d, window=10):
+def get_mean_of_complex_rate(d, remove_noise=True, window=10):
     """
     移动复合率的平均值
     :param v:
+    :param remove_noise: 是否要去除以往最大最小值
     :param window:
     :return:
     """
@@ -609,44 +743,30 @@ def get_mean_of_complex_rate(d, window=10):
     v[v.isin([np.inf, -np.inf])] = np.nan
     if v.isna().all():
         return v
-    v.dropna(0, inplace=True)
+    # v.dropna(0, inplace=True)
     v[v < -100] = -99
     # v[v > 100] = np.nan
     v.fillna(method='ffill', inplace=True)
     v.dropna(inplace=True)
     v = v/100
     data = pd.Series(index=v.index, name='data')
-    # if len(v) < 1:
-    #     return base
-    # elif len(v) == 1:
-    #     data.iloc[0] = v.iloc[0]
-    #     base = base.join(data)
-    #     return base['data']
-
-    # mv = (1 + v.iloc[0]) * (1 + v.iloc[1])
-    mv = (1 + v.iloc[0])
+    data.iloc[0] = v.iloc[0]
+    pre_date = datetime.strptime(data.index[0], '%Y%m%d')
     for i in range(1, len(data)):
         date_idx = data.index[i]
-        print('date_idx=', date_idx)
-        mv = mv * (1 + v.loc[date_idx])
-        print('mv=', mv)
-        if i < 2:
-            t = mv**(1 / (i+1)) - 1
-        elif 2 <= i < window:
-            max_v = v[0:i+1].max()
-            print('max_v', max_v)
-            min_v = v[0:i+1].min()
-            print('min_v', min_v)
-            t = mv / ((1+max_v) * (1+min_v))
-            t = t**(1/(i-1)) - 1
-            print('t=', t)
-
-        else:
-            mv = mv / (1+v.iloc[i - window])
-            t = mv**( 1 / window) - 1
-        data.iloc[i] = round(t*100, 2)
+        c_date = datetime.strptime(date_idx, '%Y%m%d')
+        date_delta = c_date - pre_date
+        pre_date = c_date
+        date_coef = 365 / date_delta.days
+        c1 = round(1 / date_coef, 2)
+        c2 = 2 - c1
+        v_yearly = round(v.iloc[i] * date_coef,4)
+        if v_yearly < -1:
+            v_yearly = -1
+        data.iloc[i] = ((1 + v_yearly) ** c1 * (1 + data.iloc[i - 1]) ** c2) ** (1 / 2) - 1
+        # print('c1=', c1, 'c2=', c2, 'data.iloc[i]=', data.iloc[i])
     base = base.join(data)
-    return base['data']
+    return round(base['data'] * 100, 2)
 
 
 def get_rev_pct(revenue, cash_divs):
@@ -680,6 +800,7 @@ def value_stock2(IR, OPM, opm_coef, years=10):
        总投资10年，前5年保持现有增长率，后5年不增长，收入平稳
 
        """
+
     V = pd.Series(index=IR.index)
 
     L = 0
@@ -712,8 +833,8 @@ def value_stock(IR, IR_a, OPM, opm_coef, years=10):
     V = pd.Series(index=IR.index)
 
     L = 0
-    IR_a[IR_a > 5] = 5
-    IR_a[IR_a < -5] = -5
+    # IR_a[IR_a > 5] = 5
+    # IR_a[IR_a < -5] = -5
     IR_a.fillna(value=0, inplace=True)
     for k in IR.index:
         v = 0
@@ -726,16 +847,59 @@ def value_stock(IR, IR_a, OPM, opm_coef, years=10):
         for i in range(1, years+1):
             # 贴现率
             # print('i=', i, ',ir=', ir, 'a=',a, ',v=', v)
-            if i < 6:
+            if i < 4:
                 ir = ir*(1+a)
-            if ir >= 0.3:
-                ir = 0.3
+            if ir >= 0.5:
+                ir = 0.5
             elif ir <= 0:
                 ir = 0
 
             # v = v * (1+ir) / (1+L)
             v += base_v * ir / (1 + L)**i
             base_v = base_v * (1 + ir)
+            # print("\\n")
+        # v = E*(1+ir)**10
+        # print('v1=', v)
+        v = v * (1 - OPM.loc[k] * opm_coef.loc[k] / 100)
+        # print('v2=', v, 'OPM.loc[k] =', OPM.loc[k],',IR.loc[k]=', IR.loc[k])
+
+        V.loc[k] = v
+    V = round(V, 2)
+    return V
+
+def value_stock3(rev_pct_yearly, income, equity, OPM, opm_coef, years=10):
+    """
+    总投资10年，前5年保持现有增长率，后5年不增长，收入平稳
+
+    """
+    V = pd.Series(index=rev_pct_yearly.index)
+    income_c = income.dropna()
+    L = 0
+    for k in income_c.index:
+        v = 0
+        base_v = 1
+        income_return = income_c.loc[k]
+        e = equity.loc[k]
+        if k not in OPM.index:
+            continue
+
+        for i in range(years):
+            if i < 3:
+                income_return = income_return * (1 + rev_pct_yearly.loc[k] / 100)
+                ir = income_return / e
+                e = equity.loc[k] + income_return
+
+            # 贴现率
+
+            if ir >= 0.5:
+                ir = 0.5
+            elif ir <= 0:
+                ir = 0
+
+            # v = v * (1+ir) / (1+L)
+            v += base_v * ir / (1 + L)**i
+            base_v = base_v * (1 + ir)
+            # print('i=', i, 'k=', k, ',income_return=', income_return, 'rev_pct_yearly.loc[k]=', rev_pct_yearly.loc[k], income_return, 'ir=', ir, ',e=', e, ', v=', v)
             # print("\\n")
         # v = E*(1+ir)**10
         # print('v1=', v)
