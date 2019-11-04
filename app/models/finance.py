@@ -156,24 +156,25 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     print('ss2')
     # 更新刚IPO时的数据,
     ipo_log = DB.get_new_share_log(balancesheets['code_id'].iloc[0])
-    ipo_before_equity = normal_equity[normal_equity.index < ipo_log.issue_date]
-    if not ipo_log.empty and not ipo_before_equity.empty:
 
-        ipo_lastest_date = ipo_before_equity.index[-1]
-        ipo_lastest_equity = ipo_before_equity.loc[ipo_lastest_date]
+    if not ipo_log.empty:
+        ipo_before_equity = normal_equity[normal_equity.index < ipo_log.issue_date]
+        if not ipo_before_equity.empty:
+            ipo_lastest_date = ipo_before_equity.index[-1]
+            ipo_lastest_equity = ipo_before_equity.loc[ipo_lastest_date]
 
-        ipo_lastest_equity += ipo_log.price * ipo_log.amount * 10000
-        ipo_lastest_total_mv = ipo_log.price * (
-                    ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share'])
+            ipo_lastest_equity += ipo_log.price * ipo_log.amount * 10000
+            ipo_lastest_total_mv = ipo_log.price * (
+                        ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share'])
 
-        pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / ipo_lastest_equity, 2)
-        total_mv.loc[ipo_lastest_date] = ipo_lastest_total_mv
-        pe.loc[ipo_lastest_date] = ipo_log.pe
-        pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / normal_equity.loc[ipo_lastest_date],2)
-        adj_close.loc[ipo_lastest_date] = ipo_log.price
-        adj_factor.loc[ipo_lastest_date] = 1
-        total_share.loc[ipo_lastest_date] = ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share']
-        equity.loc[ipo_lastest_date] = ipo_lastest_equity
+            pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / ipo_lastest_equity, 2)
+            total_mv.loc[ipo_lastest_date] = ipo_lastest_total_mv
+            pe.loc[ipo_lastest_date] = ipo_log.pe
+            pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / normal_equity.loc[ipo_lastest_date],2)
+            adj_close.loc[ipo_lastest_date] = ipo_log.price
+            adj_factor.loc[ipo_lastest_date] = 1
+            total_share.loc[ipo_lastest_date] = ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share']
+            equity.loc[ipo_lastest_date] = ipo_lastest_equity
 
     equity_pct = round((equity + cash_divs - equity.shift()) * 100 / equity.shift(), 1)
     equity_pctmv = get_mean_of_complex_rate(equity_pct)
