@@ -122,8 +122,8 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
 def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs):
     adj_close = code_info['adj_close']
     adj_factor = code_info['adj_factor']
-    adj_close_pure = adj_close.dropna()
-    if len(incomes) < 3 or len(balancesheets) < 3 or adj_close_pure.empty:
+
+    if len(incomes) < 3 or len(balancesheets) < 3:
         nan_series = pd.Series()
         return nan_series
     incomes.fillna(method='ffill', inplace=True)
@@ -178,10 +178,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
             total_share.loc[ipo_lastest_date] = ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share']
             equity.loc[ipo_lastest_date] = ipo_lastest_equity
 
-    equity_pct = round((equity + cash_divs - equity.shift()) * 100 / equity.shift(), 1)
-    equity_pctmv = get_mean_of_complex_rate(equity_pct)
-    pure_equity_pct = round((pure_equity + cash_divs - pure_equity.shift()) * 100 / pure_equity.shift(), 1)
-    pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct)
+    adj_close_pure = adj_close.dropna()
     share_pct = round(total_share.pct_change() * 100, 2)
 
     # 营运资金
@@ -224,7 +221,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     #     4、杜邦分析
     # receiv_inc = balancesheets['accounts_receiv'] - balancesheets['accounts_receiv'].shift()
-    receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv'] - balancesheets['adv_receipts']
+    receiv = balancesheets['accounts_receiv'] + balancesheets['notes_receiv']
     receiv_inc = receiv - receiv.shift()
     receiv_pct = round(receiv_inc * 100 / incomes['revenue'])
     receiv_rate = round(receiv * 100 / incomes['revenue'].shift())
@@ -249,9 +246,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     rd_exp.fillna(0, inplace=True)
     rd_exp_or = round(rd_exp * 100 / incomes['revenue'], 2)
     fix_asset_pct = round(fix_assets.pct_change()*100, 2)
-    freecash = cashflows['free_cashflow']
-    freecash_rate = round(freecash * 100 / (equity), 2)
-    freecash_mv = round(get_mean_of_complex_rate(freecash_rate, window=10), 1)
+
     # 所得税缴纳基数
     tax_rate = round(incomes['income_tax'] * 100 / incomes['total_profit'], 2)
     # 应纳税额
@@ -267,67 +262,94 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 短期营业收入是否加速
     adj_ebit = (incomes['operate_profit'] + rd_exp + cashflows['depr_fa_coga_dpba'])
     # adj_ebit = tax_payable
-    ebit_mv = get_mean_of_complex_rate(adj_ebit, window=7)
-    ebit_mv_short = get_mean_of_complex_rate(adj_ebit,  window=4)
+    ebit_mv = get_rolling_mean(adj_ebit, window=7)
+    ebit_mv_short = get_rolling_mean(adj_ebit,  window=4)
     ebit_mv_short_pct = round((ebit_mv_short - ebit_mv_short.shift()) * 100 / ebit_mv_short.shift(), 2)
     ebit_mv_pct = round((ebit_mv - ebit_mv.shift()) * 100 / ebit_mv.shift(), 2)
     mix_op_diff = ebit_mv_short_pct - ebit_mv_pct
     print('ss5=')
     # 收入，利润，负债，税的长期率
     rev_pct = get_rev_pct(incomes['revenue'], cash_divs)
-    liab_pct = balancesheets['total_liab'].pct_change()*100
-    liab_pctmv = get_mean_of_complex_rate(liab_pct, remove_noise=False)
+
     income_pct = round((incomes['n_income_attr_p'] + rd_exp).pct_change() * 100,2)
     tax_payable_pct[tax_payable_pct > 100] = 100
     tax_payable_pct[tax_payable_pct < -50] = -50
     tax_payable_pct[tax_payable_pct.isna()] = 0
     print('ss50=')
-    tax_payable_pctmv = get_mean_of_complex_rate(tax_payable_pct)
-    rev_pctmv = get_mean_of_complex_rate(rev_pct)
-    income_pctmv = get_mean_of_complex_rate(income_pct)
-    print('ss51=')
-    fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct)
+
     income_rate = round((incomes['n_income_attr_p'] + rd_exp) * 100 / incomes['revenue'], 2)
     total_turn = round(incomes['revenue'] / total_assets, 2)
-    total_assets_pct = round(total_assets.pct_change()*100, 2)
-    total_assets_pctmv = get_mean_of_complex_rate(total_assets_pct)
-    total_assets.name = 'total_assets'
+
     print('ss52=')
     OPM = get_rolling_median(oper_pressure, window=5)
     OPM = round(OPM, 2)
     opm_coef = get_opm_coef(OPM)
-    op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv-income_pctmv.shift()], axis=1).min(axis=1)
-    op_pct[op_pct > 50] = 50
-    op_pct[op_pct < -50] = -50
-    print('ss53=')
-    # libwithinterest = balancesheets['total_liab'] - balancesheets['acct_payable'] - balancesheets['adv_receipts']
+
     libwithinterest = balancesheets['st_borr'] + balancesheets['lt_borr'] + balancesheets['bond_payable'] + balancesheets['lt_payable'] + balancesheets['st_bonds_payable'] + balancesheets['non_cur_liab_due_1y'] + balancesheets['notes_payable']
     # 短期借款＋一年内到期的长期负债＋长期借款＋应付债券＋长期应付款
     i_debt = round(libwithinterest * 100 / total_assets, 2)
     # 利息保障倍数
     interst = pd.concat([fina_indicators['interst_income'], incomes['int_exp']], axis=1).max(axis=1)
     IER = round((adj_ebit) / (interst + 1), 2)
-
-    cash_act_in = get_mean_of_complex_rate(cashflows['c_inf_fr_operate_a'].pct_change() * 100)
-    cash_act_out = get_mean_of_complex_rate(cashflows['st_cash_out_act'].pct_change() * 100)
-    cash_act_rate = round(cash_act_in / cash_act_out, 2)
-    print('ss54=')
-    # 求每期收益率
-    # print('oneyearago=', incomes['oneyearago'])
-    # print('end_date', incomes.index)
-    # base_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] - incomes['n_income_attr_p']
     base_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] + cash_divs
-    equity_mean = pd.Series(index=incomes.index)
-    # base_e.iloc[0] = base_equity1 - incomes['n_income_attr_p']
-    for i in range(len(incomes)):
-        print('ysys')
+    equity_pct = round((equity + cash_divs - equity.shift()) * 100 / equity.shift(), 1)
+    pure_equity_pct = round((pure_equity + cash_divs - pure_equity.shift()) * 100 /pure_equity.shift(), 1)
+
+    rev_pct_yearly = pd.Series(index=balancesheets.index)
+    cash_act_in_pct_yearly = pd.Series(index=balancesheets.index)
+    cash_act_out_pct_yearly = pd.Series(index=balancesheets.index)
+    equity_pct_yearly = pd.Series(index=balancesheets.index)
+    pure_equity_pct_yearly = pd.Series(index=balancesheets.index)
+    tax_payable_pct_yearly = pd.Series(index=balancesheets.index)
+    income_pct_yearly = pd.Series(index=balancesheets.index)
+    fix_asset_pct_yearly = pd.Series(index=balancesheets.index)
+    total_assets_pct_yearly = pd.Series(index=balancesheets.index)
+    liab_pct_yearly = pd.Series(index=balancesheets.index)
+    freecash_pct_yearly = pd.Series(index=balancesheets.index)
+    equity_mean = pd.Series(index=balancesheets.index)
+    for i in range(1,len(incomes)):
+        print('ssa2')
         ed = incomes.index[i]
-        equity_mean.loc[ed] = base_equity[incomes.loc[ed]['oneyearago']:ed].mean()
-        # oneyearago_equity_loc = base_equity1.index[base_equity1.index <= incomes.loc[ed]['oneyearago']][-1]
-        # base_e.loc[ed] = base_equity1.loc[oneyearago_equity_loc]
+        c_date = datetime.strptime(ed, '%Y%m%d')
+        oneyearago = (c_date - timedelta(days=368)).strftime('%Y%m%d')
+        equity_mean.loc[ed] = base_equity.loc[oneyearago:ed].mean()
+
+        rev_pct_yearly.loc[ed] = round(((incomes['revenue'].loc[ed] -
+                                               incomes['revenue'].loc[oneyearago:ed][0]) * 100 /
+                                              incomes['revenue'].loc[oneyearago:ed][0]), 2)
+
+        equity_pct_yearly.loc[ed] = round((equity.loc[ed] + cash_divs.loc[ed] - equity.loc[oneyearago:ed][0]) * 100 /equity.loc[oneyearago:ed][0], 1)
+        pure_equity_pct_yearly.loc[ed] = round((pure_equity.loc[ed] + cash_divs.loc[ed] - pure_equity.loc[oneyearago:ed][0]) * 100 /pure_equity.loc[oneyearago:ed][0], 1)
+        cash_act_in_pct_yearly.loc[ed] = round(((cashflows['c_inf_fr_operate_a'].loc[ed] -cashflows['c_inf_fr_operate_a'].loc[oneyearago:ed][0]) * 100 /cashflows['c_inf_fr_operate_a'].loc[oneyearago:ed][0]), 2)
+        cash_act_out_pct_yearly.loc[ed] = round(((cashflows['st_cash_out_act'].loc[ed] -cashflows['st_cash_out_act'].loc[oneyearago:ed][0]) * 100 /cashflows['st_cash_out_act'].loc[oneyearago:ed][0]), 2)
+        tax_payable_pct_yearly.loc[ed] = round(((tax_payable.loc[ed] -tax_payable.loc[oneyearago:ed][0]) * 100 /tax_payable.loc[oneyearago:ed][0]), 2)
+        income_pct_yearly.loc[ed] = round(((incomes['n_income_attr_p'].loc[ed] - incomes['n_income_attr_p'].loc[oneyearago:ed][0]) * 100 /incomes['n_income_attr_p'].loc[oneyearago:ed][0]), 2)
+        fix_asset_pct_yearly.loc[ed] = round(((fix_assets.loc[ed] - fix_assets.loc[oneyearago:ed][0]) * 100 /fix_assets.loc[oneyearago:ed][0]), 2)
+        total_assets_pct_yearly.loc[ed] = round(((total_assets.loc[ed] - total_assets.loc[oneyearago:ed][0]) * 100 /total_assets.loc[oneyearago:ed][0]), 2)
+        liab_pct_yearly.loc[ed] = round(((balancesheets['total_liab'].loc[ed] - balancesheets['total_liab'].loc[oneyearago:ed][0]) * 100 /balancesheets['total_liab'].loc[oneyearago:ed][0]), 2)
+        freecash_pct_yearly.loc[ed] = round(((cashflows['free_cashflow'].loc[ed] - cashflows['free_cashflow'].loc[oneyearago:ed][0]) * 100 / cashflows['free_cashflow'].loc[oneyearago:ed][0]), 2)
+
+    rev_pctmv = get_mean_of_complex_rate(rev_pct_yearly)
+    equity_pctmv = get_mean_of_complex_rate(equity_pct_yearly)
+    pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct_yearly)
+    cash_act_in = get_mean_of_complex_rate(cash_act_in_pct_yearly)
+    cash_act_out = get_mean_of_complex_rate(cash_act_out_pct_yearly)
+    tax_payable_pctmv = get_mean_of_complex_rate(tax_payable_pct_yearly)
+    income_pctmv = get_mean_of_complex_rate(income_pct_yearly)
+    fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct_yearly)
+    total_assets_pctmv = get_mean_of_complex_rate(total_assets_pct_yearly)
+    liab_pctmv = get_mean_of_complex_rate(liab_pct_yearly)
+
+    freecash_mv = round(get_mean_of_complex_rate(freecash_pct_yearly), 1)
+    cash_act_rate = round(cash_act_in / cash_act_out, 2)
+    # print(pd.concat([adj_close, rev_pct,  rev_pct_yearly, rev_pctmv, pure_equity_pct, pure_equity_pct_yearly, pure_equity_pctmv, ], axis=1))
+    # os.ex
+    op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv - income_pctmv.shift()], axis=1).min(axis=1)
+    op_pct[op_pct > 50] = 50
+    op_pct[op_pct < -50] = -50
+
+    equity_mean.fillna(method='backfill', inplace=True)
     roe = round(incomes['n_income_attr_p'] * 100 / equity_mean, 2)
-    # base_equity = equity - balancesheets['oth_eqt_tools_p_shr'] + cash_divs - incomes['n_income_attr_p']
-    # roe = round(incomes['n_income_attr_p'] * 100 / base_equity, 2)
     roe[roe > 50] = 50
     roe[roe < -50] = -50
     roe_rd_pure = round((rd_exp) * 100 / equity_mean, 2)
@@ -351,13 +373,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_sale_mv = pd.Series(index=balancesheets.index)
     roe_ebitda_mv = pd.Series(index=balancesheets.index)
 
-
-    rev_pct_yearly = pd.Series(index=balancesheets.index)
-
     pre_date_idx = adj_close_pure.index[0]
     pre_date = datetime.strptime(pre_date_idx, '%Y%m%d')
-    # print(adj_close_pure)
-    # print('pre_date_idx=', pre_date_idx)
     roe_mv.loc[pre_date_idx] = roe.loc[pre_date_idx] / 100
     roe_rd_mv.loc[pre_date_idx] = roe_rd.loc[pre_date_idx] / 100
     roe_rd_pure_mv.loc[pre_date_idx] = roe_rd_pure.loc[pre_date_idx] / 100
@@ -367,25 +384,13 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     for i in range(1, len(adj_close_pure)):
         date_idx = adj_close_pure.index[i]
         c_date = datetime.strptime(date_idx, '%Y%m%d')
-        oneyearago = (c_date - timedelta(days=368*2)).strftime('%Y%m%d')
         date_delta = c_date - pre_date
         pre_date = c_date
-        # print('date_delta.days=', date_delta.days, ',c_date=', date_idx, ', ')
         date_coef = 365 / date_delta.days
 
-        rev_oneyearago = incomes['revenue'].loc[oneyearago:date_idx]
-        # print(' rev_oneyearago[0]=',  rev_oneyearago[0])
-        rev_pct_yearly.loc[date_idx] = round(((1+(incomes['revenue'].loc[date_idx] - rev_oneyearago[0])/rev_oneyearago[0])**(1/2) - 1)*100, 2)
-        # rev_pct_yearly.loc[date_idx] = rev_pct.loc[oneyearago:date_idx].sum()
         c1 = round(1 / date_coef, 2)
         c2 = 2 - c1
 
-        # if equity_pct.loc[oneyearago:date_idx].max() >= 100:
-        #     roe_mv.iloc[i] = roe_mv.iloc[i-1]
-        #     roe_rd_mv.iloc[i] = roe_rd_mv.iloc[i - 1]
-        #     roe_rd_pure_mv.iloc[i] = roe_rd_pure_mv.iloc[i - 1]
-        #     roe_sale_mv.iloc[i] = roe_sale_mv.iloc[i - 1]
-        #     roe_ebitda_mv.iloc[i] = roe_ebitda_mv.iloc[i - 1]
         roe_mv.loc[date_idx] = ((1 + roe.loc[date_idx] / 100) ** c1 * (1 + roe_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
         roe_rd_mv.loc[date_idx] = ((1 + roe_rd.loc[date_idx] / 100) ** c1 * (1 + roe_rd_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
         roe_rd_pure_mv.loc[date_idx] = ((1 + roe_rd_pure.loc[date_idx] / 100) ** c1 * (1 + roe_rd_pure_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
@@ -393,6 +398,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         roe_ebitda_mv.loc[date_idx] = ((1 + roe_ebitda.loc[date_idx] / 100) ** c1 * (1 + roe_ebitda_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
 
         pre_date_idx = date_idx
+
 
     roe_mv = round(roe_mv * 100, 2)
     roe_rd_mv = round(roe_rd_mv * 100, 2)
@@ -460,7 +466,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     lose_return2 = round(lose_return2 * 100, 1)
 
     EE = round((total_assets - balancesheets['trad_asset'] - balancesheets['money_cap']) / incomes['ebitda'], 1)
-    EE.name = 'EE'
+
     print('ss57=')
     em = round(total_assets / equity, 2)
     receiv_income = round(balancesheets['accounts_receiv'] / incomes['n_income'], 2)
@@ -527,6 +533,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     gross_rate.name = 'gross_rate'
     income_rate.name = 'income_rate'
     total_turn.name = 'total_turn'
+    EE.name = 'EE'
     pe.name = 'pe'
     pb.name = 'pb'
     dyr.name = 'dyr'
@@ -569,6 +576,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     fix_asset_pct.name = 'fix_asset_pct'
     rev_pct.name = 'rev_pct'
     tax_pct.name = 'tax_pct'
+    total_assets.name = 'total_assets'
 
     tax_payable_pct.name = 'tax_payable_pct'
     rev_pctmv.name = 'rev_pctmv'
@@ -704,12 +712,10 @@ def get_rolling_median(v, window=7):
     return data
 
 
-def get_mean_of_complex_rate(d, remove_noise=True, window=10):
+def get_mean_of_complex_rate(d):
     """
     移动复合率的平均值
     :param v:
-    :param remove_noise: 是否要去除以往最大最小值
-    :param window:
     :return:
     """
     v = d.copy()
@@ -734,11 +740,7 @@ def get_mean_of_complex_rate(d, remove_noise=True, window=10):
         date_coef = 365 / date_delta.days
         c1 = round(1 / date_coef, 2)
         c2 = 2 - c1
-        v_yearly = round(v.iloc[i] * date_coef,4)
-        if v_yearly < -1:
-            v_yearly = -1
-        data.iloc[i] = ((1 + v_yearly) ** c1 * (1 + data.iloc[i - 1]) ** c2) ** (1 / 2) - 1
-        # print('c1=', c1, 'c2=', c2, 'data.iloc[i]=', data.iloc[i])
+        data.iloc[i] = ((1 + v.iloc[i]) ** c1 * (1 + data.iloc[i - 1]) ** c2) ** (1 / 2) - 1
     base = base.join(data)
     return round(base['data'] * 100, 2)
 
