@@ -41,8 +41,8 @@ def execute(start_date='', end_date=''):
     # code_ids = [1348, 1376, 3304, 1707]
     # code_ids = range(3807, 3820)
     # code_ids = range(1877, 3868)
-    # code_ids = range(3772, 3868)
-    code_ids = range(1, 3868)
+    code_ids = range(3709, 3868)
+    # code_ids = range(1, 3868)
     # 1648：尔康制药，2352：恒瑞制药, 2543:华海药业
 
     for ci in code_ids:
