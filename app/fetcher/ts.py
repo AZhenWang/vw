@@ -372,10 +372,11 @@ class Ts(Interface):
                 new_rows.drop_duplicates('end_date', inplace=True)
                 print('new_rows1=', new_rows)
             if not new_rows.empty:
-
+                print('ss4')
+                print('new_rows2=', new_rows)
                 new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
                 new_rows = self.code_list.merge(new_rows, on='ts_code')
-                print('new_rows2=', new_rows)
+                print('new_rows3=', new_rows)
                 Fina.delete_logs_in_end_dates(code_id=new_rows.iloc[0]['code_id'], end_dates=new_rows['end_date'], tablename=api)
                 print('ss3')
                 avail_recorders = new_rows[fields_map[api]]
