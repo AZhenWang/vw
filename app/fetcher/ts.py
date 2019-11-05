@@ -345,6 +345,7 @@ class Ts(Interface):
             fields = ''
         for ts_code in codes:
             flag = True
+            print('codes=', ts_code)
             while flag:
                 try:
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
@@ -356,24 +357,27 @@ class Ts(Interface):
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
 
     def update_finance_by_code(self, api, ts_code, fields, start_date, end_date, report_type):
+        print('ss1')
         if fields == '':
             new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
         else:
             new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
         new_rows.drop_duplicates('end_date', inplace=True)
+        print('new_rows0=', new_rows)
         if not new_rows.empty:
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
             if not existed_reports.empty:
-
+                print('ss2')
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
                 new_rows.drop_duplicates('end_date', inplace=True)
+                print('new_rows1=', new_rows)
             if not new_rows.empty:
 
                 new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
                 new_rows = self.code_list.merge(new_rows, on='ts_code')
-
+                print('new_rows2=', new_rows)
                 Fina.delete_logs_in_end_dates(code_id=new_rows.iloc[0]['code_id'], end_dates=new_rows['end_date'], tablename=api)
-
+                print('ss3')
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
 
