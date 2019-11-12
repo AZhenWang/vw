@@ -14,8 +14,8 @@ def execute(start_date='', end_date=''):
     """
     start_date_id = DB.get_date_id(start_date)
     end_date_id = DB.get_date_id(end_date)
-    codes = DB.get_latestopendays_code_list(
-        latest_open_days=244*2, date_id=end_date_id)
+    # codes = DB.get_latestopendays_code_list(
+    #     latest_open_days=244*2, date_id=end_date_id)
     # code_ids = codes['code_id']
     # new_rows = pd.DataFrame(columns=fields_map['fina_sys'])
     # code_ids = [1398,2760,1386,1861,1707,2352,885,2344,2543,1524,1504,1975,2283,1392,1563,3242,2095,3192,3682,1273,1743,3315,1728,1783,]
@@ -42,7 +42,7 @@ def execute(start_date='', end_date=''):
     # code_ids = range(3807, 3820)
     # code_ids = range(1877, 3868)
     # code_ids = range(3709, 3868)
-    # code_ids = range(1, 3868)
+    code_ids = range(1, 3868)
     # 1648：尔康制药，2352：恒瑞制药, 2543:华海药业
 
     for ci in code_ids:

@@ -145,7 +145,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     total_mv = round(code_info['total_mv'] * 10000, 2)
 
     total_assets = balancesheets['total_assets']
-    TEV = total_assets - goodwill - balancesheets['r_and_d']
+    TEV = total_assets - goodwill
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
     pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - goodwill
     normal_equity = pure_equity - balancesheets['oth_eqt_tools_p_shr']
@@ -339,7 +339,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct_yearly)
     total_assets_pctmv = get_mean_of_complex_rate(total_assets_pct_yearly)
     liab_pctmv = get_mean_of_complex_rate(liab_pct_yearly)
-
+    # print(pd.concat([adj_close, round(balancesheets['total_liab'].pct_change()*100,2), liab_pct_yearly, liab_pctmv], axis=1))
+    # os.ex
     freecash_mv = round(get_mean_of_complex_rate(freecash_pct_yearly), 1)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
     # print(pd.concat([adj_close, rev_pct,  rev_pct_yearly, rev_pctmv, pure_equity_pct, pure_equity_pct_yearly, pure_equity_pctmv, ], axis=1))
