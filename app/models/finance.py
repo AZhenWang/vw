@@ -216,7 +216,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
                            - balancesheets['oth_payable'] - balancesheets['notes_payable'])
                           / equity, 2)
     capital_turn.name = 'capital_turn'
-    inventory_turn = round(incomes['revenue'] / balancesheets['inventories'], 2)
+    inventory_turn = round(incomes['oper_cost'] / balancesheets['inventories'], 2)
     inventory_turn.name = 'inventory_turn'
 
     # 如果货币资金与短期借款同步增加，且资金周转率下降，表示企业货币资金有无法动用之处，或者未来有大笔开支，且已经传导到经营层面，影响到供应商的信用授信，形成压力
@@ -335,7 +335,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
         equity_pct_yearly.loc[ed] = round((equity.loc[ed] + cashflows['cash_divs_rolling'].loc[ed] - cashflows['equity_in_fnc'].loc[ed] - equity.loc[oneyearago:ed][0]) * 100 / equity.loc[oneyearago:ed][0], 1)
         # equity_pct_yearly.loc[ed] = round((equity.loc[ed] + cash_divs.loc[ed] - equity.loc[oneyearago:ed][0]) * 100 /equity.loc[oneyearago:ed][0], 1)
-        pure_equity_pct_yearly.loc[ed] = round((pure_equity.loc[ed] + cashflows['cash_divs_rolling'].loc[ed] - pure_equity.loc[oneyearago:ed][0]) * 100 /pure_equity.loc[oneyearago:ed][0], 1)
+        pure_equity_pct_yearly.loc[ed] = round((pure_equity.loc[ed] + cashflows['cash_divs_rolling'].loc[ed] - cashflows['equity_in_fnc'].loc[ed] - pure_equity.loc[oneyearago:ed][0]) * 100 /pure_equity.loc[oneyearago:ed][0], 1)
         cash_act_in_pct_yearly.loc[ed] = round(((cashflows['c_inf_fr_operate_a'].loc[ed] -cashflows['c_inf_fr_operate_a'].loc[oneyearago:ed][0]) * 100 /cashflows['c_inf_fr_operate_a'].loc[oneyearago:ed][0]), 2)
         cash_act_out_pct_yearly.loc[ed] = round(((cashflows['st_cash_out_act'].loc[ed] -cashflows['st_cash_out_act'].loc[oneyearago:ed][0]) * 100 /cashflows['st_cash_out_act'].loc[oneyearago:ed][0]), 2)
         tax_payable_pct_yearly.loc[ed] = round(((tax_payable.loc[ed] -tax_payable.loc[oneyearago:ed][0]) * 100 /tax_payable.loc[oneyearago:ed][0]), 2)
