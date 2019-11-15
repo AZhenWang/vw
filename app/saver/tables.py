@@ -167,7 +167,7 @@ fields_map = {
         'roe',  'roe_sale', 'roe_mv', 'roe_std', 'roe_adj', 'roe_sale_mv', 'roe_ebitda', 'roe_ebitda_mv', 'op_pct',  'mix_op_diff',
         'V', 'V_adj', 'V_sale', 'V_ebitda', 'V_tax', 'dpd_V', 'pp', 'pp_adj', 'pp_sale', 'pp_ebitda', 'pp_tax', 'dpd_RR',
         'pe', 'pb', 'EE', 'i_debt', 'share_ratio', 'IER', 'oth_receiv_rate', 'money_cap_pct', 'st_borr_pct', 'st_borr_rate',
-        'capital_turn', 'inventory_turn', 'oper_pressure', 'OPM',
+        'capital_turn', 'total_turn', 'inventory_turn', 'oper_pressure', 'OPM',
         'X1', 'X2', 'X3', 'X4', 'X5', 'Z',
         'dyr', 'dyr_or', 'dyr_mean',
         'freecash_mv', 'cash_gap', 'cash_gap_r',  'receiv_pct', 'receiv_rate', 'cash_act_in', 'cash_act_out', 'cash_act_rate',

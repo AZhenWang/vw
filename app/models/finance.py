@@ -14,7 +14,7 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
                                    report_type='2')
     incomes12 = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='income',
                                    report_type='1', end_date_type='%1231')
-    cashflows= Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='cashflow',
+    cashflows2= Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='cashflow',
                                      report_type='2')
     cashflows12 = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='cashflow',
                                      report_type='1',  end_date_type='%1231')
@@ -29,7 +29,7 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
     incomes.set_index('end_date', inplace=True)
     incomes12.set_index('end_date', inplace=True)
     balancesheets.set_index('end_date', inplace=True)
-    cashflows.set_index('end_date', inplace=True)
+    cashflows2.set_index('end_date', inplace=True)
     cashflows12.set_index('end_date', inplace=True)
 
     # 组装incomes
@@ -50,11 +50,16 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
         # print('ed=', ed, 'str(int(ed) - 10000)=', str(int(ed) - 10000))
     incomes['oneyearago'] = oneyearago
 
-    # 组装cashflow
-    cashflows = cashflows[
-        ['depr_fa_coga_dpba', 'free_cashflow', 'incr_def_inc_tax_liab', 'end_bal_cash',
-                                        'decr_def_inc_tax_assets','c_inf_fr_operate_a', 'st_cash_out_act', 'n_cashflow_act']].rolling(window=4).sum()
+    #组装cashflow
+    cashflows2.fillna(0, inplace=True)
+    cashflows2['equity_in_fnc'] = cashflows2['stot_cash_in_fnc_act'] - cashflows2['oth_cash_recp_ral_fnc_act'] - cashflows2['proc_issue_bonds'] - cashflows2['c_recp_borrow']
 
+    cashflows12['equity_in_fnc'] = cashflows12['stot_cash_in_fnc_act'] - cashflows12['oth_cash_recp_ral_fnc_act'] - \
+                                   cashflows12['proc_issue_bonds'] - cashflows12['c_recp_borrow']
+
+    cashflows = cashflows2[
+        ['equity_in_fnc', 'depr_fa_coga_dpba', 'free_cashflow', 'incr_def_inc_tax_liab', 'end_bal_cash',
+                                        'decr_def_inc_tax_assets','c_inf_fr_operate_a', 'st_cash_out_act', 'n_cashflow_act']].rolling(window=4).sum()
     for i in range(len(cashflows12)):
         ed = cashflows12.index[i]
         cashflows.loc[ed] = cashflows12.loc[ed]
@@ -101,7 +106,7 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
     fina_indicators = fina_indicators[['rd_exp', 'interst_income']]
 
 
-    # 组装分红
+    # 组装分红和权益性融资
     dividends = Fina.get_divdends(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id)
     dividends.dropna(subset=['pay_date'])
     dividends['div_count'] = dividends['total_share'] * dividends['cash_div_tax'] * 10000
@@ -110,12 +115,21 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
     dividend_base = pd.DataFrame(index=dividend_dates)
     dividend_base = dividend_base.join(dividends[['pay_date', 'div_count']].set_index('pay_date'))
     cash_divs = pd.Series(index=incomes.index, name='cash_divs')
+
+    # cashflows2.fillna(0, inplace=True)
+    # equity_in_fnc_base = cashflows2['stot_cash_in_fnc_act'] - cashflows2['oth_cash_recp_ral_fnc_act'] - cashflows2['proc_issue_bonds'] - cashflows2['c_recp_borrow']
+    # equity_in_fnc = pd.Series(index=incomes.index, name='equity_in_fnc')
+
     for i in range(1, len(incomes)):
         ed = incomes.index[i]
-        sd = incomes.index[i-1]
+        sd = str(int(incomes.index[i-1]) + 1)
         current_div = np.float(dividend_base.loc[sd:ed]['div_count'].sum())
         cash_divs.loc[ed] = current_div
+        # current_equity_in_fnc = np.float(equity_in_fnc_base.loc[sd:ed].sum())
+        # equity_in_fnc.loc[ed] = current_equity_in_fnc
 
+    # cashflows['equity_in_fnc'] = equity_in_fnc
+    cashflows['cash_divs_rolling'] = cash_divs.rolling(window=4).sum()
     return incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs
 
 
@@ -163,20 +177,22 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         ipo_before_equity = normal_equity[normal_equity.index < ipo_log.issue_date]
         if not ipo_before_equity.empty:
             ipo_lastest_date = ipo_before_equity.index[-1]
-            ipo_lastest_equity = ipo_before_equity.loc[ipo_lastest_date]
+            incr_equity = ipo_log.price * ipo_log.amount * 10000
 
-            ipo_lastest_equity += ipo_log.price * ipo_log.amount * 10000
+            ipo_lastest_normal_equity = ipo_before_equity.loc[ipo_lastest_date]
+            ipo_lastest_normal_equity += incr_equity
             ipo_lastest_total_mv = ipo_log.price * (
                         ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share'])
 
-            pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / ipo_lastest_equity, 2)
+            pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / ipo_lastest_normal_equity, 2)
             total_mv.loc[ipo_lastest_date] = ipo_lastest_total_mv
             pe.loc[ipo_lastest_date] = ipo_log.pe
             pb.loc[ipo_lastest_date] = round(ipo_lastest_total_mv / normal_equity.loc[ipo_lastest_date],2)
             adj_close.loc[ipo_lastest_date] = ipo_log.price
             adj_factor.loc[ipo_lastest_date] = 1
             total_share.loc[ipo_lastest_date] = ipo_log.amount * 10000 + balancesheets.loc[ipo_lastest_date]['total_share']
-            equity.loc[ipo_lastest_date] = ipo_lastest_equity
+            # equity.loc[ipo_lastest_date] = equity.loc[ipo_lastest_date] + incr_equity
+            # pure_equity.loc[ipo_lastest_date] = pure_equity.loc[ipo_lastest_date] + incr_equity
 
     adj_close_pure = adj_close.dropna()
     share_pct = round(total_share.pct_change() * 100, 2)
@@ -291,7 +307,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 利息保障倍数
     interst = pd.concat([fina_indicators['interst_income'], incomes['int_exp']], axis=1).max(axis=1)
     IER = round((adj_ebit) / (interst + 1), 2)
-    base_equity = balancesheets['total_hldr_eqy_exc_min_int'] - balancesheets['oth_eqt_tools_p_shr'] + cash_divs
     equity_pct = round((equity + cash_divs - equity.shift()) * 100 / equity.shift(), 1)
     pure_equity_pct = round((pure_equity + cash_divs - pure_equity.shift()) * 100 /pure_equity.shift(), 1)
 
@@ -312,14 +327,15 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         ed = incomes.index[i]
         c_date = datetime.strptime(ed, '%Y%m%d')
         oneyearago = (c_date - timedelta(days=368)).strftime('%Y%m%d')
-        equity_mean.loc[ed] = base_equity.loc[oneyearago:ed].mean()
+        equity_mean.loc[ed] = equity.loc[oneyearago:ed].mean()
 
         rev_pct_yearly.loc[ed] = round(((incomes['revenue'].loc[ed] -
                                                incomes['revenue'].loc[oneyearago:ed][0]) * 100 /
                                               incomes['revenue'].loc[oneyearago:ed][0]), 2)
 
-        equity_pct_yearly.loc[ed] = round((equity.loc[ed] + cash_divs.loc[ed] - equity.loc[oneyearago:ed][0]) * 100 /equity.loc[oneyearago:ed][0], 1)
-        pure_equity_pct_yearly.loc[ed] = round((pure_equity.loc[ed] + cash_divs.loc[ed] - pure_equity.loc[oneyearago:ed][0]) * 100 /pure_equity.loc[oneyearago:ed][0], 1)
+        equity_pct_yearly.loc[ed] = round((equity.loc[ed] + cashflows['cash_divs_rolling'].loc[ed] - cashflows['equity_in_fnc'].loc[ed] - equity.loc[oneyearago:ed][0]) * 100 / equity.loc[oneyearago:ed][0], 1)
+        # equity_pct_yearly.loc[ed] = round((equity.loc[ed] + cash_divs.loc[ed] - equity.loc[oneyearago:ed][0]) * 100 /equity.loc[oneyearago:ed][0], 1)
+        pure_equity_pct_yearly.loc[ed] = round((pure_equity.loc[ed] + cashflows['cash_divs_rolling'].loc[ed] - pure_equity.loc[oneyearago:ed][0]) * 100 /pure_equity.loc[oneyearago:ed][0], 1)
         cash_act_in_pct_yearly.loc[ed] = round(((cashflows['c_inf_fr_operate_a'].loc[ed] -cashflows['c_inf_fr_operate_a'].loc[oneyearago:ed][0]) * 100 /cashflows['c_inf_fr_operate_a'].loc[oneyearago:ed][0]), 2)
         cash_act_out_pct_yearly.loc[ed] = round(((cashflows['st_cash_out_act'].loc[ed] -cashflows['st_cash_out_act'].loc[oneyearago:ed][0]) * 100 /cashflows['st_cash_out_act'].loc[oneyearago:ed][0]), 2)
         tax_payable_pct_yearly.loc[ed] = round(((tax_payable.loc[ed] -tax_payable.loc[oneyearago:ed][0]) * 100 /tax_payable.loc[oneyearago:ed][0]), 2)
@@ -329,8 +345,11 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         liab_pct_yearly.loc[ed] = round(((balancesheets['total_liab'].loc[ed] - balancesheets['total_liab'].loc[oneyearago:ed][0]) * 100 /balancesheets['total_liab'].loc[oneyearago:ed][0]), 2)
         freecash_pct_yearly.loc[ed] = round(((cashflows['free_cashflow'].loc[ed] - cashflows['free_cashflow'].loc[oneyearago:ed][0]) * 100 / cashflows['free_cashflow'].loc[oneyearago:ed][0]), 2)
 
-    rev_pctmv = get_mean_of_complex_rate(rev_pct_yearly)
     equity_pctmv = get_mean_of_complex_rate(equity_pct_yearly)
+    # print(pd.concat([equity, equity_pct, cash_divs, cashflows['cash_divs_rolling'], cashflows['equity_in_fnc'], equity_pct_yearly, equity_pctmv], axis=1))
+    # os.ex
+    rev_pctmv = get_mean_of_complex_rate(rev_pct_yearly)
+
     pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct_yearly)
     cash_act_in = get_mean_of_complex_rate(cash_act_in_pct_yearly)
     cash_act_out = get_mean_of_complex_rate(cash_act_out_pct_yearly)
@@ -339,8 +358,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct_yearly)
     total_assets_pctmv = get_mean_of_complex_rate(total_assets_pct_yearly)
     liab_pctmv = get_mean_of_complex_rate(liab_pct_yearly)
-    # print(pd.concat([adj_close, round(balancesheets['total_liab'].pct_change()*100,2), liab_pct_yearly, liab_pctmv], axis=1))
-    # os.ex
+
     freecash_mv = round(get_mean_of_complex_rate(freecash_pct_yearly), 1)
     cash_act_rate = round(cash_act_in / cash_act_out, 2)
     # print(pd.concat([adj_close, rev_pct,  rev_pct_yearly, rev_pctmv, pure_equity_pct, pure_equity_pct_yearly, pure_equity_pctmv, ], axis=1))
@@ -475,7 +493,23 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     oth_receiv_rate = round(balancesheets['oth_receiv'] * 100 / TEV, 1)
     oth_receiv_rate.name = 'oth_receiv_rate'
-
+    # print(pd.concat(
+    #     [adj_close, equity_mean, roe, roe_mv, tax_payable_pct, tax_payable_pct_yearly, tax_payable_pctmv],
+    #     axis=1))
+    # # os.ex
+    # import matplotlib.pylab as plt
+    # fig = plt.figure(figsize=(20, 16))
+    # ax1 = fig.add_subplot(111, facecolor='#07000d')
+    # ax1.plot(roe, label='roe', color='red')
+    # ax1.plot(roe_mv, label='roe_mv', color='blue')
+    # ax2 = ax1.twinx()
+    # # ax2.plot(adj_close, label='adj_close', color='yellow')
+    # ax2.plot(adj_close.pct_change()*100, label='adj_close', color='yellow')
+    # ax2.plot(equity_pctmv, label='equity_pct', color='white', alpha=0.5)
+    # ax2.plot(equity_pct.cumsum(), label='equity_pct2', color='green', alpha=0.5)
+    # ax2.axhline(0, color='gray')
+    # plt.show()
+    # os.ex
     # 普通股在资本总额中的占比
     share_ratio = round(total_mv * 100 / (balancesheets['oth_eqt_tools_p_shr'] + balancesheets['bond_payable'] + total_mv), 1)
 
@@ -560,6 +594,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     holdernum.name = 'holdernum'
     freecash_mv.name = 'freecash_mv'
     equity_pct.name = 'equity_pct'
+    equity_pct_yearly.name = 'equity_pct_yearly'
     share_pct.name = 'share_pct'
     pure_equity_pct.name = 'pure_equity_pct'
     pure_equity_pctmv.name = 'pure_equity_pctmv'
@@ -615,9 +650,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
          fix_asset_pct, tax_payable_pct, def_tax_ratio,
-         rev_pct, share_pct,  rev_pct_yearly, total_turn_pctmv, tax_pct, income_pct,
+         rev_pct, share_pct,  rev_pct_yearly, total_turn, total_turn_pctmv, tax_pct, income_pct,
          rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv,
-         pure_equity_pct, pure_equity_pctmv, equity_pct,  equity_pctmv, fix_asset_pctmv,
+         pure_equity_pct, pure_equity_pctmv, equity_pct, equity_pct_yearly,  equity_pctmv, fix_asset_pctmv,
          LLP, LP, MP, HP, HHP, MP_pct, win_return, lose_return, odds, win_return2, lose_return2, odds2, odds_pp,
          ], axis=1, sort=True)
     return data
@@ -725,7 +760,7 @@ def get_mean_of_complex_rate(d):
     if v.isna().all():
         return v
     # v.dropna(0, inplace=True)
-    v[v < -100] = -99
+    v[v < -99] = -99
     # v[v > 100] = np.nan
     v.fillna(method='ffill', inplace=True)
     v.dropna(inplace=True)

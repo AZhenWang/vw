@@ -31,7 +31,7 @@ def execute(start_date='', end_date=''):
     #             1635,1636,1648,1654,1670,1675,1679,1695,1699,1707,1728,1738,1739,
     #             3839, 3843, 3842,]
     # code_ids = [494, 1142]
-    # code_ids = [2352]
+    # code_ids = [1348,2761,2352,214, 1648, 161]
     # 智飞生物：1504
     # 康泰生物： 1975
     # 沃森生物： 1524
@@ -42,7 +42,7 @@ def execute(start_date='', end_date=''):
     # code_ids = range(3807, 3820)
     # code_ids = range(1877, 3868)
     # code_ids = range(3709, 3868)
-    code_ids = range(1, 3868)
+    code_ids = range(1, 3879)
     # 1648：尔康制药，2352：恒瑞制药, 2543:华海药业
 
     for ci in code_ids:
