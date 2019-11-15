@@ -174,7 +174,7 @@ fields_map = {
         'pure_equity_pct', 'pure_equity_pctmv', 'equity_pct', 'fix_asset_pct', 'rev_pct', 'rev_pct_yearly',
         'income_rate',  'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct', 'def_tax_ratio',
         'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
-        'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv', 'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
+        'rev_pctmv', 'total_assets_pctmv', 'liab_pctmv', 'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
         'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct',  'win_return', 'lose_return', 'odds', 'win_return2', 'lose_return2', 'odds2', 'adj_factor',
     ],
     'fina_super': [

@@ -436,7 +436,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     V_sale = value_stock2(roe_sale_mv, OPM, opm_coef)
     V_ebitda = value_stock2(roe_ebitda_mv, OPM, opm_coef)
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
-    total_turn_pctmv = round((rev_pctmv / total_assets_pctmv).pct_change()*100, 2)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     # 赔率，考虑roe_std波动
@@ -616,7 +615,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     tax_payable_pct.name = 'tax_payable_pct'
     rev_pctmv.name = 'rev_pctmv'
-    total_turn_pctmv.name = 'total_turn_pctmv'
     liab_pctmv.name = 'liab_pctmv'
     income_pctmv.name = 'income_pctmv'
     tax_payable_pctmv.name = 'tax_payable_pctmv'
@@ -650,7 +648,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
          dpba_of_assets, dpba_of_gross, IER, rd_exp_or, roe_std,
          fix_asset_pct, tax_payable_pct, def_tax_ratio,
-         rev_pct, share_pct,  rev_pct_yearly, total_turn, total_turn_pctmv, tax_pct, income_pct,
+         rev_pct, share_pct,  rev_pct_yearly, total_turn, tax_pct, income_pct,
          rev_pctmv, total_assets_pctmv, liab_pctmv, income_pctmv, tax_payable_pctmv,
          pure_equity_pct, pure_equity_pctmv, equity_pct, equity_pct_yearly,  equity_pctmv, fix_asset_pctmv,
          LLP, LP, MP, HP, HHP, MP_pct, win_return, lose_return, odds, win_return2, lose_return2, odds2, odds_pp,

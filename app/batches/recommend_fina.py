@@ -23,11 +23,11 @@ def execute(start_date='', end_date=''):
                                      'dyr', 'dyr_or', 'dyr_mean',
                                      'freecash_mv', 'cash_gap', 'cash_gap_r', 'receiv_pct', 'receiv_rate', 'cash_act_in',
                                      'cash_act_out', 'cash_act_rate',
-                                     'equity_pct', 'fix_asset_pct', 'revenue', 'rev_pct', 'rev_pct_yearly', 'share_pct', 'gross_rate',
+                                     'equity_pct', 'equity_pct_yearly', 'fix_asset_pct', 'revenue', 'rev_pct', 'rev_pct_yearly', 'share_pct', 'gross_rate',
                                      'income_rate', 'tax_rate', 'income_pct', 'tax_pct', 'tax_payable_pct',
                                      'def_tax_ratio',
                                      'dpba_of_gross', 'dpba_of_assets', 'rd_exp_or',
-                                     'rev_pctmv', 'total_assets_pctmv', 'total_turn_pctmv', 'liab_pctmv',
+                                     'rev_pctmv', 'total_assets_pctmv', 'liab_pctmv',
                                      'income_pctmv', 'tax_payable_pctmv', 'equity_pctmv', 'fix_asset_pctmv',
                                      'LLP', 'LP', 'MP', 'HP', 'HHP', 'MP_pct',  'adj_close', 'price_pct',
                                      'win_return', 'lose_return', 'odds', 'win_return2', 'lose_return2', 'odds2', 'odds_pp',
@@ -39,11 +39,11 @@ def execute(start_date='', end_date=''):
     # code_ids = range(1, 500)
     # code_ids = range(2920, 3670)
     # code_ids = [range(1, 500), range(2920, 3670)]
-    code_ids = range(1, 3868)
+    code_ids = range(1, 3879)
     # code_ids = range(3559, 3670)
     # code_ids = [3,56,63,65,78,94,103,104,110,111,115,132,138,156,171,177,198,208,213,220,239,250,256,259,284,290,297,309,311,313,324,330,333,337,390,396,399,410,422,431,450,453,454,460,465,466,468,471,483,484,486,494,501,502,508,518,525,532,556,560,563,566,571,573,582,589,600,609,626,629,630,637,662,683,687,690,710,714,716,725,738,750,757,780,789,795,804,812,823,824,828,833,845,849,853,856,862,870,871,872,874,875,885,887,895,896,898,900,905,913,916,918,939,960,1012,1013,1024,1028,1043,1046,1053,1059,1063,1065,1076,1094,1105,1106,1110,1115,1128,1131,1137,1142,1145,1150,1155,1170,1187,1196,1200,1206,1208,1211,1229,1239,1256,1258,1262,1263,1269,1273,1277,1278,1279,1313,1321,1322,1328,1342,1345,1347,1348,1353,1355,1360,1362,1368,1376,1383,1386,1389,1392,1398,1399,1402,1409,1413,1420,1422,1424,1432,1437,1443,1464,1468,1489,1490,1491,1492,1501,1503,1504,1514,1517,1524,1525,1529,1540,1553,1556,1563,1575,1580,1581,1585,1587,1595,1597,1614,1619,1620,1624,1625,1627,1628,1635,1636,1648,1654,1670,1675,1679,1695,1699,1707,1728,1738,1739,]
     # code_ids = [2352]
-    # code_ids = [2057]
+    # code_ids = [1348,2761,2352,214, 1648, 161]
     # code_ids = [1398, 2760,1386,1861,1707,2352,885,2344,2543,1524,1504,1975,2283,1392,1563,3242,2095,3192,3682,1273,1743,3315,1728,1783,]
     # code_ids = range(3800, 3820)
     start_date_id = DB.get_date_id(start_date)
@@ -53,7 +53,7 @@ def execute(start_date='', end_date=''):
         print('code_id=', code_id)
         DB.delete_code_logs(code_id, tablename='fina_recom_logs')
         logs = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='fina_sys')
-        logs = logs.dropna(subset=['total_mv'])
+        logs = logs.dropna(subset=['total_mv', 'adj_close'])
         logs.fillna(0, inplace=True)
         if logs.empty:
             continue
@@ -71,7 +71,7 @@ def execute(start_date='', end_date=''):
             flag = 0
 
             if log['liab_pctmv'] < log['rev_pctmv'] * 2 \
-                    and log['equity_pctmv'] > 10 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > -0 and log['tax_payable_pctmv'] > 5 \
+                    and log['equity_pctmv'] > 10 and log['fix_asset_pctmv'] > -10 and log['total_assets_pctmv'] > -0 and log['tax_payable_pct'] > 20 \
                     and log['receiv_pct'] < 25 and log['Z'] > 1 \
                     and log['cash_act_in'] > 8 \
                     and log['cash_act_out'] > 0 \
@@ -80,7 +80,6 @@ def execute(start_date='', end_date=''):
                     and log['roe_sale_mv'] > 10\
                     and log['IER'] > 8\
                     and log['oth_receiv_rate'] < 10:
-
                 flag = 1
 
             elif log['receiv_pct'] > 25 or log['Z'] < 1 \
@@ -94,7 +93,6 @@ def execute(start_date='', end_date=''):
                     or log['st_borr_rate'] > 40 \
                     or (log['st_borr_pct'] > 50 and log['money_cap_pct'] > 50):
                 flag = -1
-
             # 再看这个企业的业务是不是在突飞猛进
             step = 0
             if j >= 1:
@@ -103,39 +101,50 @@ def execute(start_date='', end_date=''):
                 pre_roe_sale_mv = logs.iloc[j - 1]['roe_sale_mv']
                 pre_roe_mv = logs.iloc[j - 1]['roe_mv']
                 pre_capital_turn = logs.iloc[j - 1]['capital_turn']
+                pre_total_turn = logs.iloc[j - 1]['total_turn']
+                pre_income_rate = logs.iloc[j - 1]['income_rate']
             else:
                 pre_roe = log['roe_mv']
                 pre_roe_sale = log['roe_sale_mv']
                 pre_roe_sale_mv = log['roe_sale_mv']
                 pre_roe_mv = log['roe_mv']
                 pre_capital_turn = log['capital_turn']
+                pre_total_turn = log['total_turn']
+                pre_income_rate = log['income_rate']
 
             # if (log['roe_sale'] >= log['roe_sale_mv'] or log['roe_sale'] >= pre_roe_sale or log['roe_mv'] > pre_roe_mv)\
             #         and (log['roe'] >= log['roe_mv'] or log['roe'] >= pre_roe or log['roe_sale_mv'] > pre_roe_sale_mv)\
             #         and log['capital_turn'] > pre_capital_turn:
             #     step = 1
 
-            if log['roe'] - pre_roe > 1 \
-                and log['rev_pct_yearly'] > 10 \
-                and log['capital_turn'] > pre_capital_turn:
+            # if log['roe'] > pre_roe and log['roe_sale'] > log['roe_sale_mv'] \
+            #     and log['rev_pct_yearly'] > 10 \
+            #     and log['capital_turn'] > pre_capital_turn:
+            #
+            #     step = 1
+            # elif log['roe'] < pre_roe \
+            #         and log['rev_pct_yearly'] < 0 \
+            #         and log['capital_turn'] < pre_capital_turn:
+            #     step = -1
+
+            if log['roe'] > pre_roe > 6 and log['income_rate'] > pre_income_rate \
+                    and log['capital_turn'] > pre_capital_turn\
+                    and log['total_turn'] > pre_total_turn:
 
                 step = 1
-            elif log['roe'] - pre_roe < -1 \
-                    and log['rev_pct_yearly'] < 0 \
-                    and log['capital_turn'] < pre_capital_turn:
+            elif log['income_rate'] < pre_income_rate \
+                    and log['capital_turn'] < pre_capital_turn\
+                    and log['total_turn'] < pre_total_turn:
                 step = -1
 
             # 三看年报性价比
             nice = 0
-            if log['pp_adj'] > 1\
-                    and (log['pp'] + log['pp_sale']) > 3 \
+            if (log['pp'] + log['pp_rd']) > 3 \
                     and log['dpd_RR'] > 1.8:
                 nice = 1
-            elif log['pp_adj'] < 0.5 \
-                or (log['pp'] + log['pp_sale']) < 1 \
+            elif (log['pp'] + log['pp_rd']) < 1 \
                 or log['dpd_RR'] < 1:
                 nice = -1
-
             holdernum_2inc = log['holdernum_inc']
             if j >= 1 and logs.iloc[j-1]['holdernum_inc'] * holdernum_2inc > 0:
                 holdernum_2inc += logs.iloc[j-1]['holdernum_inc']
@@ -143,7 +152,6 @@ def execute(start_date='', end_date=''):
                 holder_unit = round(log['total_mv'] / log['holdernum'], 1)
             else:
                 holder_unit = np.nan
-
             logs.at[index, 'flag'] = flag
             logs.at[index, 'step'] = step
             logs.at[index, 'nice'] = nice
@@ -155,12 +163,14 @@ def execute(start_date='', end_date=''):
             later_logs = logs[logs.end_date > today]
             corner = later_logs[later_logs['point'] != 0]
             if not corner.empty:
+
                 next_act = corner.iloc[0]
                 next_close = next_act['adj_close']
                 next_date = next_act['end_date']
                 today_close = logs.iloc[j]['adj_close']
+
                 result = round(next_close / today_close, 2)
-                years = (int(next_date) - int(today)) / 10000
+                years = np.ceil((int(next_date) - int(today)) / 10000)
                 logs.at[index, 'result'] = result
                 logs.at[index, 'years'] = years
                 logs.at[index, 'return_yearly'] = round((result**(1/years) - 1)*100, 2)
