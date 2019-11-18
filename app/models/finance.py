@@ -195,6 +195,9 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
             # pure_equity.loc[ipo_lastest_date] = pure_equity.loc[ipo_lastest_date] + incr_equity
 
     adj_close_pure = adj_close.dropna()
+    if adj_close_pure.empty:
+        nan_series = pd.Series()
+        return nan_series
     share_pct = round(total_share.pct_change() * 100, 2)
 
     # 营运资金
@@ -323,7 +326,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     freecash_pct_yearly = pd.Series(index=balancesheets.index)
     equity_mean = pd.Series(index=balancesheets.index)
     for i in range(1,len(incomes)):
-        print('ssa2')
         ed = incomes.index[i]
         c_date = datetime.strptime(ed, '%Y%m%d')
         oneyearago = (c_date - timedelta(days=368)).strftime('%Y%m%d')
@@ -391,7 +393,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_rd_pure_mv = pd.Series(index=balancesheets.index)
     roe_sale_mv = pd.Series(index=balancesheets.index)
     roe_ebitda_mv = pd.Series(index=balancesheets.index)
-
+    print('adj_close_pure=', adj_close_pure)
     pre_date_idx = adj_close_pure.index[0]
     pre_date = datetime.strptime(pre_date_idx, '%Y%m%d')
     roe_mv.loc[pre_date_idx] = roe.loc[pre_date_idx] / 100
