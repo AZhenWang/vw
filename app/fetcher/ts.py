@@ -334,7 +334,11 @@ class Ts(Interface):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] >= 3671]['ts_code']
         # codes = self.code_list['ts_code']
-        codes = ['300809.SZ', '300810.SZ','002968.SZ' ]
+        codes = ['300809.SZ', '300810.SZ','002968.SZ']
+        codes = ['688363.SH','688299.SH','688128.SH','688023.SH','688288.SH','688389.SH','688166.SH','688202.SH','688021.SH',
+                 '002967.SZ','603489.SH','688199.SH','688058.SH','300797.SZ','300564.SZ','300800.SZ','300796.SZ','688101.SH',
+                 '688300.SH','300802.SZ','300803.SZ','688111.SH','300798.SZ','300806.SZ','300805.SZ','688196.SH','688138.SH',
+                 '603390.SH']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
