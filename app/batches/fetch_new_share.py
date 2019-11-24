@@ -10,7 +10,7 @@ def execute(start_date='', end_date=''):
     """
     worker = ts.Ts(start_date='', end_date=end_date)
 
-    result = worker.update_new_share()
+    result = worker.update_new_share(start_date=start_date, end_date=end_date)
     worker.update_stock_basic()
     worker.set_code_list(list_status='N')
 
