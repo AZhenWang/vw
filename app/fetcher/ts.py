@@ -371,10 +371,9 @@ class Ts(Interface):
             if not existed_reports.empty:
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
                 new_rows.drop_duplicates('end_date', inplace=True)
-            if not new_rows.empty:
+            if not new_rows.empty and len(new_rows) > 0:
                 new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
                 new_rows = self.code_list.merge(new_rows, on='ts_code')
-                print(new_rows)
                 Fina.delete_logs_in_end_dates(code_id=new_rows.iloc[0]['code_id'], end_dates=new_rows['end_date'], tablename=api)
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
