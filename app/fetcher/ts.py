@@ -333,12 +333,8 @@ class Ts(Interface):
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] >= 3671]['ts_code']
-        # codes = self.code_list['ts_code']
+        codes = self.code_list['ts_code']
         # codes = ['300809.SZ', '300810.SZ','002968.SZ']
-        codes = ['688363.SH','688299.SH','688128.SH','688023.SH','688288.SH','688389.SH','688166.SH','688202.SH','688021.SH',
-                 '002967.SZ','603489.SH','688199.SH','688058.SH','300797.SZ','300564.SZ','300800.SZ','300796.SZ','688101.SH',
-                 '688300.SH','300802.SZ','300803.SZ','688111.SH','300798.SZ','300806.SZ','300805.SZ','688196.SH','688138.SH',
-                 '603390.SH']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
@@ -371,15 +367,9 @@ class Ts(Interface):
             if not existed_reports.empty:
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
                 new_rows.drop_duplicates('end_date', inplace=True)
-            print('new_rows=', new_rows)
-            print('self.all_dates=', self.all_dates)
-            print('self.code_list=', self.code_list)
             if not new_rows.empty:
                 new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
-                print('ss1=', new_rows)
                 new_rows = self.code_list.merge(new_rows, on='ts_code')
-                print('ss2=', new_rows)
-                print(' len(new_rows)=',  len(new_rows), ', new_rows.empty=', new_rows.empty)
                 Fina.delete_logs_in_end_dates(code_id=new_rows.iloc[0]['code_id'], end_dates=new_rows['end_date'], tablename=api)
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
