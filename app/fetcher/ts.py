@@ -372,7 +372,7 @@ class Ts(Interface):
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
                 new_rows.drop_duplicates('end_date', inplace=True)
             print(' len(new_rows)=', len(new_rows), ', new_rows.empty=', new_rows.empty)
-            if (not new_rows.empty) and (len(new_rows) > 0):
+            if (not new_rows.empty) and (len(new_rows) >= 1):
                 new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
                 new_rows = self.code_list.merge(new_rows, on='ts_code')
                 print(new_rows)
