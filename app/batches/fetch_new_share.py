@@ -1,4 +1,5 @@
 from app.fetcher import ts
+from conf.myapp import init_date
 
 
 def execute(start_date='', end_date=''):
@@ -8,7 +9,7 @@ def execute(start_date='', end_date=''):
     :param end_date:
     :return:
     """
-    worker = ts.Ts(start_date='', end_date=end_date)
+    worker = ts.Ts(start_date=init_date, end_date=end_date)
 
     result = worker.update_new_share(start_date=start_date, end_date=end_date)
     worker.update_stock_basic()
