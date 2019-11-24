@@ -374,6 +374,8 @@ class Ts(Interface):
             if not new_rows.empty and len(new_rows) > 0:
                 new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
                 new_rows = self.code_list.merge(new_rows, on='ts_code')
+                print(new_rows)
+                print(' len(new_rows)=',  len(new_rows))
                 Fina.delete_logs_in_end_dates(code_id=new_rows.iloc[0]['code_id'], end_dates=new_rows['end_date'], tablename=api)
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
