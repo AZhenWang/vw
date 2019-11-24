@@ -106,14 +106,14 @@ class Ts(Interface):
                     is_hs = ipo_done_rows.iloc[i]['is_hs']
                     DB.update_stock_basic_info(ts_code, name, area, industry, market, curr_type, list_status, list_date, delist_date, is_hs)
 
-    def update_new_share(self):
+    def update_new_share(self, start_date='', end_date=''):
         """
         更新新股ipo，并在stock_basic 中生成一条记录
         :return: 是否有更新
         """
 
         api = 'new_share'
-        new_rows = self.pro.query(api, start_date=self.start_date, end_date=self.end_date)
+        new_rows = self.pro.query(api, start_date=start_date, end_date=end_date)
 
         existed_code_list = DB.get_code_list()
         avail_recorders = new_rows[~new_rows['ts_code'].isin(existed_code_list['ts_code'])]
@@ -122,7 +122,7 @@ class Ts(Interface):
         avail_recorders['list_status'] = 'N'
         avail_recorders.to_sql('stock_basic', DB.engine, index=False, if_exists='append', chunksize=1000)
 
-        DB.delete_by_date(table_name=api, field_name='ipo_date', start_date=self.start_date, end_date=self.end_date)
+        DB.delete_by_date(table_name=api, field_name='ipo_date', start_date=start_date, end_date=end_date)
 
         existed_code_list = DB.get_code_list()
         new_rows = existed_code_list.merge(new_rows, on='ts_code')
@@ -334,7 +334,7 @@ class Ts(Interface):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] >= 3671]['ts_code']
         # codes = self.code_list['ts_code']
-        codes = ['300809.SZ','300810.SZ' ]
+        codes = ['300809.SZ', '300810.SZ','002968.SZ' ]
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
