@@ -332,9 +332,8 @@ class Ts(Interface):
 
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
-        # codes = self.code_list[self.code_list['code_id'] >= 3801]['ts_code']
+        codes = self.code_list[self.code_list['code_id'] >= 3801]['ts_code']
         # codes = self.code_list['ts_code']
-        codes = ['688368.SH']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
@@ -350,7 +349,7 @@ class Ts(Interface):
                 try:
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
                     flag = False
-                    time.sleep(5)
+                    time.sleep(7)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
@@ -362,8 +361,6 @@ class Ts(Interface):
         else:
             new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
         new_rows.drop_duplicates('end_date', inplace=True)
-        print(self.all_dates)
-        print('api=', api, new_rows[['ann_date', 'end_date']])
 
         if not new_rows.empty:
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
