@@ -332,7 +332,7 @@ class Ts(Interface):
 
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
-        codes = self.code_list[self.code_list['code_id'] >= 3801]['ts_code']
+        codes = self.code_list[self.code_list['code_id'] <= 3800]['ts_code']
         # codes = self.code_list['ts_code']
         if need_fields != '':
             fields = fields_map[api].copy()

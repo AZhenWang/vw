@@ -14,7 +14,7 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
                                    report_type='2')
     incomes12 = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='income',
                                    report_type='1', end_date_type='%1231')
-    cashflows2= Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='cashflow',
+    cashflows2 = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='cashflow',
                                      report_type='2')
     cashflows12 = Fina.get_report_info(code_id=code_id, start_date_id=start_date_id, end_date_id=end_date_id, TTB='cashflow',
                                      report_type='1',  end_date_type='%1231')
@@ -28,7 +28,7 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
 
     incomes.set_index('end_date', inplace=True)
     incomes12.set_index('end_date', inplace=True)
-    balancesheets.set_index('end_date', inplace=True)
+    balancesheets.set_index('end_date', inplace=True, drop=False)
     cashflows2.set_index('end_date', inplace=True)
     cashflows12.set_index('end_date', inplace=True)
 
@@ -36,13 +36,13 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
     incomes = incomes[
         ['n_income', 'revenue', 'oper_cost', 'income_tax', 'total_profit', 'operate_profit', 'n_income_attr_p',
          'int_exp', 'ebitda']].rolling(window=4).sum()
-
+    print(incomes12)
     for i in range(len(incomes12)):
         ed = incomes12.index[i]
         incomes.loc[ed] = incomes12.loc[ed]
     incomes.sort_index(inplace=True)
     incomes.dropna(subset=['n_income', 'revenue'], inplace=True)
-
+    print(incomes)
     oneyearago = pd.Series()
     for i in range(len(incomes)):
         ed = incomes.index[i]
@@ -136,8 +136,10 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
 def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs):
     adj_close = code_info['adj_close']
     adj_factor = code_info['adj_factor']
-
-    if len(incomes) < 3 or len(balancesheets) < 3:
+    print('incomes', incomes)
+    print('balancesheets=', balancesheets)
+    if len(incomes) < 2 or len(balancesheets) < 2:
+        print('too litter')
         nan_series = pd.Series()
         return nan_series
     incomes.fillna(method='ffill', inplace=True)
@@ -194,10 +196,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
             # equity.loc[ipo_lastest_date] = equity.loc[ipo_lastest_date] + incr_equity
             # pure_equity.loc[ipo_lastest_date] = pure_equity.loc[ipo_lastest_date] + incr_equity
 
-    adj_close_pure = adj_close.dropna()
-    if adj_close_pure.empty:
-        nan_series = pd.Series()
-        return nan_series
     share_pct = round(total_share.pct_change() * 100, 2)
 
     # 营运资金
@@ -393,17 +391,16 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_rd_pure_mv = pd.Series(index=balancesheets.index)
     roe_sale_mv = pd.Series(index=balancesheets.index)
     roe_ebitda_mv = pd.Series(index=balancesheets.index)
-    print('adj_close_pure=', adj_close_pure)
-    pre_date_idx = adj_close_pure.index[0]
+    pre_date_idx = balancesheets.index[0]
     pre_date = datetime.strptime(pre_date_idx, '%Y%m%d')
-    roe_mv.loc[pre_date_idx] = roe.loc[pre_date_idx] / 100
-    roe_rd_mv.loc[pre_date_idx] = roe_rd.loc[pre_date_idx] / 100
-    roe_rd_pure_mv.loc[pre_date_idx] = roe_rd_pure.loc[pre_date_idx] / 100
-    roe_sale_mv.loc[pre_date_idx] = roe_sale.loc[pre_date_idx] / 100
-    roe_ebitda_mv.loc[pre_date_idx] = roe_ebitda.loc[pre_date_idx] / 100
-
-    for i in range(1, len(adj_close_pure)):
-        date_idx = adj_close_pure.index[i]
+    roe_mv.iloc[0] = roe.iloc[0] / 100
+    roe_rd_mv.iloc[0] = roe_rd.iloc[0] / 100
+    roe_rd_pure_mv.iloc[0] = roe_rd_pure.iloc[0] / 100
+    roe_sale_mv.iloc[0] = roe_sale.iloc[0] / 100
+    roe_ebitda_mv.iloc[0] = roe_ebitda.iloc[0] / 100
+    print('s12')
+    for i in range(1, len(balancesheets)):
+        date_idx = balancesheets.index[i]
         c_date = datetime.strptime(date_idx, '%Y%m%d')
         date_delta = c_date - pre_date
         pre_date = c_date
@@ -412,15 +409,12 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         c1 = round(1 / date_coef, 2)
         c2 = 2 - c1
 
-        roe_mv.loc[date_idx] = ((1 + roe.loc[date_idx] / 100) ** c1 * (1 + roe_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
-        roe_rd_mv.loc[date_idx] = ((1 + roe_rd.loc[date_idx] / 100) ** c1 * (1 + roe_rd_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
-        roe_rd_pure_mv.loc[date_idx] = ((1 + roe_rd_pure.loc[date_idx] / 100) ** c1 * (1 + roe_rd_pure_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
-        roe_sale_mv.loc[date_idx] = ((1 + roe_sale.loc[date_idx] / 100) ** c1 * (1 + roe_sale_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
-        roe_ebitda_mv.loc[date_idx] = ((1 + roe_ebitda.loc[date_idx] / 100) ** c1 * (1 + roe_ebitda_mv.loc[pre_date_idx]) ** c2) ** (1 / 2) - 1
-
-        pre_date_idx = date_idx
-
-
+        roe_mv.iloc[i] = ((1 + roe.iloc[i] / 100) ** c1 * (1 + roe_mv.iloc[i-1]) ** c2) ** (1 / 2) - 1
+        roe_rd_mv.iloc[i] = ((1 + roe_rd.iloc[i] / 100) ** c1 * (1 + roe_rd_mv.iloc[i-1]) ** c2) ** (1 / 2) - 1
+        roe_rd_pure_mv.iloc[i] = ((1 + roe_rd_pure.iloc[i] / 100) ** c1 * (1 + roe_rd_pure_mv.iloc[i-1]) ** c2) ** (1 / 2) - 1
+        roe_sale_mv.iloc[i] = ((1 + roe_sale.iloc[i] / 100) ** c1 * (1 + roe_sale_mv.iloc[i-1]) ** c2) ** (1 / 2) - 1
+        roe_ebitda_mv.iloc[i] = ((1 + roe_ebitda.iloc[i] / 100) ** c1 * (1 + roe_ebitda_mv.iloc[i-1]) ** c2) ** (1 / 2) - 1
+    print('s13')
     roe_mv = round(roe_mv * 100, 2)
     roe_rd_mv = round(roe_rd_mv * 100, 2)
     roe_rd_pure_mv = round(roe_rd_pure_mv * 100, 2)
@@ -454,6 +448,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
     print('ss56=')
+    MP_base = round(adj_close * pp, 2)
     MP = round(adj_close * pp_sale, 2)
     MP_pct = MP.pct_change()
     MP_pct[MP_pct > 1] = 1
@@ -494,22 +489,54 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     oth_receiv_rate = round(balancesheets['oth_receiv'] * 100 / TEV, 1)
     oth_receiv_rate.name = 'oth_receiv_rate'
-    # print(pd.concat(
-    #     [adj_close, equity_mean, roe, roe_mv, tax_payable_pct, tax_payable_pct_yearly, tax_payable_pctmv],
-    #     axis=1))
-    # # os.ex
+
+    roe_mv_diff = roe_mv.diff()
+
+    print(pd.concat(
+        [adj_close,MP_base, HHP, MP, LLP, roe, roe_mv, roe_rd, roe_rd_mv, pp_sale, pp_rd, roe_mv_diff, income_rate, rev_pct, total_turn],
+        axis=1))
+    # os.ex
     # import matplotlib.pylab as plt
+    # from matplotlib import dates as mdates
+    # from matplotlib import ticker as mticker
+    # from datetime import datetime as dt
+    #
     # fig = plt.figure(figsize=(20, 16))
-    # ax1 = fig.add_subplot(111, facecolor='#07000d')
-    # ax1.plot(roe, label='roe', color='red')
-    # ax1.plot(roe_mv, label='roe_mv', color='blue')
+    #
+    # x_axis = mdates.date2num(
+    #     balancesheets['end_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
+    #
+    # ax1 = fig.add_subplot(211, facecolor='#07000d')
+    # ax1.xaxis.set_major_locator(mticker.MaxNLocator(10))
+    # ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    # ax1.set_title(str(balancesheets.iloc[0]['code_id']))
+    #
+    # ax1.plot(x_axis, roe, label='roe', color='red')
+    # ax1.plot(x_axis, roe_mv, label='roe_mv', color='yellow')
+    #
     # ax2 = ax1.twinx()
-    # # ax2.plot(adj_close, label='adj_close', color='yellow')
-    # ax2.plot(adj_close.pct_change()*100, label='adj_close', color='yellow')
-    # ax2.plot(equity_pctmv, label='equity_pct', color='white', alpha=0.5)
-    # ax2.plot(equity_pct.cumsum(), label='equity_pct2', color='green', alpha=0.5)
-    # ax2.axhline(0, color='gray')
+    #
+    # ax2.plot(x_axis, roe_mv_diff, label='roe_mv_diff', color='cyan')
+    # # ax2.plot(x_axis, equity_pctmv, label='equity_pct', color='cyan')
+    # # ax2.plot(x_axis, equity_pct.cumsum(), label='equity_pct2', color='green', alpha=0.5)
+    # # ax2.axhline(0, color='gray')
+    #
+    # ax3 = fig.add_subplot(212)
+    # ax3.xaxis.set_major_locator(mticker.MaxNLocator(10))
+    # ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    # print()
+    # ax3.plot(x_axis, np.log(adj_close), label='adj_close', color='blue')
+    # # ax4 = ax3.twinx()
+    # ax3.plot(x_axis, np.log(MP_base), label='MP_base', color='cyan')
+    # ax3.plot(x_axis, np.log(MP), label='MP', color='black')
+    # ax3.plot(x_axis, np.log(HP), label='HP', color='red')
+    # ax3.plot(x_axis, np.log(LP), label='LP', color='green')
+    # ax1.legend(loc=3)
+    # ax2.legend()
+    # # ax4.legend()
+    # ax3.legend()
     # plt.show()
+    #
     # os.ex
     # 普通股在资本总额中的占比
     share_ratio = round(total_mv * 100 / (balancesheets['oth_eqt_tools_p_shr'] + balancesheets['bond_payable'] + total_mv), 1)
@@ -740,7 +767,7 @@ def get_rolling_median(v, window=7):
     v.fillna(method='ffill', inplace=True)
     v.fillna(0, inplace=True)
     data = pd.Series(index=v.index)
-    for j in range(2, len(data)):
+    for j in range(1, len(data)):
         if j <= window:
             data.iloc[j] = v[:j+1].median()
         else:
