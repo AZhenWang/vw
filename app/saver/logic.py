@@ -135,13 +135,15 @@ class DB(Base):
         return existed_codes
 
     @classmethod
-    def get_ipoing(cls):
+    def get_ipoing(cls, start_date, end_date):
         logs = pd.read_sql(
             sa.text(
                 'SELECT * FROM new_share n '
-                ' where n.price > 0 and n.issue_date  = "nan"'),
+                ' where n.price > 0 and n.ipo_date >= :sd and n.ipo_date <= :ed'),
             cls.engine,
+            params={'ed': end_date, 'sd': start_date}
         )
+
         return logs
 
     @classmethod
