@@ -36,13 +36,12 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
     incomes = incomes[
         ['n_income', 'revenue', 'oper_cost', 'income_tax', 'total_profit', 'operate_profit', 'n_income_attr_p',
          'int_exp', 'ebitda']].rolling(window=4).sum()
-    print(incomes12)
     for i in range(len(incomes12)):
         ed = incomes12.index[i]
         incomes.loc[ed] = incomes12.loc[ed]
     incomes.sort_index(inplace=True)
     incomes.dropna(subset=['n_income', 'revenue'], inplace=True)
-    print(incomes)
+
     oneyearago = pd.Series()
     for i in range(len(incomes)):
         ed = incomes.index[i]
@@ -59,10 +58,15 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
 
     cashflows = cashflows2[
         ['equity_in_fnc', 'depr_fa_coga_dpba', 'free_cashflow', 'incr_def_inc_tax_liab', 'end_bal_cash',
-                                        'decr_def_inc_tax_assets','c_inf_fr_operate_a', 'st_cash_out_act', 'n_cashflow_act']].rolling(window=4).sum()
+         'decr_def_inc_tax_assets','c_inf_fr_operate_a', 'st_cash_out_act', 'n_cashflow_act',
+         'c_pay_acq_const_fiolta', 'c_pay_dist_dpcp_int_exp']].rolling(window=4).sum()
+    free_cashflow_pct = cashflows12['free_cashflow'].pct_change() * 100
+    cashflows['free_cashflow_pct'] = pd.Series(index=cashflows.index)
     for i in range(len(cashflows12)):
         ed = cashflows12.index[i]
         cashflows.loc[ed] = cashflows12.loc[ed]
+        cashflows.at[ed, 'free_cashflow_pct'] = free_cashflow_pct.loc[ed]
+
     cashflows.sort_index(inplace=True)
     cashflows.dropna(subset=['c_inf_fr_operate_a', 'st_cash_out_act'], inplace=True)
     cashflows.fillna(method='ffill', inplace=True)
@@ -136,8 +140,6 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
 def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code_info, cash_divs):
     adj_close = code_info['adj_close']
     adj_factor = code_info['adj_factor']
-    print('incomes', incomes)
-    print('balancesheets=', balancesheets)
     if len(incomes) < 2 or len(balancesheets) < 2:
         print('too litter')
         nan_series = pd.Series()
@@ -321,7 +323,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     fix_asset_pct_yearly = pd.Series(index=balancesheets.index)
     total_assets_pct_yearly = pd.Series(index=balancesheets.index)
     liab_pct_yearly = pd.Series(index=balancesheets.index)
-    freecash_pct_yearly = pd.Series(index=balancesheets.index)
     equity_mean = pd.Series(index=balancesheets.index)
     for i in range(1,len(incomes)):
         ed = incomes.index[i]
@@ -343,26 +344,26 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
         fix_asset_pct_yearly.loc[ed] = round(((fix_assets.loc[ed] - fix_assets.loc[oneyearago:ed][0]) * 100 /fix_assets.loc[oneyearago:ed][0]), 2)
         total_assets_pct_yearly.loc[ed] = round(((total_assets.loc[ed] - total_assets.loc[oneyearago:ed][0]) * 100 /total_assets.loc[oneyearago:ed][0]), 2)
         liab_pct_yearly.loc[ed] = round(((balancesheets['total_liab'].loc[ed] - balancesheets['total_liab'].loc[oneyearago:ed][0]) * 100 /balancesheets['total_liab'].loc[oneyearago:ed][0]), 2)
-        freecash_pct_yearly.loc[ed] = round(((cashflows['free_cashflow'].loc[ed] - cashflows['free_cashflow'].loc[oneyearago:ed][0]) * 100 / cashflows['free_cashflow'].loc[oneyearago:ed][0]), 2)
 
     equity_pctmv = get_mean_of_complex_rate(equity_pct_yearly)
-    # print(pd.concat([equity, equity_pct, cash_divs, cashflows['cash_divs_rolling'], cashflows['equity_in_fnc'], equity_pct_yearly, equity_pctmv], axis=1))
-    # os.ex
+
     rev_pctmv = get_mean_of_complex_rate(rev_pct_yearly)
 
     pure_equity_pctmv = get_mean_of_complex_rate(pure_equity_pct_yearly)
     cash_act_in = get_mean_of_complex_rate(cash_act_in_pct_yearly)
     cash_act_out = get_mean_of_complex_rate(cash_act_out_pct_yearly)
+    cash_act_rate = round(cash_act_in / cash_act_out, 2)
     tax_payable_pctmv = get_mean_of_complex_rate(tax_payable_pct_yearly)
     income_pctmv = get_mean_of_complex_rate(income_pct_yearly)
     fix_asset_pctmv = get_mean_of_complex_rate(fix_asset_pct_yearly)
     total_assets_pctmv = get_mean_of_complex_rate(total_assets_pct_yearly)
     liab_pctmv = get_mean_of_complex_rate(liab_pct_yearly)
 
-    freecash_mv = round(get_mean_of_complex_rate(freecash_pct_yearly), 1)
-    cash_act_rate = round(cash_act_in / cash_act_out, 2)
-    # print(pd.concat([adj_close, rev_pct,  rev_pct_yearly, rev_pctmv, pure_equity_pct, pure_equity_pct_yearly, pure_equity_pctmv, ], axis=1))
-    # os.ex
+    freecash_mv = cashflows['free_cashflow_pct']
+    inventories_diff = balancesheets['inventories'].diff()
+    investcash_need = cashflows['c_pay_acq_const_fiolta'] + cashflows['c_pay_dist_dpcp_int_exp']
+    cashcover_ratio = round(cashflows['n_cashflow_act'].rolling(window=5).sum() / (investcash_need.rolling(window=5).sum() + inventories_diff.rolling(window=4).sum()), 2)
+
     op_pct = pd.concat([rev_pctmv - rev_pctmv.shift(), income_pctmv - income_pctmv.shift()], axis=1).min(axis=1)
     op_pct[op_pct > 50] = 50
     op_pct[op_pct < -50] = -50
@@ -422,8 +423,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_ebitda_mv = round(roe_ebitda_mv * 100, 2)
 
     print('ss55=')
-    roe_std = round(get_rolling_std(roe_sale_mv, window=10), 2)
-    roe_adj = round(roe_sale_mv - roe_std, 2)
+    roe_std = round(get_rolling_std(roe_mv, window=10), 2)
+    roe_adj = round(roe_mv - roe_std, 2)
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
     V_rd_pure = value_stock2(roe_rd_pure_mv, OPM, opm_coef)
@@ -480,6 +481,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     win_return2 = round(win_return2 * 100, 1)
     lose_return2 = round(lose_return2 * 100, 1)
 
+    chance_times = round(V_adj * V_rd / pb - 1, 2)
     EE = round((total_assets - balancesheets['trad_asset'] - balancesheets['money_cap']) / incomes['ebitda'], 1)
 
     print('ss57=')
@@ -492,10 +494,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     roe_mv_diff = roe_mv.diff()
 
-    print(pd.concat(
-        [adj_close,MP_base, HHP, MP, LLP, roe, roe_mv, roe_rd, roe_rd_mv, pp_sale, pp_rd, roe_mv_diff, income_rate, rev_pct, total_turn],
-        axis=1))
-    # os.ex
     # import matplotlib.pylab as plt
     # from matplotlib import dates as mdates
     # from matplotlib import ticker as mticker
@@ -599,6 +597,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     EE.name = 'EE'
     pe.name = 'pe'
     pb.name = 'pb'
+    chance_times.name = 'chance_times'
+    cashcover_ratio.name = 'cashcover_ratio'
     dyr.name = 'dyr'
     receiv_income.name = 'receiv_income'
     rev_pct_yearly.name = 'rev_pct_yearly'
@@ -666,12 +666,16 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     HP.name = 'HP'
     HHP.name = 'HHP'
     MP_pct.name = 'MP_pct'
+    chance_times2 = round((1+V_adj) ** (1+V_rd_pure) / pb - 1, 2)
+    # print(pd.concat([adj_close, roe, total_turn, gross_rate, chance_times, chance_times2, V, V_adj, V_rd_pure,   V_rd,  V_adj * (1+V_rd_pure),   pb, equity_pct,  cashcover_ratio], axis=1))
+    # os.ex
     data = pd.concat(
         [round(adj_close,2), round(adj_factor, 3), balancesheets['date_id'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
-         roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv, pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax,
+         roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv,
+         pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax, dpd_RR, chance_times,
          holdernum, holdernum_inc,
-         V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean, dpd_RR,
-         pe, pb, EE, i_debt, share_ratio, oth_receiv_rate, money_cap_pct, st_borr_pct, st_borr_rate,  capital_turn, inventory_turn, oper_pressure, OPM,
+         V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean,
+         pe, pb, EE, cashcover_ratio, i_debt, share_ratio, oth_receiv_rate, money_cap_pct, st_borr_pct, st_borr_rate,  capital_turn, inventory_turn, oper_pressure, OPM,
          Z,
          receiv_pct, receiv_rate, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
          freecash_mv,  op_pct, mix_op_diff, tax_rate,
