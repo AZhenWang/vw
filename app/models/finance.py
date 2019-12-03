@@ -60,8 +60,12 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
         ['equity_in_fnc', 'depr_fa_coga_dpba', 'free_cashflow', 'incr_def_inc_tax_liab', 'end_bal_cash',
          'decr_def_inc_tax_assets','c_inf_fr_operate_a', 'st_cash_out_act', 'n_cashflow_act',
          'c_pay_acq_const_fiolta', 'c_pay_dist_dpcp_int_exp']].rolling(window=4).sum()
-    free_cashflow_pct = cashflows12['free_cashflow'].pct_change() * 100
-    cashflows['free_cashflow_pct'] = pd.Series(index=cashflows.index)
+
+    if cashflows12['free_cashflow'].isnull:
+        free_cashflow_pct = pd.Series(index=cashflows12.index)
+    else:
+        free_cashflow_pct = cashflows12['free_cashflow'].pct_change() * 100
+
     for i in range(len(cashflows12)):
         ed = cashflows12.index[i]
         cashflows.loc[ed] = cashflows12.loc[ed]
@@ -167,7 +171,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     equity = balancesheets['total_assets'] - balancesheets['total_liab']
     pure_equity = balancesheets['total_hldr_eqy_exc_min_int'] - goodwill
     normal_equity = pure_equity - balancesheets['oth_eqt_tools_p_shr']
-
+    print('total_assets=', total_assets)
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
     pb = round(total_mv/normal_equity, 2)
@@ -180,6 +184,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     if not ipo_log.empty:
         ipo_before_equity = normal_equity[normal_equity.index < ipo_log.issue_date]
         if not ipo_before_equity.empty:
+            print('ipodddd')
             ipo_lastest_date = ipo_before_equity.index[-1]
             incr_equity = ipo_log.price * ipo_log.amount * 10000
 
