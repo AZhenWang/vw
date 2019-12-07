@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from app.saver.logic import DB
 from app.common.function import get_ratio
+import matplotlib.pylab as plt
 
 
 def get_reports(code_id, start_date_id='', end_date_id=''):
@@ -430,16 +431,26 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     print('ss55=')
     roe_std = round(get_rolling_std(roe_mv, window=10), 2)
     roe_adj = round(roe_mv - roe_std, 2)
+
+    # 总体平均roe置信度
+    roe_mv_ci0 = pd.Series(index=roe.index)
+    roe_mv_ci1 = pd.Series(index=roe.index)
+    for i in range(2, len(roe)):
+        roe_mv_ci0.iloc[i], roe_mv_ci1.iloc[i] = get_ci(data=roe[:i + 1], loc=roe_mv.iloc[i], alpha=0.95)
+
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
-    V_rd_pure = value_stock2(roe_rd_pure_mv, OPM, opm_coef)
-    V_adj = value_stock2(roe_adj,  OPM, opm_coef)
+    V_ci0 = value_stock2(roe_mv_ci0, OPM, opm_coef)
+    V_ci1 = value_stock2(roe_mv_ci1, OPM, opm_coef)
+    V_adj = value_stock2(roe,  OPM, opm_coef)
     V_rd = value_stock2(roe_rd_mv, OPM, opm_coef)
     V_sale = value_stock2(roe_sale_mv, OPM, opm_coef)
     V_ebitda = value_stock2(roe_ebitda_mv, OPM, opm_coef)
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
+    pp_ci0 = round(V_ci0 / pb, 2)
+    pp_ci1 = round(V_ci1 / pb, 2)
     # 赔率，考虑roe_std波动
     pp_adj = round(V_adj / pb, 2)
     # 赔率，基于可持续的主营业务
@@ -454,19 +465,31 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # 未来10年总营业增速/市盈率
     dpd_RR = round(dpd_V / pe, 2)
     print('ss56=')
-    MP_base = round(adj_close * pp, 2)
-    MP = round(adj_close * pp_sale, 2)
+    # MP_base = round(adj_close * pp, 2)
+    MP_ci0 = round(adj_close * pp_ci0, 2)
+    MP_ci1 = round(adj_close * pp_ci1, 2)
+
+    LLP = MP_ci0
+    HHP = MP_ci1
+
+    MP = round(adj_close * pp, 2)
+    # MP = round(adj_close * pp_sale, 2)
     MP_pct = MP.pct_change()
     MP_pct[MP_pct > 1] = 1
     MP_pct[MP_pct < -1] = -0.99
     MP_pct.fillna(0, inplace=True)
-    LLP = round((1 + MP_pct) * MP / 2, 2)
-    HHP = round(2 * (1 + MP_pct) * MP)
+    # LLP = round((1 + MP_pct) * MP / 2, 2)
+    # HHP = round(2 * (1 + MP_pct) * MP)
 
     # HHP = round(2 * (1 + MP_pct + MP_pct_inc) * MP)
     MP = round(MP, 2)
     LP = round(MP / 2, 2)
     HP = round(2 * MP, 2)
+    # chance_times = round(V_adj * V_rd / pb - 1, 2)
+    chance_times = round(V * V_ci0 / pb - 1, 2)
+    # chance_times_adj = round(V * V_ci0 / pb - 1, 2)
+    # print(pd.concat([adj_close, total_mv, roe, MP, LLP, LP, HP, HHP, MP_ci0, MP_base,  MP_ci1, chance_times, chance_times_adj], axis=1))
+    # os.ex
 
     MP_pct = round(MP_pct * 100, 2)
 
@@ -486,7 +509,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     win_return2 = round(win_return2 * 100, 1)
     lose_return2 = round(lose_return2 * 100, 1)
 
-    chance_times = round(V_adj * V_rd / pb - 1, 2)
     EE = round((total_assets - balancesheets['trad_asset'] - balancesheets['money_cap']) / incomes['ebitda'], 1)
 
     print('ss57=')
@@ -497,50 +519,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     oth_receiv_rate = round(balancesheets['oth_receiv'] * 100 / TEV, 1)
     oth_receiv_rate.name = 'oth_receiv_rate'
 
-    roe_mv_diff = roe_mv.diff()
-
-    # import matplotlib.pylab as plt
-    # from matplotlib import dates as mdates
-    # from matplotlib import ticker as mticker
-    # from datetime import datetime as dt
-    #
-    # fig = plt.figure(figsize=(20, 16))
-    #
-    # x_axis = mdates.date2num(
-    #     balancesheets['end_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
-    #
-    # ax1 = fig.add_subplot(211, facecolor='#07000d')
-    # ax1.xaxis.set_major_locator(mticker.MaxNLocator(10))
-    # ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    # ax1.set_title(str(balancesheets.iloc[0]['code_id']))
-    #
-    # ax1.plot(x_axis, roe, label='roe', color='red')
-    # ax1.plot(x_axis, roe_mv, label='roe_mv', color='yellow')
-    #
-    # ax2 = ax1.twinx()
-    #
-    # ax2.plot(x_axis, roe_mv_diff, label='roe_mv_diff', color='cyan')
-    # # ax2.plot(x_axis, equity_pctmv, label='equity_pct', color='cyan')
-    # # ax2.plot(x_axis, equity_pct.cumsum(), label='equity_pct2', color='green', alpha=0.5)
-    # # ax2.axhline(0, color='gray')
-    #
-    # ax3 = fig.add_subplot(212)
-    # ax3.xaxis.set_major_locator(mticker.MaxNLocator(10))
-    # ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    # print()
-    # ax3.plot(x_axis, np.log(adj_close), label='adj_close', color='blue')
-    # # ax4 = ax3.twinx()
-    # ax3.plot(x_axis, np.log(MP_base), label='MP_base', color='cyan')
-    # ax3.plot(x_axis, np.log(MP), label='MP', color='black')
-    # ax3.plot(x_axis, np.log(HP), label='HP', color='red')
-    # ax3.plot(x_axis, np.log(LP), label='LP', color='green')
-    # ax1.legend(loc=3)
-    # ax2.legend()
-    # # ax4.legend()
-    # ax3.legend()
-    # plt.show()
-    #
-    # os.ex
     # 普通股在资本总额中的占比
     share_ratio = round(total_mv * 100 / (balancesheets['oth_eqt_tools_p_shr'] + balancesheets['bond_payable'] + total_mv), 1)
 
@@ -574,9 +552,14 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     X5 = round(incomes['revenue'] / total_assets, 2)
     Z = round(0.717 * X1 + 0.847 * X2 + 3.11 * X3 + 0.420 * X4 + 0.998 * X5, 2)
     print('ss58=')
+    # plt.hist(roe)
+    # plt.show()
+    # os.ex
     Z.name = 'Z'
     cash_gap_r.name = 'cash_gap_r'
     pp.name = 'pp'
+    pp_ci0.name = 'pp_ci0'
+    pp_ci1.name = 'pp_ci1'
     pp_rd.name = 'pp_rd'
     pp_adj.name = 'pp_adj'
     pp_sale.name = 'pp_sale'
@@ -588,6 +571,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_sale.name = 'roe_sale'
     roe_rd.name = 'roe_rd'
     roe_mv.name = 'roe_mv'
+    roe_mv_ci0.name = 'roe_mv_ci0'
+    roe_mv_ci1.name = 'roe_mv_ci1'
     roe_adj.name = 'roe_adj'
     roe_rd_mv.name = 'roe_rd_mv'
     roe_sale_mv.name = 'roe_sale_mv'
@@ -608,6 +593,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     receiv_income.name = 'receiv_income'
     rev_pct_yearly.name = 'rev_pct_yearly'
     V.name = 'V'
+    V_ci0.name = 'V_ci0'
+    V_ci1.name = 'V_ci1'
     V_adj.name = 'V_adj'
     V_sale.name = 'V_sale'
     V_rd.name = 'V_rd'
@@ -671,15 +658,64 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     HP.name = 'HP'
     HHP.name = 'HHP'
     MP_pct.name = 'MP_pct'
-    chance_times2 = round((1+V_adj) ** (1+V_rd_pure) / pb - 1, 2)
-    # print(pd.concat([adj_close, roe, total_turn, gross_rate, chance_times, chance_times2, V, V_adj, V_rd_pure,   V_rd,  V_adj * (1+V_rd_pure),   pb, equity_pct,  cashcover_ratio], axis=1))
+
+    # k = round((1+roe_mv/100) * 100 * adj_factor / adj_close + roe_mv, 2)
+    # k.name = 'k'
+    # print(pd.concat([adj_close, roe, roe_mv, roe_mv_ci0, roe_mv_ci1, roe_adj, k],axis=1))
+    # # os.ex
+    # from matplotlib import dates as mdates
+    # from matplotlib import ticker as mticker
+    # from datetime import datetime as dt
+    #
+    # fig = plt.figure(figsize=(20, 16))
+    # # #
+    # x_axis = mdates.date2num(
+    #     balancesheets['end_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
+    #
+    # ax1 = fig.add_subplot(211, facecolor='#07000d')
+    # ax1.xaxis.set_major_locator(mticker.MaxNLocator(10))
+    # ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    # ax1.set_title(str(balancesheets.iloc[0]['code_id']))
+    # #
+    # ax1.plot(x_axis, ci_floor.diff(), label='ci_floor')
+    # ax1.plot(x_axis, roe.diff(), label='roe')
+    # ax1.axhline(0)
+
+    # ax1.plot(x_axis, roe, label='roe', color='blue')
+    # ax1.scatter(x_axis, k, label='k', color='red')
+    # ax1.plot(x_axis, roe_mv, label='roe_mv', color='yellow')
+    #
+    # ax2 = ax1.twinx()
+    #
+    # ax2.plot(x_axis, roe_mv_diff, label='roe_mv_diff', color='cyan')
+    # # ax2.plot(x_axis, equity_pctmv, label='equity_pct', color='cyan')
+    # # ax2.plot(x_axis, equity_pct.cumsum(), label='equity_pct2', color='green', alpha=0.5)
+    # # ax2.axhline(0, color='gray')
+    #
+    # ax3 = fig.add_subplot(212)
+    # ax3.xaxis.set_major_locator(mticker.MaxNLocator(10))
+    # ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    # print()
+    # ax3.plot(x_axis, np.log(adj_close), label='adj_close', color='blue')
+    # # ax4 = ax3.twinx()
+    # ax3.plot(x_axis, np.log(MP_base), label='MP_base', color='cyan')
+    # ax3.plot(x_axis, np.log(MP), label='MP', color='black')
+    # ax3.plot(x_axis, np.log(HP), label='HP', color='red')
+    # ax3.plot(x_axis, np.log(LP), label='LP', color='green')
+    # ax1.legend(loc=3)
+    # ax2.legend()
+    # # ax4.legend()
+    # ax3.legend()
+
+    # plt.show()
     # os.ex
     data = pd.concat(
         [round(adj_close,2), round(adj_factor, 3), balancesheets['date_id'], total_mv/10000, incomes['revenue']/10000, gross_rate, income_rate,
-         roe, roe_adj, roe_rd, roe_sale, roe_ebitda, roe_mv, roe_rd_mv, roe_sale_mv, roe_ebitda_mv,
-         pp, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax, dpd_RR, chance_times,
+         roe, roe_adj, roe_rd, roe_sale, roe_ebitda,
+         roe_mv, roe_mv_ci0, roe_mv_ci1, roe_rd_mv, roe_sale_mv, roe_ebitda_mv,
+         pp, pp_ci0, pp_ci1, pp_adj, pp_rd, pp_sale, pp_ebitda, pp_tax, dpd_RR, chance_times,
          holdernum, holdernum_inc,
-         V, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean,
+         V, V_ci0, V_ci1, V_adj, V_rd, V_sale, V_ebitda, V_tax, dpd_V, dyr, dyr_or, dyr_mean,
          pe, pb, EE, cashcover_ratio, i_debt, share_ratio, oth_receiv_rate, money_cap_pct, st_borr_pct, st_borr_rate,  capital_turn, inventory_turn, oper_pressure, OPM,
          Z,
          receiv_pct, receiv_rate, cash_act_in, cash_act_out, cash_act_rate, cash_gap, cash_gap_r,
@@ -692,6 +728,30 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
          LLP, LP, MP, HP, HHP, MP_pct, win_return, lose_return, odds, win_return2, lose_return2, odds2, odds_pp,
          ], axis=1, sort=True)
     return data
+
+
+def get_ci(data, loc, alpha=0.95):
+    """
+    求总体均值的置信区间
+    :param data:样本
+    :param alpha: 置信度
+    :return:
+    """
+    from scipy import stats
+    n = len(data)
+    v = n - 1
+    m = np.mean(data)
+    # s = np.sqrt(np.sum(np.abs(data - m) ** 2)/(n-1))
+    # se = s/(np.sqrt(n))
+    # t = stats.t(v).isf(alpha/2)
+    # ci0 = m - se*t
+    # ci1 = m + se*t
+    print(data)
+    print('m=', m)
+    # loc = m
+    ci = stats.t.interval(alpha, v, loc=loc, scale=stats.sem(data))
+    print('ci=', ci)
+    return ci
 
 def get_right_mean(v, l=0.9):
     """
