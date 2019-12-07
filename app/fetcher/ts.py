@@ -44,7 +44,7 @@ class Ts(Interface):
             new_rows.sort_values(by='cal_date', inplace=True)
             new_rows.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
-    def set_code_list(self, list_status='L'):
+    def set_code_list(self, list_status=''):
         """
         设置处理的股票列表
         :param list_status: L:已经上市股， N:正在ipo，还未上市股
@@ -333,8 +333,8 @@ class Ts(Interface):
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] <= 3800]['ts_code']
-        # codes = self.code_list['ts_code']
-        codes = ['300760.SZ']
+        codes = self.code_list['ts_code']
+        # codes = ['300760.SZ']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
