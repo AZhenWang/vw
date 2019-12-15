@@ -153,7 +153,7 @@ def execute(start_date='', end_date=''):
                     and log['total_turn'] > pre_total_turn:
 
                 step = 1
-            elif log['roe'] - pre_roe > -1 \
+            elif log['roe'] - pre_roe < -1 \
                     and log['gross_rate'] < pre_gross_rate\
                     and log['total_turn'] < pre_total_turn:
                 step = -1
