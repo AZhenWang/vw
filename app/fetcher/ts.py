@@ -263,6 +263,7 @@ class Ts(Interface):
                 try:
                     self.update_by_trade_date(api, date_id, cal_date)
                     flag = False
+                    time.sleep(1)
                 except BaseException as e:
                     # print(e)
                     time.sleep(5)
