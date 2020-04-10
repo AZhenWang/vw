@@ -215,13 +215,14 @@ class Ts(Interface):
         start_date = self.trade_dates.iloc[0]['cal_date']
         end_date = self.trade_dates.iloc[-1]['cal_date']
         index_ts_code = {
-            '2054': '000001.SH',
-            '2068': '000016.SH',
-            '2660': '399001.SZ',
-            '2664': '399005.SZ',
-            '2665': '399006.SZ',
-            '2252': '000905.SH',
-            '2199': '000300.SH',
+            # '2054': '000001.SH',
+            # '2068': '000016.SH',
+            # '2660': '399001.SZ',
+            # '2664': '399005.SZ',
+            # '2665': '399006.SZ',
+            # '2252': '000905.SH',
+            # '2199': '000300.SH',
+            '2740': '399317.SZ'
         }
 
         for index_id in index_ts_code:
