@@ -9,6 +9,11 @@ def execute(start_date='', end_date=''):
     worker.update_trade_cal()
     worker.set_trade_dates()
 
+    ts_apis = ['express']
+    for api in ts_apis:
+        worker.query_finance(api, report_type='1')
+    return
+
     ts_apis = ['balancesheet', 'income', 'cashflow']
     for api in ts_apis:
         worker.query_finance(api, report_type='1')
