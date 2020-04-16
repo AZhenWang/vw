@@ -12,7 +12,6 @@ def execute(start_date='', end_date=''):
     ts_apis = ['express']
     for api in ts_apis:
         worker.query_finance(api, report_type='2')
-    return
 
     ts_apis = ['balancesheet', 'income', 'cashflow']
     for api in ts_apis:
@@ -31,10 +30,6 @@ def execute(start_date='', end_date=''):
         worker.query_finance(api=api, need_fields=True)
 
     ts_apis = ['fina_audit', 'stk_holdernumber']
-    for api in ts_apis:
-        worker.query_finance(api=api, need_fields=True)
-
-    ts_apis = ['express']
     for api in ts_apis:
         worker.query_finance(api=api, need_fields=True)
 
