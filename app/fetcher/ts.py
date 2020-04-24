@@ -311,7 +311,7 @@ class Ts(Interface):
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
         # codes = self.code_list['ts_code']
         # codes = ['300796.SZ', '688101.SH', '688300.SH', '300802.SZ']
-        codes = ['000002.SZ']
+        codes = ['600267.SH', '002901.SZ', ]
         type = 'P'
         for ts_code in codes:
             flag = True
