@@ -11,7 +11,7 @@ def execute(start_date='', end_date=''):
 
     ts_apis = ['express']
     for api in ts_apis:
-        worker.query_finance(api, report_type='2')
+        worker.query_finance(api)
 
     ts_apis = ['balancesheet', 'income', 'cashflow']
     for api in ts_apis:
