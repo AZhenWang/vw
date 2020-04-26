@@ -9,9 +9,6 @@ def execute(start_date='', end_date=''):
     worker.update_trade_cal()
     worker.set_trade_dates()
 
-    ts_apis = ['express']
-    for api in ts_apis:
-        worker.query_finance(api)
 
     ts_apis = ['balancesheet', 'income', 'cashflow']
     for api in ts_apis:
@@ -37,3 +34,6 @@ def execute(start_date='', end_date=''):
     for api in ts_apis:
         worker.query_dividend(api)
 
+    ts_apis = ['express']
+    for api in ts_apis:
+        worker.query_finance(api)
