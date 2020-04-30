@@ -341,7 +341,7 @@ class Ts(Interface):
         # codes = ['002901.SZ']
         # codes = ['002901.SZ']
         # codes = ['600267.SH', '002901.SZ', '300702.SZ', '603387.SH', '300685.SZ']
-        codes = ['002901.SZ', '002932.SZ', '603387.SH']
+        codes = ['002932.SZ', '603387.SH', '002901.SZ']
         if need_fields != '':
             fields = fields_map[api].copy()
             fields.remove('code_id')
