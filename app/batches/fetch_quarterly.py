@@ -24,7 +24,7 @@ def execute(start_date='', end_date=''):
     # for api in ts_apis:
     #     print('api=', api)
     #     worker.query_finance(api=api, need_fields=True)
-    ts_apis = ['fina_audit']
+    ts_apis = ['stk_holdernumber']
     for api in ts_apis:
         print('api=', api)
         worker.query_finance(api=api, need_fields=True)
