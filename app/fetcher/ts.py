@@ -348,6 +348,7 @@ class Ts(Interface):
         print('s-1')
         if need_fields != '':
             fields = fields_map[api].copy()
+            print('fields=', fields)
             fields.remove('code_id')
             fields.remove('date_id')
             fields.append('ts_code')
