@@ -371,11 +371,14 @@ class Ts(Interface):
 
     def update_finance_by_code(self, api, ts_code, fields, start_date, end_date, report_type):
         print('s1')
-        if fields == '':
-            new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
-        else:
-            print('fields2=', fields, 'report_type=', report_type)
-            new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
+        new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date,
+                                  report_type=report_type)
+
+        # if fields == '':
+        #     new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
+        # else:
+        #     print('fields2=', fields, 'report_type=', report_type)
+        #     new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
         print(new_rows)
         print('s2')
         new_rows.drop_duplicates('end_date', inplace=True)
