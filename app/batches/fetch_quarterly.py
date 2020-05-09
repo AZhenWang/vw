@@ -17,6 +17,7 @@ def execute(start_date='', end_date=''):
     ts_apis = ['income', 'cashflow']
     for api in ts_apis:
         worker.query_finance(api, report_type='2')
+    return
 
     ts_apis = ['fina_indicator']
     for api in ts_apis:
