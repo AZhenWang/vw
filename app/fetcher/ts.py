@@ -343,8 +343,8 @@ class Ts(Interface):
         # codes = ['002901.SZ']
         # codes = ['600267.SH', '002901.SZ', '300702.SZ', '603387.SH', '300685.SZ']
         # codes = ['002932.SZ', '603387.SH', '002901.SZ']
-        # codes = ['603658.SH', '300676.SZ', '300482.SZ']
-        codes=['688466.SH']
+        codes = ['603658.SH', '300676.SZ', '300482.SZ']
+        # codes=['688466.SH']
         print('s-1')
         if need_fields != '':
             fields = fields_map[api].copy()
@@ -374,6 +374,7 @@ class Ts(Interface):
         if fields == '':
             new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
         else:
+            print('fields2=', fields, 'report_type=', report_type)
             new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
         print(new_rows)
         print('s2')
