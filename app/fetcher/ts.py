@@ -336,7 +336,6 @@ class Ts(Interface):
     def query_finance(self, api, report_type='', need_fields=''):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] <= 3800]['ts_code']
-        print('s-2')
         codes = self.code_list['ts_code']
         # codes = ['002932.SZ']
         # codes = ['002901.SZ']
@@ -344,21 +343,16 @@ class Ts(Interface):
         # codes = ['600267.SH', '002901.SZ', '300702.SZ', '603387.SH', '300685.SZ']
         # codes = ['002932.SZ', '603387.SH', '002901.SZ']
         # codes = ['603658.SH', '300676.SZ', '300482.SZ']
-        codes=['605168.SH']
-        print('s-1')
         if need_fields != '':
             fields = fields_map[api].copy()
-            print('fields=', fields)
             fields.remove('code_id')
             fields.remove('date_id')
             fields.append('ts_code')
             fields.append('ann_date')
         else:
             fields = ''
-        print('s0')
         for ts_code in codes:
             flag = True
-            print('codes=', ts_code)
             while flag:
                 try:
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
@@ -370,35 +364,22 @@ class Ts(Interface):
                     self.update_finance_by_code(api, ts_code, fields, self.start_date, self.end_date, report_type=report_type)
 
     def update_finance_by_code(self, api, ts_code, fields, start_date, end_date, report_type):
-        print('s1')
-        new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date,
-                                  report_type=report_type)
-
-        # if fields == '':
-        #     new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
-        # else:
-        #     print('fields2=', fields, 'report_type=', report_type)
-        #     new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
-        print(new_rows)
-        print('s2')
+        if fields == '':
+            new_rows = self.pro.query(api, ts_code=ts_code,  start_date=start_date, end_date=end_date, report_type=report_type)
+        else:
+            new_rows = self.pro.query(api, ts_code=ts_code, fields=fields,  start_date=start_date, end_date=end_date, report_type=report_type)
         new_rows.drop_duplicates('end_date', inplace=True)
-        print('s3')
         if not new_rows.empty:
             existed_reports = Fina.get_existed_reports(table_name=api, ts_code=ts_code, report_type=report_type, start_date=start_date, end_date=end_date)
-            print('s4')
             if not existed_reports.empty:
                 new_rows = new_rows[~new_rows['end_date'].isin(existed_reports['end_date'])]
-                print('s5')
                 new_rows.drop_duplicates('end_date', inplace=True)
-                print('s6')
             if not new_rows.empty:
-                new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
-                print('s7')
-                new_rows = self.code_list.merge(new_rows, on='ts_code')
-                print('s8')
-                Fina.delete_logs_in_end_dates(code_id=new_rows.iloc[0]['code_id'], end_dates=new_rows['end_date'], tablename=api)
-                print('s9')
-                avail_recorders = new_rows[fields_map[api]]
-                print('s10')
-                avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
-
+                try:
+                    new_rows = new_rows.merge(self.all_dates, left_on='ann_date', right_on='cal_date')
+                    new_rows = self.code_list.merge(new_rows, on='ts_code')
+                    Fina.delete_logs_in_end_dates(code_id=new_rows.iloc[0]['code_id'], end_dates=new_rows['end_date'], tablename=api)
+                    avail_recorders = new_rows[fields_map[api]]
+                    avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=3000)
+                except BaseException as e:
+                    print('存储错误: api=', api, ', ts_code=',ts_code )
