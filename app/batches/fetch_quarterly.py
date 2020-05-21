@@ -10,16 +10,16 @@ def execute(start_date='', end_date=''):
     worker.set_trade_dates()
 
 
-    # ts_apis = ['balancesheet', 'income', 'cashflow']
-    # for api in ts_apis:
-    #     print('api=', api)
-    #     worker.query_finance(api, report_type='1')
-    #
-    # ts_apis = ['income', 'cashflow']
-    # for api in ts_apis:
-    #     print('api=', api)
-    #     worker.query_finance(api, report_type='2')
-    #
+    ts_apis = ['balancesheet', 'income', 'cashflow']
+    for api in ts_apis:
+        print('api=', api)
+        worker.query_finance(api, report_type='1')
+
+    ts_apis = ['income', 'cashflow']
+    for api in ts_apis:
+        print('api=', api)
+        worker.query_finance(api, report_type='2')
+
     ts_apis = ['fina_indicator']
     for api in ts_apis:
         print('api=', api)
