@@ -175,7 +175,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     print('total_assets=', total_assets)
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
-    pb = round(total_mv/normal_equity, 2)
+    pb = round(code_info['pb'], 2)
+    # pb = round(total_mv/normal_equity, 2)
     total_share = balancesheets['total_share']
 
     print('ss2')
@@ -429,8 +430,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_ebitda_mv = round(roe_ebitda_mv * 100, 2)
 
     print('ss55=')
-    roe_std = round(get_rolling_std(roe_mv, window=10), 2)
-    roe_adj = round(roe_mv - roe_std, 2)
+    roe_std = round(get_rolling_std(roe_mv), 2)
+    roe_adj = round(np.log(1+roe/100)*100, 2)
 
     # 总体平均roe置信度
     roe_mv_ci0 = pd.Series(index=roe.index)
@@ -553,8 +554,6 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     Z = round(0.717 * X1 + 0.847 * X2 + 3.11 * X3 + 0.420 * X4 + 0.998 * X5, 2)
     print('ss58=')
     # plt.hist(roe)
-    # plt.show()
-    # os.ex
     Z.name = 'Z'
     cash_gap_r.name = 'cash_gap_r'
     pp.name = 'pp'
@@ -666,47 +665,50 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     # from matplotlib import dates as mdates
     # from matplotlib import ticker as mticker
     # from datetime import datetime as dt
-    #
+    # #
     # fig = plt.figure(figsize=(20, 16))
-    # # #
+    # # # #
     # x_axis = mdates.date2num(
     #     balancesheets['end_date'].apply(lambda x: dt.strptime(x, '%Y%m%d')))
-    #
+    # #
     # ax1 = fig.add_subplot(211, facecolor='#07000d')
     # ax1.xaxis.set_major_locator(mticker.MaxNLocator(10))
     # ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     # ax1.set_title(str(balancesheets.iloc[0]['code_id']))
+    # ax1.plot(x_axis, np.log(adj_close))
+    # ax1.plot(x_axis, np.log(LLP))
+    # ax1.plot(x_axis, np.log(HHP))
+    # # #
+    # # ax1.plot(x_axis, ci_floor.diff(), label='ci_floor')
+    # # ax1.plot(x_axis, roe.diff(), label='roe')
+    # # ax1.axhline(0)
+    #
+    # # ax1.plot(x_axis, roe, label='roe', color='blue')
+    # # ax1.scatter(x_axis, k, label='k', color='red')
+    # # ax1.plot(x_axis, roe_mv, label='roe_mv', color='yellow')
     # #
-    # ax1.plot(x_axis, ci_floor.diff(), label='ci_floor')
-    # ax1.plot(x_axis, roe.diff(), label='roe')
-    # ax1.axhline(0)
-
-    # ax1.plot(x_axis, roe, label='roe', color='blue')
-    # ax1.scatter(x_axis, k, label='k', color='red')
-    # ax1.plot(x_axis, roe_mv, label='roe_mv', color='yellow')
-    #
-    # ax2 = ax1.twinx()
-    #
-    # ax2.plot(x_axis, roe_mv_diff, label='roe_mv_diff', color='cyan')
-    # # ax2.plot(x_axis, equity_pctmv, label='equity_pct', color='cyan')
-    # # ax2.plot(x_axis, equity_pct.cumsum(), label='equity_pct2', color='green', alpha=0.5)
-    # # ax2.axhline(0, color='gray')
-    #
-    # ax3 = fig.add_subplot(212)
-    # ax3.xaxis.set_major_locator(mticker.MaxNLocator(10))
-    # ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    # print()
-    # ax3.plot(x_axis, np.log(adj_close), label='adj_close', color='blue')
-    # # ax4 = ax3.twinx()
-    # ax3.plot(x_axis, np.log(MP_base), label='MP_base', color='cyan')
-    # ax3.plot(x_axis, np.log(MP), label='MP', color='black')
-    # ax3.plot(x_axis, np.log(HP), label='HP', color='red')
-    # ax3.plot(x_axis, np.log(LP), label='LP', color='green')
+    # # ax2 = ax1.twinx()
+    # #
+    # # ax2.plot(x_axis, roe_mv_diff, label='roe_mv_diff', color='cyan')
+    # # # ax2.plot(x_axis, equity_pctmv, label='equity_pct', color='cyan')
+    # # # ax2.plot(x_axis, equity_pct.cumsum(), label='equity_pct2', color='green', alpha=0.5)
+    # # # ax2.axhline(0, color='gray')
+    # #
+    # # ax3 = fig.add_subplot(212)
+    # # ax3.xaxis.set_major_locator(mticker.MaxNLocator(10))
+    # # ax3.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    # # print()
+    # # ax3.plot(x_axis, np.log(adj_close), label='adj_close', color='blue')
+    # # # ax4 = ax3.twinx()
+    # # ax3.plot(x_axis, np.log(MP_base), label='MP_base', color='cyan')
+    # # ax3.plot(x_axis, np.log(MP), label='MP', color='black')
+    # # ax3.plot(x_axis, np.log(HP), label='HP', color='red')
+    # # ax3.plot(x_axis, np.log(LP), label='LP', color='green')
     # ax1.legend(loc=3)
-    # ax2.legend()
-    # # ax4.legend()
-    # ax3.legend()
-
+    # # ax2.legend()
+    # # # ax4.legend()
+    # # ax3.legend()
+    #
     # plt.show()
     # os.ex
     data = pd.concat(
@@ -807,7 +809,7 @@ def get_rolling_mean(v, window=7, mtype=0):
 
     return round(data, 3)
 
-def get_rolling_std(v, window=7):
+def get_rolling_std(v=''):
     """
     移动方差
     :param v:
@@ -818,11 +820,8 @@ def get_rolling_std(v, window=7):
     v.fillna(method='ffill', inplace=True)
     v.fillna(0, inplace=True)
     data = pd.Series(index=v.index)
-    for j in range(2, len(data)):
-        if j <= window:
-            data.iloc[j] = v[:j+1].std()
-        else:
-            data.iloc[j] = v[j-window+1:j + 1].std()
+    for j in range(1, len(data)):
+        data.iloc[j] = v[:j + 1].std()
     return data
 
 def get_rolling_median(v, window=7):
