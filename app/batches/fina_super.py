@@ -59,14 +59,15 @@ def execute(start_date='', end_date=''):
         adj_high = base['high'] * base['adj_factor']
         adj_low = base['low'] * base['adj_factor']
 
-        d_dates = pd.Series(index=base.index)
-        for i in range(len(base)):
-            sd = datetime.strptime(base.iloc[i]['end_date'], '%Y%m%d')
-            ed = datetime.strptime(base.iloc[i]['cal_date'], '%Y%m%d')
-            d_dates.iloc[i]= (ed-sd).days
+        # d_dates = pd.Series(index=base.index)
+        # for i in range(len(base)):
+        #     sd = datetime.strptime(base.iloc[i]['end_date'], '%Y%m%d')
+        #     ed = datetime.strptime(base.iloc[i]['cal_date'], '%Y%m%d')
+        #     d_dates.iloc[i]= (ed-sd).days
+        #
+        # accrued_interest = (1 + base['roe_mv'] /100 * d_dates / 365)
 
-        accrued_interest = (1 + base['roe_mv'] /100 * d_dates / 365)
-
+        accrued_interest = 1
 
         data = pd.DataFrame()
         data['end_date'] = base['end_date']
