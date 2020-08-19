@@ -1,0 +1,16 @@
+create table fx_obasic (
+   id int not null auto_increment,
+   ts_code	VARCHAR(16)	default null comment'合约代码',
+   name	VARCHAR(64)	default null comment'名称',
+   classify	VARCHAR(16)	default null comment'分类',
+   exchange	VARCHAR(16)	default null comment'交易商',
+   min_unit	float	default null comment'最小交易单位',
+   max_unit	float	default null comment'最大交易单位',
+   pip	float	default null comment'最大交易单位',
+   pip_cost	float	default null comment'点值',
+   traget_spread float	default null comment'目标差价',
+   min_stop_distance	float	default null comment'最小止损距离（点子',
+   created_at timestamp not null default CURRENT_TIMESTAMP,
+   PRIMARY KEY(id),
+   UNIQUE `ts_code_idx`  (`ts_code`)
+)ENGINE=MyISAM DEFAULT CHARSET=utf8 comment'外汇基本信息';
