@@ -157,7 +157,7 @@ class Ts(Interface):
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
-    def update_fx_basic(self):
+    def update_fx_obasic(self):
         """
         外汇基本信息
         :return:

@@ -7,7 +7,7 @@ def execute(start_date='', end_date=''):
     worker.update_trade_cal()
     worker.set_trade_dates()
 
-    worker.update_fx_basic()
+    worker.update_fx_obasic()
     # worker.set_fx_list()
 
     # worker.update_fut_basic()

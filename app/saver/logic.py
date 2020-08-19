@@ -887,12 +887,12 @@ class DB(Base):
     def get_fx_list(cls, classify=''):
         if classify != '':
             fx_list = pd.read_sql(
-                sa.text('SELECT id as fx_id, ts_code FROM fx_basic where classify=:classify'),
+                sa.text('SELECT id as fx_id, ts_code FROM fx_obasic where classify=:classify'),
                 cls.engine,
                 params={'classify': classify}
             )
         else:
-            fx_list = pd.read_sql(sa.text('SELECT id as fx_id, ts_code, classify FROM fx_basic'), cls.engine)
+            fx_list = pd.read_sql(sa.text('SELECT id as fx_id, ts_code, classify FROM fx_obasic'), cls.engine)
         return fx_list
 
     # @staticmethod
