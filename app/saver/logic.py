@@ -280,12 +280,13 @@ class DB(Base):
             params={'code_id': str(code_id), 'date_id': str(date_id), 'period': period})
         return daily
 
+
     @classmethod
     def get_code_dailys(cls, code_id='', start_date_id='', end_date_id='',  period=''):
         sql_str = 'select af.adj_factor, tc.cal_date, d.* from daily d' \
                     ' left join adj_factor af on af.date_id = d.date_id and af.code_id = d.code_id'  \
                     ' left join trade_cal tc on tc.id = d.date_id' \
-                    ' where d.code_id = :code_id'
+                    ' where d.code_id = :code_id '
         params = {'code_id': str(code_id)}
 
         if start_date_id != '':
@@ -305,6 +306,17 @@ class DB(Base):
         daily.sort_values(by='date_id', inplace=True)
         daily.set_index('date_id', inplace=True)
         return daily
+
+    @classmethod
+    def get_stock_basic(cls, code_id=''):
+        data = pd.read_sql(
+            sa.text(
+                ' SELECT name as ts_name, ts_code, list_date from stock_basic where id = :code_id'),
+            cls.engine,
+            params={'code_id': str(code_id)}
+        )
+
+        return data.iloc[-1]
 
     @classmethod
     def get_code_info(cls, code_id='', start_date='', end_date='', period='', TTB='daily'):
@@ -870,6 +882,18 @@ class DB(Base):
         data.sort_values(by='date_id', inplace=True)
         data.set_index('date_id', inplace=True)
         return data
+
+    @classmethod
+    def get_fx_list(cls, classify=''):
+        if classify != '':
+            fx_list = pd.read_sql(
+                sa.text('SELECT id as fx_id, ts_code FROM fx_basic where classify=:classify'),
+                cls.engine,
+                params={'classify': classify}
+            )
+        else:
+            fx_list = pd.read_sql(sa.text('SELECT id as fx_id, ts_code, classify FROM fx_basic'), cls.engine)
+        return fx_list
 
     # @staticmethod
     # def validate_field(columns, fields):
