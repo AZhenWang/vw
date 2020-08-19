@@ -157,6 +157,31 @@ class Ts(Interface):
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
+    def update_fx_basic(self):
+        """
+        外汇基本信息
+        :return:
+        """
+        api = 'fx_obasic'
+        classify_list = {
+            'FX': '外汇货币对',
+            'INDEX': '指数',
+            'COMMODITY': '大宗商品',
+            'METAL': 'XAUUSD',
+            '国库债券': '国库债券',
+            'CRYPTO': '加密数字货币',
+            'FX_BASKET': '外汇篮子',
+        }
+
+        existed_index_list = DB.get_fut_list()
+        for exchange in classify_list.keys():
+            new_rows = self.pro.query(api, exchange=exchange, fields=fields_map[api])
+            if not new_rows.empty:
+                new_rows = new_rows[~new_rows['ts_code'].isin(existed_index_list['ts_code'])]
+            if not new_rows.empty:
+                avail_recorders = new_rows[fields_map[api]]
+                avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+
     def set_fut_list(self):
         fut_list = DB.get_fut_list()
         self.fut_list = fut_list
