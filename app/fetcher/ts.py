@@ -176,7 +176,7 @@ class Ts(Interface):
         existed_fx_list = DB.get_fx_list()
         for classify in classify_list.keys():
             new_rows = self.pro.query(api, classify=classify, fields=fields_map[api])
-            print('ss1')
+            print('ss1', classify, fields_map[api])
             print(new_rows)
             if not new_rows.empty:
                 print('ss2')
