@@ -176,16 +176,10 @@ class Ts(Interface):
         existed_fx_list = DB.get_fut_list()
         for classify in classify_list.keys():
             new_rows = self.pro.query(api, classify=classify, fields=fields_map[api])
-            print('ss1', classify, fields_map[api])
-            print(new_rows)
             if not new_rows.empty:
-                print('ss2')
                 new_rows = new_rows[~new_rows['ts_code'].isin(existed_fx_list['ts_code'])]
-                print('ss3')
             if not new_rows.empty:
-                print('ss4')
                 avail_recorders = new_rows[fields_map[api]]
-                print(avail_recorders)
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
 
     def set_fut_list(self):
