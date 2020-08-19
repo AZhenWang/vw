@@ -173,11 +173,11 @@ class Ts(Interface):
             'FX_BASKET': '外汇篮子',
         }
 
-        existed_fx_list = DB.get_fut_list()
+        existed_list = DB.get_fx_list()
         for classify in classify_list.keys():
             new_rows = self.pro.query(api, classify=classify, fields=fields_map[api], exchange='FXCM')
             if not new_rows.empty:
-                new_rows = new_rows[~new_rows['ts_code'].isin(existed_fx_list['ts_code'])]
+                new_rows = new_rows[~new_rows['ts_code'].isin(existed_list['ts_code'])]
             if not new_rows.empty:
                 avail_recorders = new_rows[fields_map[api]]
                 avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
