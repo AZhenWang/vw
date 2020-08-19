@@ -76,6 +76,11 @@ fields_map = {
         'vol', 'amount', 'oi', 'oi_chg',
     ],
 
+    # 外汇表
+    'fx_obasic': [
+        'ts_code', 'name', 'classify', 'exchange', 'min_unit', 'max_unit', 'pip', 'pip_cost', 'traget_spread', 'min_stop_distance',
+    ],
+
     # 公司报表
     'income': [
         'code_id', 'date_id', 'f_ann_date', 'end_date', 'report_type', 'comp_type',
