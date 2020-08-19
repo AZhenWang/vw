@@ -1,9 +1,8 @@
 create table fx_obasic (
    id int not null auto_increment,
    ts_code	VARCHAR(16)	default null comment'合约代码',
-   name	VARCHAR(64)	default null comment'名称',
+   name	VARCHAR(128)	default null comment'名称',
    classify	VARCHAR(16)	default null comment'分类',
-   exchange	VARCHAR(16)	default null comment'交易商',
    min_unit	float	default null comment'最小交易单位',
    max_unit	float	default null comment'最大交易单位',
    pip	float	default null comment'最大交易单位',

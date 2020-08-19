@@ -78,7 +78,7 @@ fields_map = {
 
     # 外汇表
     'fx_obasic': [
-        'ts_code', 'name', 'classify', 'exchange', 'min_unit', 'max_unit', 'pip', 'pip_cost', 'traget_spread', 'min_stop_distance',
+        'ts_code', 'name', 'classify', 'min_unit', 'max_unit', 'pip', 'pip_cost', 'traget_spread', 'min_stop_distance',
     ],
 
     # 公司报表
