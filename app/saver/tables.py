@@ -80,6 +80,10 @@ fields_map = {
     'fx_obasic': [
         'ts_code', 'name', 'classify', 'min_unit', 'max_unit', 'pip', 'pip_cost', 'traget_spread', 'min_stop_distance',
     ],
+    'fx_daily': [
+        'date_id', 'fx_id', 'bid_open', 'bid_close', 'bid_high', 'bid_low',
+        'ask_open', 'ask_close', 'ask_high', 'ask_low', 'tick_qty'
+    ],
 
     # 公司报表
     'income': [
