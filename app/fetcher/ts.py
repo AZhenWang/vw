@@ -173,7 +173,7 @@ class Ts(Interface):
             'FX_BASKET': '外汇篮子',
         }
 
-        existed_fx_list = DB.get_fx_list()
+        existed_fx_list = DB.get_fut_list()
         for classify in classify_list.keys():
             new_rows = self.pro.query(api, classify=classify, fields=fields_map[api])
             print('ss1', classify, fields_map[api])
