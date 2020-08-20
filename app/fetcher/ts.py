@@ -436,6 +436,7 @@ class Ts(Interface):
             existed_codes = DB.get_existed_fx(table_name=api, date_id=date_id)
             if not existed_codes.empty:
                 new_rows = new_rows[~new_rows['ts_code'].isin(existed_codes['ts_code'])]
+                new_rows.drop_duplicates('ts_code', inplace=True)
             new_rows = new_rows.merge(self.trade_dates, left_on='trade_date', right_on='cal_date')
             new_rows = self.fx_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
