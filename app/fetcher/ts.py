@@ -419,14 +419,6 @@ class Ts(Interface):
 
     # 拉外汇信息
     def query_fx(self, api):
-        start_date = self.trade_dates.iloc[0]['cal_date']
-        end_date = self.trade_dates.iloc[-1]['cal_date']
-        try:
-            new_rows = self.pro.query(api,  start_date=start_date, end_date=end_date, exchange='FXCM')
-            print(new_rows)
-        except Exception as e:
-            print(e)
-        os.ex
         # 按trade_date依次拉取所有股票信息
         for date_id, cal_date in self.trade_dates[['date_id', 'cal_date']].values:
             flag = True
