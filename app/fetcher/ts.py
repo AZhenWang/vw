@@ -455,7 +455,7 @@ class Ts(Interface):
                 try:
                     self.update_fx_by_trade_date(api, fx_id, ts_code, start_date, end_date)
                     flag = False
-                    time.sleep(7)
+                    time.sleep(1)
                 except BaseException as e:
                     time.sleep(7)
                     self.update_fx_by_trade_date(api, fx_id, ts_code, start_date, end_date)
