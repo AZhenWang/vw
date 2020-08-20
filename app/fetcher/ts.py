@@ -450,7 +450,6 @@ class Ts(Interface):
         print('self.fx_list=', self.fx_list)
         for fx_id, ts_code in self.fx_list[['fx_id', 'ts_code']].values:
             print(fx_id, ts_code)
-            os.ex
             flag = True
             while flag:
                 try:
