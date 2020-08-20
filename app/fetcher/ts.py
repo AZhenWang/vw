@@ -418,26 +418,59 @@ class Ts(Interface):
                     print('存储错误: api=', api, ', ts_code=', ts_code)
 
     # 拉外汇信息
+    # def query_fx(self, api):
+    #     # 按trade_date依次拉取所有股票信息
+    #     for date_id, cal_date in self.trade_dates[['date_id', 'cal_date']].values:
+    #         flag = True
+    #         while flag:
+    #             try:
+    #                 self.update_fx_by_trade_date(api, date_id, cal_date)
+    #                 flag = False
+    #                 time.sleep(1)
+    #             except Exception:
+    #                 time.sleep(5)
+    #                 self.update_fx_by_trade_date(api, date_id, cal_date)
+    #
+    # def update_fx_by_trade_date(self, api, date_id, cal_date):
+    #     new_rows = self.pro.query(api, trade_date=cal_date, exchange='FXCM')
+    #     if not new_rows.empty:
+    #         existed_codes = DB.get_existed_fx(table_name=api, date_id=date_id)
+    #         if not existed_codes.empty:
+    #             new_rows = new_rows[~new_rows['ts_code'].isin(existed_codes['ts_code'])]
+    #             new_rows.drop_duplicates('ts_code', inplace=True)
+    #         new_rows = new_rows.merge(self.trade_dates, left_on='trade_date', right_on='cal_date')
+    #         new_rows = self.fx_list.merge(new_rows, on='ts_code')
+    #         avail_recorders = new_rows[fields_map[api]]
+    #         avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)
+
+
     def query_fx(self, api):
-        # 按trade_date依次拉取所有股票信息
-        for date_id, cal_date in self.trade_dates[['date_id', 'cal_date']].values:
+        start_date = self.trade_dates.iloc[0]['cal_date']
+        end_date = self.trade_dates.iloc[-1]['cal_date']
+        for fx_obasic in self.fx_list:
+            print('fx_obasic=', fx_obasic)
+            fx_id = fx_obasic.fx_id
+            ts_code = fx_obasic.ts_code
             flag = True
             while flag:
                 try:
-                    self.update_fx_by_trade_date(api, date_id, cal_date)
+                    self.update_fx_by_trade_date(api, fx_id, ts_code, start_date, end_date)
                     flag = False
-                except Exception:
+                    time.sleep(1)
+                except BaseException as e:
                     time.sleep(5)
-                    self.update_fx_by_trade_date(api, date_id, cal_date)
+                    self.update_fx_by_trade_date(api, fx_id, ts_code, start_date, end_date)
 
-    def update_fx_by_trade_date(self, api, date_id, cal_date):
-        new_rows = self.pro.query(api, trade_date=cal_date, exchange='FXCM')
+    def update_fx_by_trade_date(self, api, fx_id, ts_code, start_date, end_date):
+        new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date)
         if not new_rows.empty:
-            existed_codes = DB.get_existed_fx(table_name=api, date_id=date_id)
-            if not existed_codes.empty:
-                new_rows = new_rows[~new_rows['ts_code'].isin(existed_codes['ts_code'])]
-                new_rows.drop_duplicates('ts_code', inplace=True)
+            existed_dates = DB.get_existed_fx(table_name=api, fx_id=fx_id, start_date=start_date, end_date=end_date)
+            if not existed_dates.empty:
+                new_rows = new_rows[~new_rows['trade_date'].isin(existed_dates['cal_date'])]
+
+            new_rows.drop_duplicates('trade_date', inplace=True)
             new_rows = new_rows.merge(self.trade_dates, left_on='trade_date', right_on='cal_date')
             new_rows = self.fx_list.merge(new_rows, on='ts_code')
             avail_recorders = new_rows[fields_map[api]]
+
             avail_recorders.to_sql(api, DB.engine, index=False, if_exists='append', chunksize=1000)

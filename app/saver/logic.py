@@ -896,15 +896,29 @@ class DB(Base):
             fx_list = pd.read_sql(sa.text('SELECT id as fx_id, ts_code, classify FROM fx_obasic'), cls.engine)
         return fx_list
 
+    # @classmethod
+    # def get_existed_fx(cls, table_name, date_id):
+    #     existed_codes = pd.read_sql(
+    #         sa.text(
+    #             'SELECT sb.ts_code FROM ' + table_name + ' as api left join fx_obasic as sb on sb.id = api.fx_id where api.date_id=:date_id'),
+    #         cls.engine,
+    #         params={'date_id': date_id}
+    #     )
+    #     return existed_codes
+
+
     @classmethod
-    def get_existed_fx(cls, table_name, date_id):
+    def get_existed_fx(cls, table_name, fx_id, start_date, end_date):
         existed_codes = pd.read_sql(
             sa.text(
-                'SELECT sb.ts_code FROM ' + table_name + ' as api left join fx_obasic as sb on sb.id = api.fx_id where api.date_id=:date_id'),
+                ' SELECT tc.cal_date FROM ' + table_name + ' as api '
+                ' left join trade_cal tc on tc.id = api.date_id'
+                ' where api.fx_id = :fx_id and tc.cal_date between :start_date and :end_date'),
             cls.engine,
-            params={'date_id': date_id}
+            params={'fx_id': fx_id, 'start_date': start_date, 'end_date': end_date}
         )
         return existed_codes
+
 
     # @staticmethod
     # def validate_field(columns, fields):
