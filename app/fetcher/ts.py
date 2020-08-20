@@ -448,7 +448,7 @@ class Ts(Interface):
         start_date = self.trade_dates.iloc[0]['cal_date']
         end_date = self.trade_dates.iloc[-1]['cal_date']
         print('self.fx_list=', self.fx_list)
-        for fx_id, ts_code in self.fx_list[['fx_id', 'ts_code']]:
+        for fx_id, ts_code in self.fx_list[['fx_id', 'ts_code']].values:
             print(fx_id, ts_code)
             os.ex
             flag = True
