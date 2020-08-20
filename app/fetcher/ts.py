@@ -449,6 +449,7 @@ class Ts(Interface):
         end_date = self.trade_dates.iloc[-1]['cal_date']
         print('self.fx_list=', self.fx_list)
         for fx_id, ts_code in self.fx_list['fx_id', 'ts_code']:
+            print(fx_id, ts_code)
             flag = True
             while flag:
                 try:
@@ -461,6 +462,7 @@ class Ts(Interface):
 
     def update_fx_by_trade_date(self, api, fx_id, ts_code, start_date, end_date):
         new_rows = self.pro.query(api, ts_code=ts_code, start_date=start_date, end_date=end_date)
+        print(new_rows)
         if not new_rows.empty:
             existed_dates = DB.get_existed_fx(table_name=api, fx_id=fx_id, start_date=start_date, end_date=end_date)
             if not existed_dates.empty:
