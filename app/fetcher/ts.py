@@ -447,6 +447,7 @@ class Ts(Interface):
     def query_fx(self, api):
         start_date = self.trade_dates.iloc[0]['cal_date']
         end_date = self.trade_dates.iloc[-1]['cal_date']
+        print('self.fx_list=', self.fx_list)
         for fx_obasic in self.fx_list:
             print('fx_obasic=', fx_obasic)
             fx_id = fx_obasic.fx_id
