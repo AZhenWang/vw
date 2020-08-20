@@ -6,7 +6,7 @@ def execute(start_date='', end_date=''):
 
     worker.set_trade_dates(is_open='')
 
-    worker.update_fx_obasic()
+    # worker.update_fx_obasic()
     worker.set_fx_list()
 
     if not worker.trade_dates.empty:
