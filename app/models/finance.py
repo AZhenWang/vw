@@ -41,6 +41,7 @@ def get_reports(code_id, start_date_id='', end_date_id=''):
         ed = incomes12.index[i]
         incomes.loc[ed] = incomes12.loc[ed]
     incomes.sort_index(inplace=True)
+    print('income=', incomes[['n_income', 'revenue']])
     incomes.dropna(subset=['n_income', 'revenue'], inplace=True)
 
     oneyearago = pd.Series()
@@ -175,8 +176,8 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     print('total_assets=', total_assets)
     ret = round(incomes['n_income'] * 100 / total_assets, 2)
     pe = round(code_info['pe'], 2)
-    pb = round(code_info['pb'], 2)
-    # pb = round(total_mv/normal_equity, 2)
+    # pb = round(code_info['pb'], 2)
+    pb = round(total_mv/normal_equity, 2)
     total_share = balancesheets['total_share']
 
     print('ss2')
@@ -212,7 +213,7 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
 
     # 4、资金周转率：平均准备期+平均收账期-平均付账期
     # 存货周转天数：360*存货平均余额/主营成本
-    inventories_days = 360 * balancesheets['inventories'] / incomes['revenue']
+    inventories_days = 360 * balancesheets['inventories'] / incomes['oper_cost']
     # 应收账款周转天数：360×应收账款周转率=平均应收账款×360天/销售收入=平均应收账款/平均日销售额
     accounts_receiv_days = 360 * balancesheets['accounts_receiv'] / incomes['revenue']
     # 预收账款周转天数：360 * 预收平均余额/主营收入
@@ -434,20 +435,31 @@ def fina_kpi(incomes, balancesheets, cashflows, fina_indicators, holdernum, code
     roe_adj = round(np.log(1+roe/100)*100, 2)
 
     # 总体平均roe置信度
+    # roe_mv_ci0 = pd.Series(index=roe.index)
+    # roe_mv_ci1 = pd.Series(index=roe.index)
+    # for i in range(2, len(roe)):
+    #     roe_mv_ci0.iloc[i], roe_mv_ci1.iloc[i] = get_ci(data=roe[:i + 1], loc=roe_mv.iloc[i], alpha=0.95)
+
+    roe_diff = roe.diff()
+    adj_roe_mv = round(roe_mv / (1 - (roe_diff + roe_diff.shift()) / 100), 2)
+
     roe_mv_ci0 = pd.Series(index=roe.index)
     roe_mv_ci1 = pd.Series(index=roe.index)
     for i in range(2, len(roe)):
-        roe_mv_ci0.iloc[i], roe_mv_ci1.iloc[i] = get_ci(data=roe[:i + 1], loc=roe_mv.iloc[i], alpha=0.95)
+        roe_mv_ci0.iloc[i], roe_mv_ci1.iloc[i] = get_ci(data=roe[:i + 1], loc=adj_roe_mv.iloc[i], alpha=0.95)
+    V_adj = value_stock2(adj_roe_mv, OPM, opm_coef)
 
     # 未来10年涨幅倍数
     V = value_stock2(roe_mv, OPM, opm_coef)
     V_ci0 = value_stock2(roe_mv_ci0, OPM, opm_coef)
     V_ci1 = value_stock2(roe_mv_ci1, OPM, opm_coef)
-    V_adj = value_stock2(roe,  OPM, opm_coef)
+
     V_rd = value_stock2(roe_rd_mv, OPM, opm_coef)
     V_sale = value_stock2(roe_sale_mv, OPM, opm_coef)
     V_ebitda = value_stock2(roe_ebitda_mv, OPM, opm_coef)
     V_tax = value_stock2(tax_payable_pctmv, OPM, opm_coef)
+    # print(pd.concat([adj_close, roe, roe_diff, roe_diff.shift(), roe_mv,  adj_roe_mv, V,  V_adj, V_ci0, V_ci1, pb], axis=1))
+    # os.ex
     # 赔率= 未来10年涨幅倍数/市现率
     pp = round(V / pb, 2)
     pp_ci0 = round(V_ci0 / pb, 2)

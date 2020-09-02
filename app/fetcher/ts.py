@@ -344,7 +344,9 @@ class Ts(Interface):
         # codes = self.code_list[self.code_list['code_id'] >= 3771]['ts_code']
         codes = self.code_list['ts_code']
         # codes = ['300796.SZ', '688101.SH', '688300.SH', '300802.SZ']
-        # codes = ['600267.SH', '002901.SZ', ]
+        # codes = ['300871.SZ', '300878.SZ', '300869.SZ']
+        # codes = ['603538.SH']
+        # codes = ['300869.SZ', '300871.SZ', '300878.SZ']
         type = 'P'
         for ts_code in codes:
             flag = True
@@ -370,8 +372,9 @@ class Ts(Interface):
         # 按trade_date依次拉取所有股票信息
         # codes = self.code_list[self.code_list['code_id'] <= 3800]['ts_code']
         codes = self.code_list['ts_code']
-        # codes = ['002932.SZ']
-        # codes = ['002901.SZ']
+        # codes = ['300871.SZ', '300878.SZ', '300869.SZ']
+        # codes = ['603538.SH']
+        # codes = ['300869.SZ', '300871.SZ', '300878.SZ']
         # codes = ['002901.SZ']
         # codes = ['600267.SH', '002901.SZ', '300702.SZ', '603387.SH', '300685.SZ']
         # codes = ['002932.SZ', '603387.SH', '002901.SZ']
